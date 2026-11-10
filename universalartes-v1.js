@@ -60,4 +60,53 @@
   const brand = document.querySelector('.brand strong');
   if (brand) brand.textContent='UNIVERSALARTES';
   if ((location.hash.slice(1) || 'dashboard') === 'dashboard') render('dashboard');
+
+  // Ordem de produção impressa: somente consulta, não altera estoque nem status.
+  function printProductionOrder(oid){
+    const order = getOrder(oid);
+    if(!order){alert('Pedido não encontrado.');return;}
+    const items = Array.isArray(order.items) ? order.items : [];
+    const materials = Array.isArray(order.materials) ? order.materials : [];
+    const rows = items.map((item,i) =>
+       '<tr><td>' + (i+1) + '</td><td>' + esc(item.descricao||'Item não especificado') +
+       '</td><td>' + esc(item.quantidade||0) + '</td><td style="min-width:110px">__________</td></tr>').join('');
+    const materialRows = materials.map((m,i)=>{
+      const p=getProduct(m.productId);
+      return '<tr><td>' + (i+1) + '</td><td>' + esc(p?.nome||'Material não encontrado') +
+      '</td><td>' + esc(m.quantidade||0) + ' ' + esc(p?.unidade||'un') + '</td><td>□</td></tr>';
+    }).join('');
+    const tasks=['Medição conferida e projeto aprovado','Plano de corte conferido','Separação de MDF e ferragens','Corte de peças','Aplicação de fita de borda','Furação e usinagem','Montagem e conferência','Acabamento e limpeza','Conferência final','Transporte e instalação'];
+    const checks=tasks.map(t => '<div style="display:inline-block;width:48%;min-width:230px;margin:9px 0">□ '+esc(t)+'</div>').join('');
+    const html =
+       '<p><b>Pedido:</b> #'+esc(order.number)+' &nbsp; <b>Cliente:</b> '+esc(order.clientNome||'—')+
+       '<br><b>Data do pedido:</b> '+date(order.date)+' &nbsp; <b>Entrega prevista:</b> '+
+       (order.entregaData?date(order.entregaData):esc(order.entrega||'A definir'))+
+       '<br><b>Ambientes:</b> '+esc(order.ambientes||'Não informado')+'</p>'+
+       '<h2>1. Móveis / serviços da ordem</h2>'+
+       '<table><thead><tr><th>#</th><th>Descrição</th><th>Quantidade</th><th>Visto</th></tr></thead><tbody>'+
+       (rows||'<tr><td colspan="4">Nenhum item registrado</td></tr>')+'</tbody></table>'+
+       '<h2>2. Materiais previstos</h2>'+
+       '<table><thead><tr><th>#</th><th>Material</th><th>Quantidade</th><th>Separado?</th></tr></thead><tbody>'+
+       (materialRows||'<tr><td colspan="4">Nenhuma composição vinculada. Conferir projeto e lista de corte.</td></tr>')+'</tbody></table>'+
+       '<h2>3. Etapas da oficina</h2><div>'+checks+'</div>'+
+       '<h2>4. Conferência e execução</h2>'+
+       '<p>Responsável: __________________________________ &nbsp; Início: ___/___/______</p>'+
+       '<p>Observações técnicas: '+esc(order.observacoes||'Consultar medidas e desenhos aprovados.')+'</p>'+
+       '<p>Conferência final: ______________________________ &nbsp; Data: ___/___/______</p>'+
+       '<p style="font-size:12px;color:#666">Importante: esta ordem resume o pedido. Confirme dimensões, espessura, sentido do veio, folgas e desenhos técnicos antes do corte. Este documento não faz baixa de estoque.</p>';
+    openPrint('Ordem de produção — Pedido #' + String(order.number), html);
+  }
+  window.universalartesPrintProductionOrder=printProductionOrder;
+  const baseOrdersView=ordersView;
+  ordersView = function universalartesOrdersView(){
+    baseOrdersView();
+    content.querySelectorAll('[data-action="view-order"]').forEach(button=>{
+      const id=button.dataset.id;
+      const action=document.createElement('button');
+      action.type='button';action.className='btn small';action.textContent='Ordem de produção';
+      action.addEventListener('click',()=>printProductionOrder(id));
+      button.parentElement?.append(action);
+    });
+  };
+
 })();
