@@ -87,6 +87,9 @@ assert.equal(ls.role,'fornecedor');
 // Ampliar um cliente antigo para fornecedor sem trocar seu ID nem duplicar cliente.
 ctx.handleAction('ua-edit-entry','cliente:legacy-c');
 assert(currentModal.fields.includes('value="ambos"'));
+assert.throws(()=>currentModal.onSubmit({nome:'Mesmo Nome',tipo:'PF',doc:'52998224725',cep:'',uf:'',papelCadastro:'ambos',categoria:'Ferragens'}),/já está cadastrado em Fornecedores/);
+// O usuário deve resolver o registro duplicado antes de criar um segundo vínculo.
+DB.suppliers.find(x=>x.id==='legacy-s').doc='';
 assert(currentModal.onSubmit({nome:'Mesmo Nome',tipo:'PF',doc:'52998224725',cep:'',uf:'',papelCadastro:'ambos',categoria:'Ferragens'}));
 assert.equal(DB.clients.filter(x=>x.id==='legacy-c').length,1);
 assert.equal(DB.suppliers.filter(x=>x.id==='legacy-c').length,1);
