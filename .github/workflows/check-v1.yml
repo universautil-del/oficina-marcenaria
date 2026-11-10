@@ -4,6 +4,10 @@ on:
     paths:
       - 'preview-v1/**'
       - 'tests/v1-smoke.cjs'
+      - 'tests/security-audit.cjs'
+      - 'script.js'
+      - 'cloud-v06.js'
+      - 'features-v05.js'
       - '.github/workflows/check-v1.yml'
   workflow_dispatch:
 permissions:
@@ -18,4 +22,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar sintaxe, CSV, cálculo e isolamento da prévia
-        run: node tests/v1-smoke.cjs
+        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs
