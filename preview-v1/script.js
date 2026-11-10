@@ -145,12 +145,13 @@ function productModal(pid='',type='materia'){
   heading.insertAdjacentHTML('afterbegin','<small class="ua-product-eyebrow">CADASTRO DE PRODUTO</small>');
   const footer=dialog.querySelector('.dialog-actions');
   footer.querySelector('[type=submit]').textContent=pid?'Salvar alterações':'Salvar produto';
-  const close=document.createElement('button');close.type='button';close.className='ua-product-close';close.setAttribute('aria-label','Fechar cadastro');close.textContent='×';close.onclick=()=>dialog.close();dialog.append(close);
+  const close=document.createElement('button');close.type='button';close.className='ua-product-close';close.setAttribute('aria-label','Fechar cadastro');close.textContent='×';close.onclick=()=>dialog.close();dialog.insertBefore(close,dialog.firstChild);
   const typeSelect=dialog.querySelector('[name=tipo]'),rawFields=[...dialog.querySelectorAll('[data-ua-raw]')],finished=dialog.querySelector('[data-ua-finished]');
   const toggle=()=>{
    const isRaw=typeSelect.value==='materia';
    rawFields.forEach(label=>{label.hidden=!isRaw;label.querySelectorAll('input').forEach(input=>input.disabled=!isRaw)});
    finished.hidden=isRaw;
+   finished.querySelectorAll('select,input').forEach(control=>{control.disabled=isRaw});
   };
   typeSelect.addEventListener('change',toggle);
   toggle();
