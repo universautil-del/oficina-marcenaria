@@ -100,7 +100,26 @@ function v5InvoiceXml(){const el=document.createElement('input');el.type='file';
 function v5InvoiceDelete(id){if(!confirm('Excluir este registro de nota fiscal?'))return;db.invoices=db.invoices.filter(n=>n.id!==id);save();render('notas')}
 function v5AttachmentsView(){const orders=db.orders.slice().reverse();content.innerHTML=`${intro('Contratos anexados','Associe contratos e documentos PDF aos pedidos.',`${db.orderAttachments.length} anexo(s)`)}${notice()}<section class="panel"><div class="toolbar"><p class="muted">Os anexos pequenos são armazenados apenas neste navegador.</p><div class="actions">${button('+ Anexar contrato','v5-attachment-new','','primary')}</div></div>${table(['Pedido','Documento','Tamanho','Ações'],db.orderAttachments.slice().reverse().map(a=>td(esc('#'+(db.orders.find(o=>o.id===a.orderId)?.number||'—')),esc(a.name),`${Math.round(a.size/1024)} KB`,`<div class="row-actions">${button('Baixar','v5-attachment-download',a.id,'small')}${button('Excluir','v5-attachment-delete',a.id,'small danger')}</div>`)),'Nenhum contrato anexado.')}</section><p class="footer-note">Limite de 150 KB por PDF, apenas para demonstração. Documentos reais exigem armazenamento protegido (como Cloudflare R2 ou Supabase Storage) e controle de acesso.</p>`}
 function v5Attach(){if(!db.orders.length)return alert('Cadastre um pedido antes de anexar documentos.');const f=document.createElement('input');f.type='file';f.accept='application/pdf';f.onchange=async()=>{const file=f.files?.[0];if(!file)return;if(file.type!=='application/pdf'||file.size>150000)return alert('Selecione um arquivo PDF de até 150 KB.');const orderId=prompt('Número do pedido ao qual anexar o documento:');const order=db.orders.find(o=>String(o.number)===String(orderId||'').trim());if(!order)return alert('Pedido não encontrado.');try{const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Leitura interrompida.'));reader.readAsDataURL(file)});db.orderAttachments.push({id:id(),orderId:order.id,name:file.name.slice(0,160),size:file.size,data});if(save())render('anexos')}catch(e){alert('Não foi possível anexar: '+e.message)}};f.click()}
-function v5AttachmentDownload(attachmentId){const a=db.orderAttachments.find(x=>x.id===attachmentId);if(!a)return;const link=document.createElement('a');link.href=a.data;link.download=a.name;link.click()}
+function v5AttachmentDownload(attachmentId){
+ const a=db.orderAttachments.find(x=>x.id===attachmentId);if(!a)return;
+ // Backups JSON podem ser manipulados. Nunca navegar para um endereço arbitrário vindo do backup.
+ const value=typeof a.data==='string'?a.data:'';
+ const match=/^data:application\/pdf;base64,([A-Za-z0-9+/]+={0,2})$/i.exec(value);
+ if(!match||match[1].length>250000)return alert('Anexo inválido ou acima do limite. Aceitamos apenas PDFs armazenados no aplicativo.');
+ let bytes;
+ try{
+  const raw=atob(match[1]);
+  if(!raw.slice(0,1024).includes('%PDF-'))throw Error('Assinatura PDF ausente');
+  bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
+ }catch(e){return alert('Anexo PDF inválido. Não foi aberto.')}
+ const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+ try{
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=String(a.name||'contrato.pdf').replace(/[\/\\:*?"<>|]/g,'_').slice(0,160)||'contrato.pdf';
+  link.click();
+ }finally{setTimeout(()=>URL.revokeObjectURL(url),2000)}
+}
 function v5AttachmentDelete(attachmentId){if(!confirm('Excluir este anexo local?'))return;db.orderAttachments=db.orderAttachments.filter(a=>a.id!==attachmentId);save();render('anexos')}
 function v5PaidReceipt(orderId){const o=getOrder(orderId);if(!o||o.status==='cancelado')return alert('Pedido não encontrado ou cancelado.');const total=orderTotal(o),paid=orderPaid(o);if(paid+0.005<total)return alert(`Este pedido ainda não foi totalmente pago. Saldo: ${money(total-paid)}. Um recibo de quitação só pode ser emitido após receber o valor integral.`);const pays=db.transactions.filter(t=>t.orderId===o.id&&t.kind==='receber').flatMap(t=>t.payments||[]).sort((a,b)=>a.date.localeCompare(b.date));const last=pays[pays.length-1]?.date||iso();const client=getClient(o.clientId);openPrint(`Recibo de quitação — Pedido nº ${o.number}`,`<p>Declaramos o recebimento integral de <strong>${esc(client?.nome||o.clientNome)}</strong> do valor de <strong>${money(total)}</strong> referente ao pedido nº ${o.number}.</p><p><strong>Data da quitação:</strong> ${date(last)}<br><strong>Total recebido:</strong> ${money(paid)}<br><strong>Saldo:</strong> ${money(Math.max(0,total-paid))}</p><div class="sign"><div>Assinatura / Responsável</div></div>`)}
 // Acopla os novos módulos sem recriar o aplicativo nem alterar a chave dos backups.
