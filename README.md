@@ -6,6 +6,7 @@ Esta branch `universalartes-v1` é o início da reconstrução do sistema para a
 - Marca **Universalartes** (empresa) + **Oficina** (nome do sistema).
 - Novo **Painel do Marceneiro**, somente leitura, alimentado pelos registros existentes: vendas do mês, pedidos ativos, próximas entregas, atrasos, estoque, contas e projetos.
 - **Ordem de produção para impressão:** botão em Pedidos, com itens, materiais previstos, responsável, prazo e checklist de corte, fita, furação, montagem e instalação. Não altera estoque nem status.
+- **Assistente de projetos (prévia):** formulário em mm, seleção opcional de um projeto cadastrado, perguntas sobre materiais/portas/gavetas/restrições e geração de texto técnico para copiar e conversar com ChatGPT. Sem IA integrada ao navegador e sem envio automático de dados.
 - Fallback de nome Universalartes em dados de empresa/documentos, sem apagar nome que já tenha sido cadastrado.
 - Estrutura de planejamento de migração para dados por empresa e fluxo completo de obra: [Plano técnico de v1](docs/UNIVERSALARTES-V1-PLANO.md).
 - Preserva chaves antigas de armazenamento e dados existentes nesta etapa.
