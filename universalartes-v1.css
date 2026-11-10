@@ -55,3 +55,17 @@
 #uaAssistantStatus{min-height:32px;margin:12px 0}
 @media(max-width:950px){.ua-assistant-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.ua-form-3{grid-template-columns:1fr}}
+
+
+/* SketchUp -> pré-orçamento (protótipo local da Universalartes) */
+.ua-sketch-input{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.ua-sketch-input label{display:flex;flex-direction:column;font-weight:650;font-size:13px;gap:6px;color:#365340}
+.ua-sketch-input input,.ua-sketch-input select{border:1px solid #cbd9ce;border-radius:8px;background:white;color:#214435;padding:10px 12px;font:inherit;min-width:0;width:100%}
+.ua-sketch-result{margin:18px 0;min-height:45px;font-size:13px}
+.ua-sketch-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:16px}
+.ua-sketch-metrics>div{background:#f2f7f2;border-radius:9px;padding:12px}
+.ua-sketch-metrics small{display:block;font-size:11px;color:#637a69;margin-bottom:8px}
+.ua-sketch-metrics strong{font-size:17px;color:#214737}
+.ua-sketch-cost{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between;margin:20px 0;padding:13px;border-top:1px solid #dbe6dc}
+.ua-sketch-cost strong{font-size:18px;color:#214737}
+@media(max-width:750px){.ua-sketch-input{grid-template-columns:1fr}.ua-sketch-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
