@@ -12,7 +12,7 @@
   const maskDocument=v=>{
     const n=digits(v).slice(0,14);
     if(n.length<=11)return n.replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d{1,2})$/,'.$1-$2');
-    return n.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+    return n.slice(0,2)+(n.length>2?'.'+n.slice(2,5):'')+(n.length>5?'.'+n.slice(5,8):'')+(n.length>8?'/'+n.slice(8,12):'')+(n.length>12?'-'+n.slice(12):'');
   };
   const maskPhone=v=>{
     const n=digits(v);
