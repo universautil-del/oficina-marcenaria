@@ -305,9 +305,9 @@
    if(action==='calculate'){
     state.parts=makeParts();state.error='';view();return;
    }
-   if(action==='recalculate'){recalcInputs();renderTotals();return}
+   if(action==='recalculate'){recalcInputs();view();return}
    if(action==='export'){exportParts();return}
-   if(action==='brief'){recalcInputs();renderTotals();brief();return}
+   if(action==='brief'){recalcInputs();view();brief();return}
    if(action==='copy'){
     const txt=document.querySelector('#uaSkuBrief')?.value;
     if(!txt)throw Error('Gere primeiro o resumo para o ChatGPT.');
