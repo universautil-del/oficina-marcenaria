@@ -42,7 +42,7 @@
     const keys={
       name:['peca','nome','descricao','component','component_name','definition_name','name','definicao'],
       length:['comprimento_mm','comprimento','largura_mm','largura','lenx','length','length_mm','lenx_mm'],
-      width:['profundidade_mm','profundidade','altura_mm','altura','leny','width','width_mm','leny_mm'],
+      width:['profundidade_mm','profundidade','altura_mm','altura','largura_mm','largura','leny','width','width_mm','leny_mm'],
       thick:['espessura_mm','espessura','thickness','thickness_mm','lenz','lenz_mm'],
       qty:['quantidade','qtd','qty','quantity','count'],
       material:['material','mdf','material_nome','material_name'],
