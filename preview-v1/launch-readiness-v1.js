@@ -4,6 +4,7 @@
    não afirma RLS ou backup de servidor sem testes reais. */
 (function(){
   const oldRender=render;
+  const oldSave=save;
   if(!sections.some(s=>s[0]==='seguranca')){
     const idx=sections.findIndex(x=>x[0]==='empresa');
     sections.splice(idx<0?sections.length:idx,0,['seguranca','✓','Segurança e lançamento']);
@@ -108,7 +109,7 @@
       '<div><strong>2. Testar restauração completa</strong><p>Exportar um backup, restaurar em ambiente descartável e conferir cadastros, pedidos e valores. A verificação JSON acima não substitui este teste.</p></div>'+
       '<div><strong>3. Garantir transações de estoque e financeiro</strong><p>O sistema ainda usa um documento JSON por usuário; alterações simultâneas e operações críticas precisam de validação e proteção no servidor.</p></div>'+
       '<div><strong>4. Proteger anexos e dados pessoais</strong><p>Validar storage privado, política de acesso e isolamento do ambiente de produção antes de cadastrar informações reais.</p></div></div>'+
-      '<p class="muted small">**Este diagnóstico não libera automaticamente o uso comercial.** A prévia continua em modo de testes até concluirmos a validação externa.</p>'+
+      '<p class="muted small"><strong>Este diagnóstico não libera automaticamente o uso comercial.</strong> A prévia continua em modo de testes até concluirmos a validação externa.</p>'+
       '<p><a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/docs/FINALIZACAO-UNIVERSALARTES-V1.md" target="_blank" rel="noopener noreferrer">Abrir roteiro completo de conclusão</a></p></section>';
   }
   async function runCloud(){
@@ -145,6 +146,8 @@
     }finally{btn.disabled=false}
   };
   document.addEventListener('click',handle);
+  // Uma edição invalida a checagem do backup anterior: é preciso validar novamente.
+  save=function(...args){status.backupChecked=false;return oldSave(...args)};
   render=function launchRender(section=location.hash.slice(1)||'dashboard'){
     if(section!=='seguranca')return oldRender(section);
     title.textContent='Segurança e lançamento';
