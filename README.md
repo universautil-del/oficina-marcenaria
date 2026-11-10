@@ -1,3 +1,20 @@
+# UNIVERSALARTES — OFICINA 1.0 (prévia de desenvolvimento)
+
+Esta branch `universalartes-v1` é o início da reconstrução do sistema para a rotina real de uma marcenaria de móveis sob medida. O sistema publicado continua na branch `main` com a versão 0.6. **Não publicar esta prévia como sistema comercial pronto.**
+
+## Primeira entrega da branch
+- Marca **Universalartes** (empresa) + **Oficina** (nome do sistema).
+- Novo **Painel do Marceneiro**, somente leitura, alimentado pelos registros existentes: vendas do mês, pedidos ativos, próximas entregas, atrasos, estoque, contas e projetos.
+- Fallback de nome Universalartes em dados de empresa/documentos, sem apagar nome que já tenha sido cadastrado.
+- Estrutura de planejamento de migração para dados por empresa e fluxo completo de obra: [Plano técnico de v1](docs/UNIVERSALARTES-V1-PLANO.md).
+- Preserva chaves antigas de armazenamento e dados existentes nesta etapa.
+
+**Ainda não implementado na v1:** banco multiusuário por empresa, transações de estoque/financeiro no backend, ordens de produção detalhadas, importação segura ou acesso a anexos privados. Todos requerem desenvolvimento e testes antes da publicação.
+
+---
+
+## Documentação da versão anterior (0.6)
+
 # OFICINA — Gestão de Marcenaria v0.6
 
 Versão estática hospedada no GitHub Pages, com clientes, produtos e composição, estoque, compras, fornecedores, orçamentos, pedidos, projetos, conversor, financeiro, documentos, XML de NF-e e relatórios da v0.5. Mantém o tema verde/branco/madeira.
