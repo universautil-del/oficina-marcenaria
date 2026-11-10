@@ -9,7 +9,7 @@ for(const file of ['preview-v1/compact-entities-v1.js','preview-v1/unified-conta
 const css=source('preview-v1/unified-contacts-v1.css'),html=source('preview-v1/index.html');
 assert(html.includes('unified-contacts-v1.js')&&html.includes('unified-contacts-v1.css'));
 assert(html.indexOf('unified-contacts-v1.js')>html.indexOf('compact-entities-v1.js'));
-assert(css.includes('grid-template-columns:')&&css.includes('ua-directory-tabs'));
+assert(css.includes('.ua-directory-tabs')&&css.includes('@media(max-width:760px)'));
 const DB={clients:[],suppliers:[],quotes:[],orders:[],purchases:[]};
 let currentModal=null,saved=0,seq=0,originalCalls=0;
 const location={hash:''},content={innerHTML:'',querySelectorAll(){return[]}},nav={innerHTML:'',querySelectorAll(){return[]}};
