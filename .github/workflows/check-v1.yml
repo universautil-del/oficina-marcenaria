@@ -5,9 +5,11 @@ on:
       - 'preview-v1/**'
       - 'tests/v1-smoke.cjs'
       - 'tests/security-audit.cjs'
+      - 'tests/product-excel-v1.cjs'
       - 'script.js'
       - 'cloud-v06.js'
       - 'features-v05.js'
+      - 'preview-v1/product-compact-v1.css'
       - '.github/workflows/check-v1.yml'
   workflow_dispatch:
 permissions:
@@ -22,4 +24,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar sintaxe, CSV, cálculo e isolamento da prévia
-        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs
+        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs && node tests/product-excel-v1.cjs
