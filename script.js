@@ -191,7 +191,30 @@ function receiptPrint(tid,pid){const t=db.transactions.find(x=>x.id===tid);const
  const remains=balance(t),isFull=remains<.005;
  openPrint(`Recibo de ${isFull?'pagamento':'pagamento parcial'}`,`<p>Recebemos de <strong>${esc(client?.nome||order?.clientNome||'Pagador não identificado')}</strong>${client?.doc?' (CPF/CNPJ: '+esc(client.doc)+')':''} a importância de <strong>${money(payment.valor)}</strong>, em ${date(payment.date)}, referente a ${esc(t.descricao)}.</p><p><strong>Forma:</strong> ${esc(payment.method||'Não informada')}<br><strong>${isFull?'Situação da parcela: quitada':'Saldo pendente da parcela:'}</strong> ${isFull?'Quitada':money(remains)}.</p><p><strong>Emitente:</strong> ${esc(c.nome||'Empresa não cadastrada')}</p><div class="sign"><div>Assinatura / Responsável</div></div>`)}
 function backup(){const exportData={app:'oficina',version:3,exportedAt:new Date().toISOString(),data:db};download(`oficina-backup-${iso()}.json`,JSON.stringify(exportData,null,2))}
-function validateBackup(obj){if(obj?.app!=='oficina')throw Error('O arquivo não é um backup do Oficina.');if(obj.version===2&&Array.isArray(obj.clientes))return {kind:2,clients:obj.clientes};if(obj.version!==3||!obj.data||obj.data.version!==3)throw Error('Versão ou estrutura do backup não reconhecida.');const data=obj.data;for(const prop of ['clients','products','quotes','orders','transactions','stockMovements'])if(!Array.isArray(data[prop]))throw Error(`Campo ${prop} inválido.`);if(!data.company||typeof data.company!=='object'||!data.seq||typeof data.seq!=='object')throw Error('Backup incompleto.');return {kind:3,data}}
+function validateBackup(obj){
+ if(obj?.app!=='oficina')throw Error('O arquivo não é um backup do Oficina.');
+ if(obj.version===2&&Array.isArray(obj.clientes)){
+  if(obj.clientes.length>100000||obj.clientes.some(x=>!x||typeof x!=='object'||Array.isArray(x)))throw Error('Clientes do backup antigo inválidos.');
+  return {kind:2,clients:obj.clientes};
+ }
+ if(obj.version!==3||!obj.data||obj.data.version!==3)throw Error('Versão ou estrutura do backup não reconhecida.');
+ const data=obj.data;
+ for(const prop of ['clients','products','quotes','orders','transactions','stockMovements'])if(!Array.isArray(data[prop]))throw Error('Campo '+prop+' inválido.');
+ if(!data.company||typeof data.company!=='object'||Array.isArray(data.company)||!data.seq||typeof data.seq!=='object'||Array.isArray(data.seq))throw Error('Backup incompleto.');
+ // Backups legítimos das versões anteriores podem não conter os módulos adicionados depois.
+ const normalized={...data,seq:{...data.seq}};
+ for(const field of ['suppliers','purchases','projects','invoices','orderAttachments']){
+  if(data[field]!==undefined&&!Array.isArray(data[field]))throw Error('Campo '+field+' inválido no backup.');
+  normalized[field]=data[field]||[];
+ }
+ for(const field of ['quote','order','purchase','project','invoice']){
+  const collection={quote:'quotes',order:'orders',purchase:'purchases',project:'projects',invoice:'invoices'}[field];
+  const next=normalized[collection].reduce((n,item)=>Math.max(n,(Number.isSafeInteger(Number(item?.number))&&Number(item.number)>=0)?Number(item.number)+1:1),1);
+  const seq=Number(normalized.seq[field]);
+  normalized.seq[field]=Number.isSafeInteger(seq)&&seq>=next?seq:next;
+ }
+ return {kind:3,data:normalized};
+}
 function importData(){const file=document.createElement('input');file.type='file';file.accept='.json,application/json';file.onchange=async()=>{const f=file.files?.[0];if(!f)return;if(f.size>15e6)return alert('Arquivo maior que 15 MB.');try{const raw=JSON.parse(await f.text());const result=validateBackup(raw);if(result.kind===2){if(!confirm(`Importar ${result.clients.length} clientes do backup antigo? Clientes atuais serão substituídos; os demais módulos serão preservados.`))return;db.clients=result.clients;}
  else{if(!confirm('ATENÇÃO: restaurar este arquivo vai SUBSTITUIR TODOS os dados atuais neste navegador. Você já exportou um backup do estado atual?'))return;backup();db=result.data;db.suppliers||=[];db.purchases||=[];db.seq.purchase||=1;}
  if(save()){search.clientes='';render();alert('Backup importado com sucesso.')}}catch(e){alert('Não foi possível importar o backup: '+e.message)}};file.click()}
