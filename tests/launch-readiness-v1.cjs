@@ -89,7 +89,7 @@ assert.notEqual(cloudCode,cloudSource,'Precisa expor somente no teste os método
 const cloudCtx={
  document:{addEventListener(){},getElementById:()=>null,querySelector:()=>null},
  window:{addEventListener(){}},
- localStorage:ls,sessionStorage:ss,location:{hash:'#empresa'},
+ localStorage:ls,sessionStorage:ss,location:{hash:'#dashboard'},
  db:JSON.parse(baseline),blank:()=>JSON.parse(baseline),load:()=>JSON.parse(baseline),
  DB_KEY:'test-db',OLD_CLIENTS:'test-old',
  render(){},save(){return true},download(){},esc:x=>String(x??''),alert(){},
