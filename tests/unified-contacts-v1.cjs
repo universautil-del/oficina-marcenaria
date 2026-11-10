@@ -104,6 +104,6 @@ assert.equal(DB.suppliers.find(x=>x.id==='legacy-c').cadastroCompartilhado,false
 assert(api.allEntries().some(x=>x.id==='legacy-c'&&x.role==='fornecedor'));
 ctx.render('clientes');assert(content.innerHTML.includes('ua-directory'));
 ctx.render('fornecedores');assert(content.innerHTML.includes('ua-directory'));
-ctx.render('dashboard');assert.equal(originalCalls,1);
+ctx.render('dashboard');assert.equal(originalCalls,2); // primeira renderização ao carregar + navegação manual
 assert(saved>=4);
 console.log('OK: Menu único, filtros, cadastro com 1 ou 2 papéis, links de pedidos/compras, dados antigos e exclusão parcial.');
