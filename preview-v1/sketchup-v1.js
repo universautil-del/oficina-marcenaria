@@ -153,7 +153,7 @@
  function mappingHTML(){
   if(!state.raw.length)return '';
   const options=(field)=>'<option value="-1">Não informado / escolher</option>'+state.headers.map((h,i)=>'<option value="'+i+'" '+(state.map[field]===i?'selected':'')+'>'+safe(h||'Coluna '+(i+1))+'</option>').join('');
-  return '<section class="ua-section gap-top"><h3>2. Conferir as colunas</h3><p class="muted">Confirme se o OFICINA identificou corretamente cada campo do CSV. As medidas devem estar em milímetros.</p><div class="ua-mapping">'+fields.map(([key,label,required])=>'<label>'+safe(label)+(required?' *':'')+'<select data-ua-map="'+key+'">'+options(key)+'</select></label>').join('')+'</div>'+
+  return '<section class="ua-section gap-top"><h3>2. Conferir as colunas</h3><p class="muted">Confira as colunas do Excel ou CSV. Todas as medidas das peças devem estar em milímetros.</p><div class="ua-mapping">'+fields.map(([key,label,required])=>'<label>'+safe(label)+(required?' *':'')+'<select data-ua-map="'+key+'">'+options(key)+'</select></label>').join('')+'</div>'+
     '<div class="actions gap-top"><button class="btn primary" type="button" data-ua-skp="calculate">Ler peças e calcular</button><button class="btn" type="button" data-ua-skp="reset">Limpar importação</button></div></section>';
  }
  function summaryHTML(){
@@ -217,14 +217,15 @@
   content.innerHTML='<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSALARTES · SKETCHUP</div>'+
     '<h2>Do desenho ao custo do móvel</h2><p>Importe uma lista de peças exportada do SketchUp e confira materiais, quantitativos e uma estimativa preliminar.</p></div></div>'+
     '<section class="ua-section"><h3>1. Importar lista de peças do SketchUp</h3>'+
-    '<p>Use o plugin gratuito <strong>OpenCutList</strong> no SketchUp para exportar o CSV de componentes. Configure as dimensões em <strong>mm</strong> e, se possível, inclua o material e a metragem de fita.</p>'+
-    '<label class="ua-skp-upload">Escolher arquivo CSV ou TXT<input type="file" id="uaSkuFile" accept=".csv,.txt,text/csv,text/plain"></label>'+
-    '<p class="muted">O arquivo é processado apenas nesta aba. Formato nativo .skp ainda não é interpretado pelo OFICINA. Não é preciso enviar seu desenho a um servidor.</p>'+
+    '<p>No SketchUp 2022, exporte a lista de peças do <strong>OpenCutList</strong> como <strong>Excel (.xlsx)</strong> ou CSV. Configure as dimensões em <strong>mm</strong> e confira material, espessura, quantidade e fita.</p>'+
+    '<label class="ua-skp-upload">Importar Excel (.xlsx), CSV ou TXT<input type="file" id="uaSkuFile" accept=".xlsx,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain"></label>'+
+    '<p class="muted">A planilha é lida no seu navegador. O leitor Excel é carregado por HTTPS quando necessário. O arquivo nativo .skp ainda não é interpretado diretamente.</p>'+
     '<div class="actions gap-top"><button class="btn" type="button" data-ua-skp="template">Baixar modelo de CSV</button><a class="btn" href="https://extensions.sketchup.com/extension/00f0bf69-7a42-4295-9e1c-226080814e3e/opencutlist" target="_blank" rel="noopener noreferrer">Conhecer OpenCutList ↗</a></div>'+
     (state.file?'<p class="ua-skp-file">Arquivo carregado: '+safe(state.file)+' · '+state.raw.length+' linhas</p>':'')+
     (state.error?'<div class="ua-skp-warnings" role="alert">'+safe(state.error)+'</div>':'')+'</section>'+
     mappingHTML()+summaryHTML();
   renderTotals();
+  window.universalartesSketchUpExcel?.enhance?.();
  }
  function readFile(file){
   if(!file)return;
@@ -318,5 +319,5 @@
    }
   }catch(error){alert(error.message||'Não foi possível concluir o cálculo.')}
  });
- window.universalartesSketchUp={parseCSV,detectSep,makeParts,calculated,state};
+ window.universalartesSketchUp={parseCSV,detectSep,makeParts,calculated,state,mapping,view};
 })();
