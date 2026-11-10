@@ -124,10 +124,11 @@
   activate(state.remote.data,state.remote.revision);
  }
  function logout(){
+  const wasActive=state.active;
   if(state.active&&JSON.stringify(db)!==state.lastSynced&&!confirm('Existem alterações não sincronizadas. Ao sair elas podem ser perdidas. Deseja continuar?'))return;
   clearTimeout(state.timer);state.active=false;state.paused=false;state.rev=null;state.remote=null;state.lastSynced='';state.userId=null;state.session=null;
   sessionStorage.removeItem(SES);sessionStorage.removeItem(CACHE);sessionStorage.removeItem(META);
-  state.status='Local — somente neste navegador';db=blank();localStorage.setItem(DB_KEY,JSON.stringify(db));render('empresa');
+  state.status='Local — somente neste navegador';if(wasActive){db=blank();localStorage.setItem(DB_KEY,JSON.stringify(db))}else{db=load()}render('empresa');
  }
  function showStatus(){
   let item=document.getElementById('cloudStatus');
