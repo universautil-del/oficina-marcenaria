@@ -58,19 +58,40 @@ function v5DeleteProject(pid){if(!confirm('Excluir este projeto e seus dados loc
 function v5Checklist(pid){const p=v5FindProject(pid);if(!p)return;const checks=(p.checklist||[]);const rows=checks.map((item,i)=>`<label class="v5-check"><input type="checkbox" data-v5-check="${i}" ${item.done?'checked':''}> ${esc(item.label)}</label>`).join('');openModal('Checklist — '+p.nome,`<div class="v5-checklist">${rows||'<p>Nenhuma etapa cadastrada.</p>'}</div>`,(_v,dlg)=>{checks.forEach((item,i)=>item.done=!!dlg.querySelector(`[data-v5-check="${i}"]`)?.checked);return save()});}
 function v5Compare(pid){const p=v5FindProject(pid);if(!p)return;const rows=[['Materiais / acabamento',p.optionA||'Não informado',p.optionB||'Não informado'],['Custo estimado',money(p.priceA||0),money(p.priceB||0)],['Diferença',p.priceA&&p.priceB?money(Math.abs(p.priceA-p.priceB)):'—','']];openModal('Comparar opções — '+p.nome,`<p class="muted">Compare alternativas do mesmo móvel antes de aprovar o projeto.</p>${table(['Critério','Opção A','Opção B'],rows.map(a=>td(...a.map(esc))))}`,()=>true)}
 function v5ExportProjects(){exportCsv(`oficina-projetos-${iso()}.csv`,['Projeto','Cliente','Ambiente','Largura mm','Altura mm','Profundidade mm','Material','Acabamento','Etapa','Prazo','Alternativa A','Valor A','Alternativa B','Valor B'],db.projects.map(p=>[p.nome,p.clientNome,p.ambiente,p.largura,p.altura,p.profundidade,p.material,p.acabamento,v5ProjectStatus(p.status),date(p.prazo),p.optionA,p.priceA,p.optionB,p.priceB]))}
-function v5Inches(str){
- const s=String(str).trim().replace(',','.').replace(/\s+/g,' ');
- if(!s)throw Error('Informe uma medida em polegadas.');
- const m=s.match(/^(\d+(?:\.\d+)?)\s+(\d+)\/(\d+)$/);
- if(m){if(Number(m[3])===0)throw Error('O denominador deve ser maior que zero.');return Number(m[1])+Number(m[2])/Number(m[3])}
- const fraction=s.match(/^(\d+)\/(\d+)$/);
- if(fraction){if(Number(fraction[2])===0)throw Error('O denominador deve ser maior que zero.');return Number(fraction[1])/Number(fraction[2])}
- if(!/^\d+(?:\.\d+)?$/.test(s))throw Error('Use, por exemplo: 3/8, 1 1/2 ou 2,75.');
- const n=Number(s);if(!Number.isFinite(n))throw Error('Medida fora do limite.');return n;
+
+function v5ConverterView(){
+ content.innerHTML=
+  intro('Conversor métrico','Padrão brasileiro: milímetros (mm), centímetros (cm) e metros (m).')+
+  '<div class="v5-split"><section class="panel"><h3>Converter medida</h3>'+
+  '<p class="muted">Informe uma medida e escolha a unidade. Aceita vírgula decimal, como 2,45.</p>'+
+  '<label class="v5-label">Medida<input id="v5MetricValue" type="text" inputmode="decimal" placeholder="Ex.: 2,45" value="1,60"></label>'+
+  '<label class="v5-label">Unidade de origem<select id="v5MetricUnit"><option value="m">Metros (m)</option><option value="cm">Centímetros (cm)</option><option value="mm">Milímetros (mm)</option></select></label>'+
+  '<div class="actions gap-top">'+button('Converter medida','v5-convert-metric','','primary')+'</div>'+
+  '<output id="v5MetricResult" class="v5-convert-output" aria-live="polite">1.600 mm = 160 cm = 1,6 m</output></section>'+
+  '<section class="panel"><h3>Medidas para fabricação</h3>'+
+  '<p class="muted">Nos projetos, listas de peças e ordens de produção da Universalartes, registre largura, altura, profundidade e espessura sempre em milímetros.</p>'+
+  '<div class="empty">Exemplo: armário de 1,60 m × 2,10 m × 0,55 m → <strong>1.600 × 2.100 × 550 mm</strong>.</div>'+
+  '</section></div>'+
+  '<section class="panel gap-top"><h3>Referências rápidas da marcenaria</h3>'+
+  table(['Metros','Centímetros','Milímetros'],[['0,30 m','30 cm','300 mm'],['0,45 m','45 cm','450 mm'],['0,55 m','55 cm','550 mm'],['0,60 m','60 cm','600 mm'],['1,20 m','120 cm','1.200 mm'],['1,60 m','160 cm','1.600 mm'],['2,10 m','210 cm','2.100 mm'],['2,75 m','275 cm','2.750 mm']].map(a=>td(...a)))+'</section>';
 }
-function v5MmToFraction(n){const value=Number(n)/25.4,whole=Math.floor(value),sixteenths=Math.round((value-whole)*16),a=whole+Math.floor(sixteenths/16),b=sixteenths%16;if(!b)return String(a);const gcd=(a,b)=>b?gcd(b,a%b):a;const g=gcd(b,16);return `${a?a+' ':''}${b/g}/${16/g}`}
-function v5ConverterView(){content.innerHTML=`${intro('Conversor de medidas','Polegadas (inclusive frações) e milímetros.')}<div class="v5-split"><section class="panel"><h3>Polegadas → milímetros</h3><p class="muted">Aceita frações como 3/8, 1 1/2 ou 2,75.</p><label class="v5-label">Polegadas<input id="v5Inch" type="text" placeholder="Ex.: 1 3/8" value="1 3/8"></label><div class="actions gap-top">${button('Converter para mm','v5-convert-inch','','primary')}</div><output id="v5MmResult" class="v5-convert-output" aria-live="polite">34,925 mm</output></section><section class="panel"><h3>Milímetros → polegadas</h3><p class="muted">Mostra também a fração aproximada de 1/16 de polegada.</p><label class="v5-label">Milímetros<input id="v5Millimeter" type="number" min="0" step="0.001" value="25.4"></label><div class="actions gap-top">${button('Converter para polegadas','v5-convert-mm','','primary')}</div><output id="v5InchResult" class="v5-convert-output" aria-live="polite">1″</output></section></div><section class="panel gap-top"><h3>Referências rápidas</h3>${table(['Polegadas','Milímetros'],[['1/8',3.175],['1/4',6.35],['3/8',9.525],['1/2',12.7],['3/4',19.05],['1',25.4]].map(a=>td(esc(a[0]),`${dec(a[1])} mm`)))}</section>`}
-function v5Convert(which){try{if(which==='inch'){const n=v5Inches(document.querySelector('#v5Inch').value);document.querySelector('#v5MmResult').textContent=(n*25.4).toLocaleString('pt-BR',{maximumFractionDigits:4})+' mm'}else{const mm=Number(document.querySelector('#v5Millimeter').value);if(!(mm>=0&&Number.isFinite(mm)))throw Error('Informe milímetros válidos.');document.querySelector('#v5InchResult').textContent=`${dec(mm/25.4)}″ · aproximadamente ${v5MmToFraction(mm)}″`}}catch(e){alert(e.message)}}
+function v5ParseMetric(input){
+ const s=String(input??'').trim().replace(/\s/g,'');
+ if(!/^\d+(?:[,.]\d+)?$/.test(s))throw Error('Informe uma medida válida, como 2,45 ou 160.');
+ const n=Number(s.replace(',','.'));
+ if(!Number.isFinite(n)||n<0||n>1000000)throw Error('Informe uma medida entre 0 e 1.000.000.');
+ return n;
+}
+function v5Convert(){
+ try{
+  const value=v5ParseMetric(document.querySelector('#v5MetricValue').value);
+  const unit=document.querySelector('#v5MetricUnit').value;
+  if(!['mm','cm','m'].includes(unit))throw Error('Unidade de medida inválida.');
+  const mm=value*({mm:1,cm:10,m:1000}[unit]);
+  const fmt=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:3});
+  document.querySelector('#v5MetricResult').textContent=fmt(mm)+' mm = '+fmt(mm/10)+' cm = '+fmt(mm/1000)+' m';
+ }catch(e){alert(e.message||'Não foi possível converter a medida.')}
+}
 function v5InvoiceView(){const q=v5InvoiceSearch.toLowerCase();const list=db.invoices.filter(n=>[n.numero,n.chave,n.emitente,n.destinatario,n.tipo,n.origem].some(x=>String(x||'').toLowerCase().includes(q))).slice().reverse();content.innerHTML=`${intro('Notas fiscais','Cadastro manual e importação local de arquivos XML de NF-e.',`${db.invoices.length} nota(s)`)}${notice()}<section class="panel"><div class="toolbar"><input id="v5InvoiceSearch" class="search" placeholder="Pesquisar NF, emitente ou chave..." value="${esc(v5InvoiceSearch)}"><div class="actions">${button('Importar XML','v5-invoice-xml')}${button('+ Nota manual','v5-invoice-new','','primary')}</div></div>${table(['Número / Data','Emitente','Destinatário','Valor','Origem','Ações'],list.map(n=>td(`<strong>${esc(n.numero||'—')}</strong><div class="muted small">${date(n.data)}</div>`,esc(n.emitente||'—'),esc(n.destinatario||'—'),money(n.valor),pill(n.origem==='XML'?'Importação XML':'Manual'),button('Excluir','v5-invoice-delete',n.id,'small danger'))),'Nenhuma nota fiscal registrada.')}</section><p class="footer-note">Este módulo não emite notas fiscais, não valida autorização na SEFAZ e não importa documentos diretamente de serviços fiscais. As informações são apenas registradas no navegador.</p>`;
  const el=document.querySelector('#v5InvoiceSearch');el.oninput=e=>{const pos=e.target.selectionStart;v5InvoiceSearch=e.target.value;v5InvoiceView();const n=document.querySelector('#v5InvoiceSearch');n.focus();n.setSelectionRange(pos,pos)}}
 function v5InvoiceModal(){openModal('Registrar nota fiscal',`<div class="form-grid"><label>Número *<input name="numero" required maxlength="30"></label><label>Data de emissão *<input name="data" type="date" value="${iso()}" required></label><label>Tipo<select name="tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></label><label>Valor (R$) *<input type="number" min="0" step="0.01" name="valor" required></label><label>Emitente<input name="emitente" maxlength="160"></label><label>Destinatário<input name="destinatario" maxlength="160"></label><label class="full">Chave de acesso (se houver)<input name="chave" maxlength="44" pattern="[0-9]{44}" placeholder="44 dígitos"></label><label class="full">Observações<textarea name="observacoes" rows="3"></textarea></label></div>`,v=>{
@@ -103,7 +124,7 @@ document.addEventListener('click',e=>{
  switch(a){
   case 'v5-project-new':return v5ProjectModal();case 'v5-project-edit':return v5ProjectModal(ref);case 'v5-project-delete':return v5DeleteProject(ref);case 'v5-project-check':return v5Checklist(ref);case 'v5-project-compare':return v5Compare(ref);case 'v5-project-export':return v5ExportProjects();
   case 'v5-view-cards':v5ProjectMode='cards';return render('projetos');case 'v5-view-list':v5ProjectMode='list';return render('projetos');case 'v5-view-kanban':v5ProjectMode='kanban';return render('projetos');
-  case 'v5-convert-inch':return v5Convert('inch');case 'v5-convert-mm':return v5Convert('mm');
+  case 'v5-convert-metric':return v5Convert();
   case 'v5-invoice-new':return v5InvoiceModal();case 'v5-invoice-xml':return v5InvoiceXml();case 'v5-invoice-delete':return v5InvoiceDelete(ref);
   case 'v5-attachment-new':return v5Attach();case 'v5-attachment-download':return v5AttachmentDownload(ref);case 'v5-attachment-delete':return v5AttachmentDelete(ref);
   case 'v5-paid-receipt':return v5PaidReceipt(ref);case 'v5-go-attachments':location.hash='anexos';return render('anexos');
