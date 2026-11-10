@@ -25,6 +25,7 @@
   if(v instanceof Date)return v.toISOString().slice(0,10);
   if(typeof v==='object'){
    if(Array.isArray(v.richText))return v.richText.map(x=>x.text||'').join('');
+   if('formula' in v&&!('result' in v))throw Error('Fórmula do Excel sem resultado calculado. Abra a planilha, recalcule e salve.');
    if('result' in v){
     if(v.result===null||v.result===undefined)throw Error('Fórmula do Excel sem resultado calculado. Abra a planilha, recalcule e salve.');
     return String(v.result);
