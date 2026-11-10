@@ -106,7 +106,7 @@ function v5PaidReceipt(orderId){const o=getOrder(orderId);if(!o||o.status==='can
 // Acopla os novos módulos sem recriar o aplicativo nem alterar a chave dos backups.
 v5InitData();
 sections.splice(sections.findIndex(x=>x[0]==='produtos'),0,['projetos','▥','Projetos de móveis']);
-sections.splice(sections.findIndex(x=>x[0]==='documentos'),0,['conversor','⇄','Conversor'],['notas','▤','Notas fiscais']);
+sections.splice(sections.findIndex(x=>x[0]==='documentos'),0,['conversor','⇄','Conversor métrico'],['notas','▤','Notas fiscais']);
 sections.splice(sections.findIndex(x=>x[0]==='empresa'),0,['anexos','▧','Contratos anexados']);
 const v5OriginalRender=render;
 render=function(section=location.hash.slice(1)||'dashboard'){
