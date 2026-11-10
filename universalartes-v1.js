@@ -36,7 +36,7 @@
       '<h2>O que precisa da sua atenção hoje?</h2><p>Uma visão da produção, das entregas e do dinheiro da marcenaria.</p></div>' +
       '<a class="ua-help-link" href="#empresa">Minha empresa ↗</a></div>' +
       notice() +
-      '<div class="ua-shortcuts"><a href="#clientes">+ Cliente</a><a href="#projetos">+ Ver projetos</a><a href="#orcamentos">+ Orçamento</a><a href="#pedidos">Pedidos</a><a href="#producao">Produção</a><a href="#produtos">Estoque</a></div>' +
+      '<div class="ua-shortcuts"><a href="#assistente">✎ Pedir ajuda no projeto</a><a href="#clientes">+ Cliente</a><a href="#projetos">+ Ver projetos</a><a href="#orcamentos">+ Orçamento</a><a href="#pedidos">Pedidos</a><a href="#producao">Produção</a><a href="#produtos">Estoque</a></div>' +
       '<div class="ua-metrics">' +
         plainCard('Vendas do mês',money(sold),'Pedidos do mês','pedidos') +
         plainCard('Pedidos em andamento',String(open.length),'Produção e entrega','producao') +
@@ -107,6 +107,107 @@
       action.addEventListener('click',()=>printProductionOrder(id));
       button.parentElement?.append(action);
     });
+  };
+
+
+  // Assistente de projetos: organiza um pedido para conversa com ChatGPT.
+  // Não envia dados a terceiros automaticamente e não é uma integração com a API.
+  if(!sections.some(s=>s[0]==='assistente')){
+    const p=sections.findIndex(s=>s[0]==='projetos');
+    sections.splice(Math.max(p+1,0),0,['assistente','✎','Assistente de projetos']);
+  }
+  let generatedBrief='';
+  function assistantView(){
+    const projects=Array.isArray(db.projects)?db.projects:[];
+    const projectOptions=projects.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nome||'Projeto sem nome')+' — '+esc(p.ambiente||'Ambiente')+'</option>').join('');
+    content.innerHTML=
+      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSALARTES · ASSISTENTE DE PROJETOS</div><h2>Descreva o móvel que você precisa fabricar</h2>'+
+      '<p>Organize o projeto e leve as informações para uma conversa com o ChatGPT.</p></div></div>'+
+      '<div class="ua-assistant-grid"><section class="ua-section"><h3>1. Informações do móvel</h3>'+
+      '<p class="muted">Use medidas em milímetros (mm). Os campos marcados com * são obrigatórios.</p>'+
+      '<form id="uaAssistantForm" class="ua-form">'+
+      '<label>Usar projeto cadastrado (opcional)<select name="selectedProject" id="uaAssistantProject"><option value="">Começar um novo briefing</option>'+projectOptions+'</select></label>'+
+      '<label>Ambiente *<input name="ambiente" required maxlength="120" placeholder="Ex.: Cozinha, quarto, sala"></label>'+
+      '<label>Tipo de móvel *<input name="movel" required maxlength="150" placeholder="Ex.: Armário aéreo, guarda-roupa"></label>'+
+      '<div class="ua-form-3"><label>Largura (mm)<input name="largura" inputmode="decimal" placeholder="1600"></label><label>Altura (mm)<input name="altura" inputmode="decimal" placeholder="2100"></label><label>Profundidade (mm)<input name="profundidade" inputmode="decimal" placeholder="550"></label></div>'+
+      '<label>Material e espessura<input name="material" maxlength="180" placeholder="Ex.: MDF branco TX de 15 mm"></label>'+
+      '<label>Portas, gavetas, nichos e ferragens<textarea name="componentes" maxlength="1800" rows="3" placeholder="Ex.: 4 portas, 2 gavetas, dobradiças com amortecedor"></textarea></label>'+
+      '<label>Acabamentos e detalhes<textarea name="acabamento" maxlength="1800" rows="2" placeholder="Ex.: Fitamento de bordas, acabamento amadeirado"></textarea></label>'+
+      '<label>Restrições e observações<textarea name="observacoes" maxlength="2400" rows="3" placeholder="Ex.: Pia existente, tomada, parede irregular, espaço do rodapé"></textarea></label>'+
+      '<button type="submit" class="btn primary">Preparar pedido para o ChatGPT</button></form></section>'+
+      '<section class="ua-section"><h3>2. Pedido técnico organizado</h3><p class="muted">O sistema vai montar um texto com suas informações. Você copia, abre o ChatGPT e anexa as fotos ou desenhos disponíveis.</p>'+
+      '<textarea id="uaAssistantOutput" class="ua-generated" aria-label="Pedido técnico para o ChatGPT" readonly placeholder="Preencha o formulário para preparar seu projeto."></textarea>'+
+      '<div class="actions gap-top"><button type="button" class="btn" id="uaCopyPrompt" disabled>Copiar pedido</button><a class="btn primary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Abrir ChatGPT ↗</a></div>'+
+      '<div id="uaAssistantStatus" class="muted small" aria-live="polite"></div>'+
+      '<div class="empty">Confira todas as medidas na obra antes de fabricar. Um desenho ou plano de corte gerado por IA é uma proposta de trabalho, não substitui a conferência das ferragens, folgas, prumo, esquadro, sentido do veio e tolerâncias.</div>'+
+      '</section></div>';
+    const form=document.getElementById('uaAssistantForm');
+    const status=document.getElementById('uaAssistantStatus');
+    form.querySelector('#uaAssistantProject').addEventListener('change',e=>{
+      const p=projects.find(x=>x.id===e.target.value);if(!p)return;
+      const fields={ambiente:p.ambiente||'',movel:p.nome||'',largura:p.largura||'',altura:p.altura||'',profundidade:p.profundidade||'',material:p.material||'',componentes:p.componentes||'',acabamento:p.acabamento||'',observacoes:p.observacoes||''};
+      Object.entries(fields).forEach(([key,val])=>{const input=form.elements.namedItem(key);if(input)input.value=String(val)});
+    });
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      const values=Object.fromEntries(new FormData(form));
+      const parseMeasure=(s,label)=>{
+        if(!String(s||'').trim())return 'não informada';
+        const raw=String(s).trim().replace(/\s/g,'').replace(',','.');
+        if(!/^\d+(?:\.\d+)?$/.test(raw)||Number(raw)<=0||Number(raw)>100000)throw Error(label+': informe um número positivo em mm (ex.: 1600).');
+        return String(Number(raw))+' mm';
+      };
+      try{
+        const largura=parseMeasure(values.largura,'Largura'),altura=parseMeasure(values.altura,'Altura'),profundidade=parseMeasure(values.profundidade,'Profundidade');
+        generatedBrief=[
+          'Estou desenvolvendo um móvel sob medida para a marcenaria Universalartes, no Brasil. Seja meu assistente técnico de projetos de marcenaria.',
+          'Use milímetros (mm) em TODAS as medidas e português brasileiro. Não utilize polegadas.',
+          '',
+          'INFORMAÇÕES DO PROJETO',
+          'Ambiente: '+String(values.ambiente||'Não informado').trim(),
+          'Móvel: '+String(values.movel||'Não informado').trim(),
+          'Largura: '+largura,
+          'Altura: '+altura,
+          'Profundidade: '+profundidade,
+          'Material e espessura: '+String(values.material||'não informado').trim(),
+          'Divisões e ferragens: '+String(values.componentes||'não informado').trim(),
+          'Acabamentos: '+String(values.acabamento||'não informado').trim(),
+          'Restrições no local: '+String(values.observacoes||'não informado').trim(),
+          '',
+          'QUERO SUA AJUDA PARA:',
+          '1. Fazer as perguntas essenciais que faltam ANTES de definir dimensões de corte ou ferragens.',
+          '2. Propor um layout funcional do móvel e uma sequência de montagem, explicando opções.',
+          '3. Montar um desenho técnico esquemático e uma lista preliminar de peças em mm, somente quando houver informações suficientes; identifique claramente suposições.',
+          '4. Sugerir materiais, espessuras, fita de borda, ferragens e insumos com quantidades aproximadas.',
+          '5. Apontar pontos que precisam de conferência na obra: prumo, esquadro, folgas, portas e gavetas, fundo, recuos, tomadas, água, ventilação, sentido do veio e largura de corte da serra.',
+          '6. Preparar uma lista de compras, um checklist de produção e perguntas para o cliente.',
+          '7. Se eu enviar fotos ou croquis, use-os como referência visual, mas NÃO invente cotas que não estejam medidas.',
+          '',
+          'Não apresente qualquer plano de corte como final sem minha aprovação e sem conferir os dados essenciais.'
+        ].join('\n');
+        document.getElementById('uaAssistantOutput').value=generatedBrief;
+        document.getElementById('uaCopyPrompt').disabled=false;
+        status.textContent='Pedido preparado. Copie, abra o ChatGPT e anexe fotos/croquis para continuar.';
+      }catch(err){status.textContent=err.message||'Verifique as medidas informadas.'}
+    });
+    document.getElementById('uaCopyPrompt').addEventListener('click',async ()=>{
+      if(!generatedBrief)return;
+      try{
+        await navigator.clipboard.writeText(generatedBrief);
+        status.textContent='Copiado! Agora abra o ChatGPT e cole seu pedido.';
+      }catch{
+        const output=document.getElementById('uaAssistantOutput');output.focus();output.select();
+        status.textContent='Selecione e copie o texto usando Ctrl+C.';
+      }
+    });
+  }
+  const previousRender=render;
+  render=function universalartesRender(section=location.hash.slice(1)||'dashboard'){
+    if(section!=='assistente')return previousRender(section);
+    title.textContent='Assistente de projetos';
+    nav.innerHTML=sections.map(([key,icon,label])=>'<button class="nav-btn '+(key===section?'active':'')+'" data-section="'+key+'"><span aria-hidden="true">'+icon+'</span>'+esc(label)+'</button>').join('');
+    nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.section;sidebar.classList.remove('open');if(location.hash.slice(1)===section)render(section)}));
+    assistantView();
   };
 
 })();
