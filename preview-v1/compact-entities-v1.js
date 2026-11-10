@@ -69,10 +69,12 @@
     if(data.cep && digits(data.cep).length!==8)throw Error('O CEP deve conter 8 dígitos.');
     data.uf=val(v.uf).toUpperCase();
     if(data.uf&&!states.includes(data.uf))throw Error('Selecione uma UF válida.');
-    if(val(v.prazoEntrega)){
-      const prazo=Number(v.prazoEntrega);
-      if(!Number.isSafeInteger(prazo)||prazo<0||prazo>365)throw Error('Prazo médio de entrega: informe de 0 a 365 dias.');
-      data.prazoEntrega=String(prazo);
+    if('prazoEntrega' in v){
+      if(val(v.prazoEntrega)){
+        const prazo=Number(v.prazoEntrega);
+        if(!Number.isSafeInteger(prazo)||prazo<0||prazo>365)throw Error('Prazo médio de entrega: informe de 0 a 365 dias.');
+        data.prazoEntrega=String(prazo);
+      }else data.prazoEntrega=''; // permitir limpar um prazo cadastrado anteriormente
     }
     for(const key of ['email','contato','inscricaoEstadual','endereco','numero','bairro','complemento','cidade','observacoes','categoria','condicaoPagamento','site']){
       if(key in data)data[key]=val(data[key]);
