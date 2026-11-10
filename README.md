@@ -64,3 +64,14 @@ O modo local continua usando `oficina-marcenaria-v03` e o formato `version:3`, p
 ## Padrão brasileiro de medidas
 
 O conversor usa apenas **mm, cm e m**. Nos projetos e documentos técnicos da Universalartes, **todas as medidas de fabricação devem ser lançadas em milímetros (mm)**. As demais unidades servem para consulta, sem conversão implícita dos registros existentes.
+
+## Pré-orçamento a partir do SketchUp (CSV)
+
+A branch v1 inclui `sketchup-import-v1.js`, um importador local de relatório CSV do SketchUp. Ele **não abre diretamente arquivos `.skp`**.
+
+1. No SketchUp, organize cada peça como componente distinto e gere um relatório CSV (File > Generate Report, conforme sua edição/licença). Exportações de extensões de lista de corte também podem servir se as colunas corresponderem.
+2. Use colunas `peça`, `comprimento_mm`, `largura_mm`, `espessura_mm`, `quantidade`, `material`, `fita_m`, ou aliases equivalentes; existe botão **Baixar modelo CSV** no módulo.
+3. Selecione a unidade correta das medidas de origem (mm/cm/m). O sistema normaliza dimensões em mm, soma áreas em m², separa material/espessura, calcula fita informada em metros e aplica uma margem configurada de perda, com preços definidos pelo próprio marceneiro.
+4. O resultado é **pré-orçamento**, com lista revisada exportável em CSV. Não cria pedido, compra, reserva ou baixa automática.
+
+**Limitações:** dimensões do componente devem corresponder às medidas físicas das peças; orientação dos eixos, espessura, veio, fitas de borda e duplicação de componentes aninhados precisam de revisão. Área × perda não produz um plano de corte nem quantidade garantida de chapas. O custo calculado não inclui ferragens, mão de obra, instalação, impostos ou markup/margem comercial. Não importar dados sensíveis até concluir autenticação e armazenamento seguro.
