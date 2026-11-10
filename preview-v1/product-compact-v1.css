@@ -1,0 +1,68 @@
+/* UNIVERSALARTES v1 — formulário compacto de produtos (referência visual aprovada) */
+dialog.ua-product-dialog{
+ width:min(850px,calc(100vw - 28px));max-height:min(92dvh,860px);
+ border:0;border-radius:15px;padding:0;overflow:auto;position:fixed;
+ background:#f9faf7;box-shadow:0 24px 80px rgba(20,37,29,.33);
+}
+dialog.ua-product-dialog form{margin:0;display:block;}
+dialog.ua-product-dialog h2{
+ margin:0;padding:24px 56px 20px 26px;background:#fff;
+ border-bottom:1px solid #edf0ea;color:#203a2d;
+ font-size:21px;font-weight:750;line-height:1.3;position:sticky;top:0;z-index:2;
+}
+dialog.ua-product-dialog .ua-product-eyebrow{
+ display:block;font-size:10px;letter-spacing:1.6px;
+ font-weight:800;color:#83978a;margin-bottom:8px;
+}
+dialog.ua-product-dialog .ua-product-close{
+ position:absolute;top:16px;right:18px;z-index:5;
+ background:transparent;border:0;color:#294737;font-size:28px;
+ width:36px;height:36px;cursor:pointer;border-radius:9px;
+}
+dialog.ua-product-dialog .ua-product-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:14px 19px;padding:23px 26px 24px;
+}
+dialog.ua-product-dialog .ua-product-grid label{
+ display:flex;flex-direction:column;gap:6px;min-width:0;
+ font-size:12px;font-weight:650;color:#617465;
+}
+dialog.ua-product-dialog .ua-product-grid input,
+dialog.ua-product-dialog .ua-product-grid select,
+dialog.ua-product-dialog .ua-product-grid textarea{
+ display:block;width:100%;margin:0;padding:10px 12px;min-height:42px;
+ border:1px solid #d6dfd5;border-radius:8px;background:#fff;
+ font:inherit;font-size:14px;color:#243b31;box-sizing:border-box;
+}
+dialog.ua-product-dialog .ua-product-grid textarea{resize:vertical;min-height:74px;}
+dialog.ua-product-dialog .ua-product-grid .ua-product-wide{grid-column:1/-1;}
+dialog.ua-product-dialog [hidden]{display:none!important;}
+dialog.ua-product-dialog .ua-product-finished{padding:0 26px 24px;}
+dialog.ua-product-dialog .ua-product-finished h3{margin:0 0 4px;font-size:16px;}
+dialog.ua-product-dialog .ua-product-finished .muted{margin-bottom:13px;}
+dialog.ua-product-dialog .bom-row.ua-product-component{
+ display:grid;grid-template-columns:minmax(0,2fr) minmax(110px,1fr) auto;
+ align-items:end;gap:10px;padding:10px 0;border-bottom:1px solid #e2eae2;
+}
+dialog.ua-product-dialog .bom-row.ua-product-component label{min-width:0;font-size:12px;color:#617465}
+dialog.ua-product-dialog .bom-row.ua-product-component input,
+dialog.ua-product-dialog .bom-row.ua-product-component select{min-height:39px;width:100%;font:inherit;padding:8px;border:1px solid #d6dfd5;border-radius:8px;}
+dialog.ua-product-dialog .dialog-actions{
+ display:flex;position:sticky;bottom:0;z-index:2;background:#fff;
+ border-top:1px solid #dce5db;justify-content:flex-end;
+ margin:0;padding:15px 25px;gap:10px;box-shadow:0 -6px 15px #1c3b2910;
+}
+dialog.ua-product-dialog .dialog-actions .btn{padding:10px 18px;font-weight:650;}
+dialog.ua-product-dialog .dialog-actions .btn.primary{background:#28553c;border-color:#28553c;}
+dialog.ua-product-dialog input:focus-visible,
+dialog.ua-product-dialog select:focus-visible,
+dialog.ua-product-dialog textarea:focus-visible{outline:2px solid #77a888;outline-offset:1px;}
+@media(max-width:650px){
+ dialog.ua-product-dialog{width:calc(100vw - 16px);max-height:95dvh;}
+ dialog.ua-product-dialog .ua-product-grid{grid-template-columns:minmax(0,1fr);gap:12px;padding:18px 18px 22px;}
+ dialog.ua-product-dialog h2{padding:20px 49px 17px 18px;font-size:19px;}
+ dialog.ua-product-dialog .ua-product-finished{padding:0 18px 18px;}
+ dialog.ua-product-dialog .dialog-actions{padding:13px 16px;}
+ dialog.ua-product-dialog .bom-row.ua-product-component{grid-template-columns:1fr 1fr;}
+ dialog.ua-product-dialog .bom-row.ua-product-component button{grid-column:1/-1;}
+}
