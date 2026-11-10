@@ -12,6 +12,15 @@
  function valid(data){return data&&data.version===3&&['clients','products','orders','quotes','transactions','stockMovements'].every(k=>Array.isArray(data[k]))}
  function validURL(url){try{const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&!u.search&&!u.hash&&/^[a-z0-9-]+\.supabase\.co$/.test(u.hostname)&&!u.pathname.replace(/\//g,'')}catch{return false}}
  function friendlyError(e){const m=String(msg(e));return m.slice(0,190)}
+ function isPublicKey(key){
+  if(/^sb_publishable_[A-Za-z0-9_-]+$/.test(key))return true;
+  try{
+   const parts=String(key).split('.');
+   if(parts.length!==3)return false;
+   const payload=JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+   return payload?.role==='anon';
+  }catch{return false}
+ }
  function apiKey(){return state.cfg?.key||''}
  async function request(path,{method='GET',body,auth=true,extra={}}={}){
   if(!state.cfg||!validURL(state.cfg.url))throw Error('Configure uma URL válida do projeto Supabase.');
@@ -167,7 +176,7 @@
    if(form.dataset.cloudForm==='config'){
     const url=String(data.get('url')||'').trim().replace(/\/+$/,''),key=String(data.get('key')||'').trim();
     if(!validURL(url))throw Error('Use a URL HTTPS do projeto Supabase (*.supabase.co).');
-    if(!key||/service_role|sb_secret_/i.test(key))throw Error('Use apenas a chave pública anon ou publishable.');
+    if(!isPublicKey(key))throw Error('Use somente uma chave pública anon ou sb_publishable_. Nunca forneça chaves secretas ou service_role.');
     if(state.session&&url!==state.cfg?.url)throw Error('Saia da conta antes de mudar de projeto.');
     state.cfg={url,key};localStorage.setItem(CFG,JSON.stringify(state.cfg));alert('Configuração pública salva neste navegador.');render('empresa');
    }else{
