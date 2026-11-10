@@ -1,0 +1,64 @@
+/* Universalartes 1.0 — um cadastro único de contatos com filtros. */
+.ua-directory .ua-directory-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;margin:0 0 16px;flex-wrap:wrap;
+}
+.ua-directory h3{margin:0 0 4px;font-size:18px;color:#244334}
+.ua-directory-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:14px;flex-wrap:wrap;margin-bottom:17px;
+}
+.ua-directory-tabs{
+  display:flex;gap:5px;padding:4px;border-radius:11px;
+  background:#eaf0e9;max-width:100%;overflow-x:auto;
+}
+.ua-directory-tabs .ua-tab{
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;color:#3b5848;border:0;
+  border-radius:8px;padding:10px 12px;font-size:13px;
+  font-weight:700;white-space:nowrap;cursor:pointer;
+}
+.ua-directory-tabs .ua-tab.active{
+  background:#fff;box-shadow:0 1px 7px #21412c16;color:#183a2b;
+}
+.ua-directory-tabs .ua-tab span{
+  background:#d9e4d9;border-radius:20px;
+  padding:2px 7px;font-size:11px;
+}
+.ua-directory-tabs .ua-tab.active span{background:#f5e7c9;color:#885d18}
+.ua-directory-search .search{min-width:220px;margin:0}
+.ua-person-role{
+  display:inline-block;font-size:11px;font-weight:750;
+  border-radius:18px;padding:6px 9px;
+  background:#ecf4ec;color:#21533a;white-space:nowrap;
+}
+.ua-person-fornecedor{background:#fff2db;color:#89621a}
+.ua-person-ambos{background:#e8eaf6;color:#4a5082}
+.ua-directory-note{font-size:12px;color:#7c8d80;margin:15px 0 0}
+dialog.ua-unified-dialog .ua-role-picker{
+  padding:20px 26px 12px;display:flex;align-items:end;
+  gap:18px;background:#eef4ec;border-bottom:1px solid #dfeadf;
+}
+dialog.ua-unified-dialog .ua-role-picker label{
+  font-weight:750;font-size:12px;color:#365b41;min-width:240px;
+  display:flex;flex-direction:column;gap:6px;
+}
+dialog.ua-unified-dialog .ua-role-picker select{
+  min-height:42px;background:#fff;border:1px solid #c7d9ca;
+  border-radius:8px;font:inherit;font-size:14px;
+  padding:9px 12px;width:100%;color:#244334;
+}
+dialog.ua-unified-dialog .ua-role-picker p{margin:0 0 9px;flex:1}
+dialog.ua-unified-dialog .ua-entity-grid{padding-top:16px}
+dialog.ua-unified-dialog [hidden]{display:none!important}
+@media(max-width:760px){
+  .ua-directory-bar{flex-direction:column;align-items:stretch}
+  .ua-directory-search .search{width:100%;min-width:0}
+  .ua-directory-tabs .ua-tab{flex:1;justify-content:center}
+  dialog.ua-unified-dialog .ua-role-picker{padding:18px;display:block}
+  dialog.ua-unified-dialog .ua-role-picker label{min-width:0}
+  dialog.ua-unified-dialog .ua-role-picker p{margin:9px 0 0}
+}
+@media(max-width:460px){
+  .ua-directory-tabs .ua-tab{font-size:12px;padding:9px 8px;gap:4px}
+}
