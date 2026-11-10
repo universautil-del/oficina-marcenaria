@@ -15,6 +15,21 @@ Esta branch `universalartes-v1` é o início da reconstrução do sistema para a
 
 ---
 
+## Integração SketchUp → orçamento preliminar (em desenvolvimento)
+
+- A prévia na branch `universalartes-v1` agora tem o menu **Calcular SketchUp**.
+- Para o usuário do SketchUp Desktop: instalar a extensão **OpenCutList**, identificar cada peça como componente, atribuir materiais, gerar lista de peças e exportar em **CSV UTF-8**, com valores **em milímetros (mm)**.
+- O OFICINA aceita CSV com cabeçalhos identificados automaticamente ou mapeados pelo marceneiro: **peça**, **comprimento (mm)**, **largura (mm)**, espessura (mm), quantidade, material e **metragem de fita por peça (m)**.
+- Se a planilha não contiver a metragem de fita, o sistema **não inventa** esse número e mostra aviso.
+- O cálculo agrupa peças por material/espessura, informa área total, quantidade estimada de chapas por área, fita informada, preço por chapa (editável), ferragens, mão de obra, entrega, instalação e margem desejada sobre a venda.
+- **As dimensões da chapa são exemplos editáveis (2750×1850 mm); o aproveitamento padrão de 80% é uma hipótese configurável.** Quantidade de chapas por área **NÃO** é plano de corte nem cálculo exato de aproveitamento. Validar sentido do veio, orientação, sangria da serra, retalhos, folgas e geometria de cada peça no OpenCutList ou no SketchUp.
+- Possibilidade de baixar a lista revisada em CSV ou gerar um resumo técnico para copiar ao ChatGPT.
+- O arquivo é processado somente nesta aba, sem armazenamento de modelos ou envio automático. Não é feita baixa de estoque nem criação de pedidos. **O formato nativo `.skp` não é interpretado nesta versão.**
+- A evolução para envio direto do modelo poderá usar uma extensão SketchUp personalizada, que exportará a estrutura das peças, em vez de tentar interpretar o arquivo `.skp` de maneira imprecisa no navegador.
+
+### Verificações efetuadas
+Sintaxe JavaScript validada. Parser CSV testado com colunas separadas por ponto e vírgula, aspas e nome de peça contendo separador; quantidades, área e fita conferidas em exemplos simulados. Integração completa com SketchUp/OpenCutList real ainda precisa de arquivos de amostra e teste visual integrado.
+
 ## Documentação da versão anterior (0.6)
 
 # OFICINA — Gestão de Marcenaria v0.6
