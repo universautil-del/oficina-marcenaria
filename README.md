@@ -1,56 +1,43 @@
-# OFICINA — Gestão de Marcenaria v0.5
+# OFICINA — Gestão de Marcenaria v0.6
 
-Sistema web para GitHub Pages. Esta versão busca aproximar o aplicativo da referência **Oficina Ademir Projetos**, conservando os módulos existentes e os cadastros locais da versão 0.3/0.4.
+Versão estática hospedada no GitHub Pages, com clientes, produtos e composição, estoque, compras, fornecedores, orçamentos, pedidos, projetos, conversor, financeiro, documentos, XML de NF-e e relatórios da v0.5. Mantém o tema verde/branco/madeira.
 
-## Funcionalidades incluídas
+## Novo: login e sincronização opcionais
 
-- Dashboard com indicadores de orçamento, compras, pedidos, contas a pagar e receber, vencimentos, avisos e atalhos.
-- Clientes com cadastro, edição e pesquisa.
-- Orçamentos com itens, **ambientes, frete**, desconto, condições de pagamento e forma de pagamento. Impressão pelo navegador (Salvar como PDF) e compartilhamento de **resumo** por WhatsApp (o PDF deve ser anexado manualmente).
-- Pedidos a partir do orçamento conservando **o mesmo número comercial** para novas operações; status de produção e entrega; contas a receber geradas ao confirmar, evitando geração em duplicidade.
-- Financeiro com registro de pagamentos parciais, vencimentos, parcelas e exportação CSV.
-- Produtos acabados e matérias-primas, composição, compras, estoque, reserva e baixa de insumos; a reversão de consumo após início de produção ainda exige processo próprio.
-- Projetos de móveis com ambiente, dimensões em milímetros, materiais, acabamentos, fotografia compactada, etapas, checklist, alternativas A/B e exportação CSV. Visualizações em cartões, lista e quadro por etapas.
-- Conversor de polegadas para milímetros, inclusive frações (`3/8`, `1 1/2`) e conversão inversa (aproximação em frações de 1/16).
-- Notas fiscais: cadastro **manual** e leitura de dados essenciais de arquivo XML local de NF-e. **Não** transmite, emite, autoriza, valida na SEFAZ, recebe de SEFAZ ou verifica autenticidade fiscal.
-- Documentos: orçamento, pedido e contrato-modelo editável para impressão/Salvar PDF; recibos de pagamentos registrados e **recibo de quitação integral** somente após pagamento completo do pedido. Anexos locais de PDF pequeno por pedido (limite de 150 KB).
-- Minha empresa, modelo de contrato, logotipo e exportação/importação de backup JSON.
-- Nova paleta verde, branco e tons de madeira, com layout responsivo.
+Agora há um painel **Minha Empresa > Login e banco de dados online**. O sistema continua no modo local até o administrador configurar o próprio projeto Supabase.
 
-## Limitações relevantes
+**Como habilitar:**
+1. Crie um projeto em https://supabase.com e escolha uma senha forte para a conta administrativa do Supabase.
+2. No painel do Supabase, abra **SQL Editor** e execute `supabase/schema.sql` na íntegra. Este script cria `public.oficina_backups`, com RLS (Row Level Security), permitindo que cada usuário autenticado leia e escreva apenas seu próprio registro.
+3. Em **Project Settings > API**, copie a **Project URL** e a chave **publishable/anon (pública)**. **Nunca use chave `service_role`, `sb_secret_` ou outros segredos no navegador ou no GitHub.**
+4. Abra o site OFICINA > **Minha Empresa**, preencha Project URL e chave pública, clique **Salvar configuração**.
+5. Crie uma conta com e-mail/senha ou entre com uma conta previamente cadastrada no **Authentication > Users** do Supabase. Se o Supabase solicitar confirmação por e-mail, confirme antes de tentar entrar. É possível configurar o cadastro público de usuários no painel Supabase.
+6. **Exporte seu backup local antes da migração.** O painel de nuvem oferece **Enviar dados deste aparelho** ou **Usar dados da nuvem**. Ao selecionar uma versão, o sistema inicia outro download de backup antes da troca.
+7. No segundo aparelho, use **o mesmo projeto Supabase, a mesma chave pública e o mesmo e-mail/senha**; então escolha **Usar dados da nuvem**. Confira o indicador **Sincronizado** antes de alternar aparelhos.
 
-**Esta ainda é uma demonstração local. Não utilize dados reais ou sensíveis de clientes, notas fiscais, contratos, documentos ou pagamentos.**
+**ATENÇÃO:** não configure dois logins diferentes se deseja os mesmos dados. Nesta versão, cada usuário tem seu próprio conjunto de dados; não há permissões de equipe ou compartilhamento por empresa.
 
-- A aplicação é hospedada gratuitamente em GitHub Pages e **não tem autenticação, servidor, banco de dados online, nem sincronização entre aparelhos**. Esses requisitos da referência exigem implementação e infraestrutura adicionais; não foram considerados concluídos.
-- Todos os dados ficam em `localStorage` no navegador. Perda/limpeza do armazenamento pode apagar os registros; exporte backups periodicamente.
-- Os anexos PDF e imagens são armazenados apenas no navegador, sem criptografia por usuário e sem backup em servidor. Para produção, migre anexos para armazenamento privado com controle de acesso, e o restante para banco de dados com políticas de segurança.
-- **Contratos automáticos jurídicos** não foram implementados. O modelo atual é editável e preenche informações do pedido, mas deve ser revisado juridicamente; o recurso de anexo associa PDF já existente ao pedido.
-- Recibos/contratos em PDF usam **Imprimir > Salvar como PDF**, não geram PDF pelo servidor.
-- Integração com SEFAZ (importação de documentos autorizados, emissão e consulta) depende de credenciais, certificados e requisitos específicos externos.
-- O fluxo de baixa de estoque de materiais ao iniciar produção é mantido; estorno de materiais já consumidos requer controle adicional, ainda não disponível.
+## Proteções e limites
+
+- Os dados no Supabase ficam isolados por `auth.uid()`/RLS e só são enviados após login e vínculo explícito do aparelho.
+- A atualização usa versão numérica condicional: alterações de dois aparelhos são sinalizadas como **conflito**. O app **não mescla automaticamente** cadastros de dois aparelhos. Exporte backup e escolha qual conjunto preservar.
+- No modo nuvem, os dados alterados ficam na memória/`sessionStorage` até sincronizarem. **Não feche a aba se o status for Offline, Não sincronizado ou Conflito.** Exporte um backup se necessário.
+- O logout limpa a sessão e os dados de nuvem desta aba; o modo local é zerado após um backup antes de ativar a nuvem.
+- Tokens de sessão ficam no `sessionStorage` do navegador, não no GitHub. A chave pública do Supabase fica nas configurações locais do navegador.
+- O limite de envio automático é de **2 MB por backup JSON**. Projetos com muitas imagens/anexos exigirão migração dos arquivos para Supabase Storage privado.
+- Este sistema ainda sincroniza um **documento JSON por conta**: não implementa edição colaborativa em tempo real, trilhas de auditoria, separação por empresa ou permissões de funcionários.
+- Senhas e e-mails são gerenciados pelo Supabase Auth; **não** se deve guardar senhas no código ou no banco de dados do Oficina.
+- A integração não foi testada com um projeto Supabase real nesta entrega; o fluxo foi testado em navegador com respostas simuladas. **Faça testes com dados fictícios e revise as políticas RLS antes de confiar informações comerciais sensíveis.**
+- A nota fiscal XML local não autentica dados com SEFAZ. Não há emissão fiscal automática, nem estorno de matéria-prima já consumida.
 
 ## Publicação
 
-Arquivos no diretório raiz de `main`:
+Os arquivos da raiz permanecem: `index.html`, `style.css`, `style-v04.css`, `theme-v05.css`, `upgrade.js`, `script.js`, `features-v05.js`.
 
-- `index.html`
-- `style.css` e `style-v04.css` (mantidos)
-- `theme-v05.css` (novo)
-- `upgrade.js` (mantido)
-- `script.js` (atualizado)
-- `features-v05.js` (novo)
-- `README.md`
+Novos: `cloud-v06.js`, `cloud-v06.css` e `supabase/schema.sql`. O `index.html` referencia primeiro `upgrade.js`, depois `script.js`, `features-v05.js` e por último `cloud-v06.js`.
 
-GitHub Pages: **Settings > Pages > Deploy from a branch > main > /(root)**.
+Em GitHub Pages, use `main` e `/(root)`. A versão 0.5 fica preservada em uma branch de backup.
 
-O `index.html` tem parâmetros de versão para atualizar o cache e a ordem `upgrade.js` → `script.js` → `features-v05.js` deve ser preservada.
+## Compatibilidade dos dados
 
-## Dados existentes
-
-A aplicação mantém a chave `oficina-marcenaria-v03` e `data.version: 3`, adicionando apenas campos opcionais (`projects`, `invoices`, `orderAttachments`, `seq.project`, `seq.invoice`). Isto permite continuar utilizando os cadastros anteriores neste mesmo navegador sem apagar dados. O backup JSON também inclui as novas informações.
-
-Antes de atualizar: abra **Minha Empresa > Exportar backup completo**, salve em um lugar seguro e teste a nova versão com dados fictícios. O branch `backup-v0.4-2026-11-10` conserva o estado anterior do código.
-
-## Plano para acesso seguro em mais de um aparelho
-
-Será necessário acrescentar um backend e banco de dados, por exemplo Supabase/PostgreSQL com autenticação e Row Level Security ou Cloudflare Workers/D1/R2. Para migração, definir usuários, organização/empresa, autorização por empresa, relacionamentos, trilhas de auditoria, anexos privados, backups automatizados, importação única dos dados locais e testes de segurança. **Nenhum login fictício foi criado.**
+O modo local continua usando `oficina-marcenaria-v03` e o formato `version:3`, para preservar os registros criados nas versões anteriores. A migração para a nuvem é **manual e confirmada**: há download do backup antes de limpar a cópia local desprotegida. Se você já utiliza clientes reais na versão local, remova qualquer cópia remanescente de dispositivos compartilhados.

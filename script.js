@@ -32,7 +32,7 @@ const kindText={materia:'Matéria-prima',acabado:'Produto acabado',receber:'Rece
 const search={clientes:'',produtos:'',fornecedores:'',compras:'',orcamentos:'',pedidos:'',producao:'',financeiro:''};
 function button(label,action,item='',cls=''){return `<button type="button" class="btn ${cls}" data-action="${esc(action)}" data-id="${esc(item)}">${label}</button>`}
 function intro(head,sub,tag=''){return `<div class="intro"><div><h2>${esc(head)}</h2><p class="muted">${esc(sub)}</p></div>${tag?`<span class="tag">${esc(tag)}</span>`:''}</div>`}
-function notice(){return '<div class="alert-bar">Versão local: os dados ficam somente neste navegador. Não há login ou sincronização. Faça backup regularmente e use dados de teste até haver infraestrutura segura.</div>'}
+function notice(){return window.oficinaCloud?.active?'<div class="alert-bar">Nuvem ativada: alterações são enviadas ao banco quando houver conexão. Confirme o indicador de sincronização antes de trocar de aparelho. Faça backup regularmente.</div>':'<div class="alert-bar">Modo local de testes: os dados ficam somente neste navegador. Configure a nuvem em Minha Empresa para sincronizar. Não use dados sensíveis sem autenticação.</div>'}
 function table(headers,rows,empty='Nenhum registro encontrado.'){return rows.length?`<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:`<div class="empty compact">${esc(empty)}</div>`}
 function td(...cells){return `<tr>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`}
 function pill(label,type=''){return `<span class="pill ${type}">${esc(label)}</span>`}
