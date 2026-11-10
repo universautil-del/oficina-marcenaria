@@ -1,0 +1,21 @@
+name: Validar Universalartes 1.0
+on:
+  push:
+    paths:
+      - 'preview-v1/**'
+      - 'tests/v1-smoke.cjs'
+      - '.github/workflows/check-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe, CSV, cálculo e isolamento da prévia
+        run: node tests/v1-smoke.cjs
