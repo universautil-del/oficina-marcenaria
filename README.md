@@ -1,40 +1,56 @@
-# OFICINA — Gestão de Marcenaria v0.4
+# OFICINA — Gestão de Marcenaria v0.5
 
-Sistema web estático para GitHub Pages, em português brasileiro. **Versão de testes**, com dados apenas no armazenamento local (`localStorage`). Não possui autenticação, banco de dados centralizado, sincronização nem armazenamento seguro de dados sensíveis. **Use dados fictícios para testar.**
+Sistema web para GitHub Pages. Esta versão busca aproximar o aplicativo da referência **Oficina Ademir Projetos**, conservando os módulos existentes e os cadastros locais da versão 0.3/0.4.
 
-## Novidades da versão 0.4
+## Funcionalidades incluídas
 
-- **Fornecedores:** cadastro, edição, pesquisa e proteção de exclusão quando vinculado a compras.
-- **Compras:** itens de matérias-primas, contas a pagar automáticas, recebimento de mercadorias (entrada em estoque uma única vez), custo médio atualizado; cancelamento apenas de compras abertas sem pagamentos.
-- **Produção:** quadro de pedidos abertos com prazo previsto, atrasos e próximas entregas, além de ações de reserva/produção/conclusão.
-- **Dashboard:** seis indicadores, avisos de materiais e contas vencidas, movimentação de caixa dos últimos seis meses e atalhos.
-- **Relatórios:** seleção de períodos, vendas, recebimentos e pagamentos, ranking de produtos, exportação CSV e impressão/PDF.
-- **Financeiro:** exportação CSV de lançamentos.
-- **Orçamentos:** duplicação, resumo compartilhável por link WhatsApp (`wa.me`), mantendo o PDF como anexo manual.
-- **Pedidos e orçamentos:** campo opcional de data prevista de entrega para orientar o planejamento.
-- **Backup:** continua exportando todos os dados e agora inclui fornecedores e compras. Backups da versão 0.3 seguem compatíveis. Antes de restaurar backup completo, o sistema gera uma cópia do estado atual.
+- Dashboard com indicadores de orçamento, compras, pedidos, contas a pagar e receber, vencimentos, avisos e atalhos.
+- Clientes com cadastro, edição e pesquisa.
+- Orçamentos com itens, **ambientes, frete**, desconto, condições de pagamento e forma de pagamento. Impressão pelo navegador (Salvar como PDF) e compartilhamento de **resumo** por WhatsApp (o PDF deve ser anexado manualmente).
+- Pedidos a partir do orçamento conservando **o mesmo número comercial** para novas operações; status de produção e entrega; contas a receber geradas ao confirmar, evitando geração em duplicidade.
+- Financeiro com registro de pagamentos parciais, vencimentos, parcelas e exportação CSV.
+- Produtos acabados e matérias-primas, composição, compras, estoque, reserva e baixa de insumos; a reversão de consumo após início de produção ainda exige processo próprio.
+- Projetos de móveis com ambiente, dimensões em milímetros, materiais, acabamentos, fotografia compactada, etapas, checklist, alternativas A/B e exportação CSV. Visualizações em cartões, lista e quadro por etapas.
+- Conversor de polegadas para milímetros, inclusive frações (`3/8`, `1 1/2`) e conversão inversa (aproximação em frações de 1/16).
+- Notas fiscais: cadastro **manual** e leitura de dados essenciais de arquivo XML local de NF-e. **Não** transmite, emite, autoriza, valida na SEFAZ, recebe de SEFAZ ou verifica autenticidade fiscal.
+- Documentos: orçamento, pedido e contrato-modelo editável para impressão/Salvar PDF; recibos de pagamentos registrados e **recibo de quitação integral** somente após pagamento completo do pedido. Anexos locais de PDF pequeno por pedido (limite de 150 KB).
+- Minha empresa, modelo de contrato, logotipo e exportação/importação de backup JSON.
+- Nova paleta verde, branco e tons de madeira, com layout responsivo.
 
-## Publicar
+## Limitações relevantes
 
-Envie os arquivos `index.html`, `script.js`, `upgrade.js`, `style.css`, `README.md` à raiz da branch `main`, com Pages em **Settings > Pages > Deploy from a branch > main > /(root)**.
+**Esta ainda é uma demonstração local. Não utilize dados reais ou sensíveis de clientes, notas fiscais, contratos, documentos ou pagamentos.**
 
-A ordem dos scripts em `index.html` é importante: `upgrade.js` deve vir **antes** de `script.js`, ambos com `defer`. As funções extras são declaradas primeiro e iniciadas pelo arquivo principal.
+- A aplicação é hospedada gratuitamente em GitHub Pages e **não tem autenticação, servidor, banco de dados online, nem sincronização entre aparelhos**. Esses requisitos da referência exigem implementação e infraestrutura adicionais; não foram considerados concluídos.
+- Todos os dados ficam em `localStorage` no navegador. Perda/limpeza do armazenamento pode apagar os registros; exporte backups periodicamente.
+- Os anexos PDF e imagens são armazenados apenas no navegador, sem criptografia por usuário e sem backup em servidor. Para produção, migre anexos para armazenamento privado com controle de acesso, e o restante para banco de dados com políticas de segurança.
+- **Contratos automáticos jurídicos** não foram implementados. O modelo atual é editável e preenche informações do pedido, mas deve ser revisado juridicamente; o recurso de anexo associa PDF já existente ao pedido.
+- Recibos/contratos em PDF usam **Imprimir > Salvar como PDF**, não geram PDF pelo servidor.
+- Integração com SEFAZ (importação de documentos autorizados, emissão e consulta) depende de credenciais, certificados e requisitos específicos externos.
+- O fluxo de baixa de estoque de materiais ao iniciar produção é mantido; estorno de materiais já consumidos requer controle adicional, ainda não disponível.
 
-## Dados e segurança
+## Publicação
 
-- O aplicativo continua usando a chave local `oficina-marcenaria-v03` para **preservar registros existentes** sem migração destrutiva. O formato do backup continua com `version: 3`, incluindo propriedades opcionais `suppliers` e `purchases`.
-- A cópia dos dados fica armazenada apenas no navegador atual. Limpar o histórico/dados do site pode apagar cadastros. Use **Minha Empresa > Exportar backup completo** com frequência.
-- Não cadastre CPFs, dados reais de clientes ou informações financeiras sensíveis no site publicado em um GitHub Pages público nesta versão.
-- Os dados não aparecem automaticamente em outro computador ou celular. Para produção, é necessário autenticação, autorização, backend, banco de dados, backup automatizado e política de privacidade.
-- `wa.me` abre o WhatsApp com uma mensagem preenchida; **não** envia mensagens automaticamente nem hospeda o PDF.
-- Compras geram contas a pagar quando são cadastradas; o estoque entra apenas ao confirmar o recebimento.
+Arquivos no diretório raiz de `main`:
 
-## Como testar
+- `index.html`
+- `style.css` e `style-v04.css` (mantidos)
+- `theme-v05.css` (novo)
+- `upgrade.js` (mantido)
+- `script.js` (atualizado)
+- `features-v05.js` (novo)
+- `README.md`
 
-1. Cadastre um cliente em **Clientes**.
-2. Em **Produtos**, crie uma matéria-prima e um produto acabado com composição.
-3. Em **Fornecedores**, cadastre um fornecedor.
-4. Em **Compras**, lance uma compra, confira a conta a pagar e clique em **Receber materiais**; confira o estoque.
-5. Crie um orçamento, defina a data prevista, converta em pedido e gerencie em **Produção**.
-6. Registre recebimentos em **Financeiro** e consulte **Relatórios** e **Dashboard**.
-7. Exporte o backup em **Minha Empresa**.
+GitHub Pages: **Settings > Pages > Deploy from a branch > main > /(root)**.
+
+O `index.html` tem parâmetros de versão para atualizar o cache e a ordem `upgrade.js` → `script.js` → `features-v05.js` deve ser preservada.
+
+## Dados existentes
+
+A aplicação mantém a chave `oficina-marcenaria-v03` e `data.version: 3`, adicionando apenas campos opcionais (`projects`, `invoices`, `orderAttachments`, `seq.project`, `seq.invoice`). Isto permite continuar utilizando os cadastros anteriores neste mesmo navegador sem apagar dados. O backup JSON também inclui as novas informações.
+
+Antes de atualizar: abra **Minha Empresa > Exportar backup completo**, salve em um lugar seguro e teste a nova versão com dados fictícios. O branch `backup-v0.4-2026-11-10` conserva o estado anterior do código.
+
+## Plano para acesso seguro em mais de um aparelho
+
+Será necessário acrescentar um backend e banco de dados, por exemplo Supabase/PostgreSQL com autenticação e Row Level Security ou Cloudflare Workers/D1/R2. Para migração, definir usuários, organização/empresa, autorização por empresa, relacionamentos, trilhas de auditoria, anexos privados, backups automatizados, importação única dos dados locais e testes de segurança. **Nenhum login fictício foi criado.**
