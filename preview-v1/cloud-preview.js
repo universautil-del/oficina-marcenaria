@@ -214,6 +214,10 @@
   finally{btn.disabled=false}
  });
  window.addEventListener('online',()=>{if(state.active)refresh().catch(e=>{state.status='Não sincronizado: '+friendlyError(e);showStatus()})});
+ window.addEventListener('beforeunload',event=>{
+  // Antes de fechar, avise sobre dados comerciais ainda não recebidos pelo servidor.
+  if(state.active&&JSON.stringify(db)!==state.lastSynced){event.preventDefault();event.returnValue=''}
+ });
  async function boot(){
   if(!state.session?.at){state.session=null;render();return}
   state.userId=state.session.id;
