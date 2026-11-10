@@ -86,7 +86,7 @@
   }
   function buildFields(old,kind){
     const isSupplier=kind==='fornecedor';
-    const t=old.tipo==='PJ'?'PJ':'PF';
+    const t=old.tipo==='PJ'||(!old.tipo&&digits(old.doc).length===14)?'PJ':'PF';
     const doc=old.doc||'';
     const common=[
       '<div class="ua-entity-grid">',
@@ -111,7 +111,7 @@
       common.push(
         '<div class="ua-entity-section ua-entity-wide">Condições do fornecedor</div>',
         '<label>Categoria principal<select name="categoria"><option value="">Selecionar</option>'+
-        ['MDF e chapas','Ferragens','Fitas de borda','Vidros','Alumínio','Pintura e acabamento','Terceirização','Outros']
+        (['MDF e chapas','Ferragens','Fitas de borda','Vidros','Alumínio','Pintura e acabamento','Terceirização','Outros'].includes(old.categoria)||!old.categoria?['MDF e chapas','Ferragens','Fitas de borda','Vidros','Alumínio','Pintura e acabamento','Terceirização','Outros']:[old.categoria,'MDF e chapas','Ferragens','Fitas de borda','Vidros','Alumínio','Pintura e acabamento','Terceirização','Outros'])
          .map(s=>'<option value="'+safe(s)+'" '+(s===old.categoria?'selected':'')+'>'+safe(s)+'</option>').join('')+'</select></label>',
         field('Prazo médio de entrega (dias)','prazoEntrega',old.prazoEntrega,{type:'number',min:0,max:365,step:1}),
         field('Condição de pagamento','condicaoPagamento',old.condicaoPagamento,{maxlength:120,placeholder:'Ex.: 30 dias ou à vista'}),
