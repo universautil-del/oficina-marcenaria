@@ -58,6 +58,7 @@ clone.clients.pop();
 clone.orders[0].clientId='inexistente';
 assert(api.inspect(clone).warnings>0);
 assert.equal(ctx.save(),true);
+ctx.render('seguranca');
 assert(ctx.content.innerHTML.includes('Teste a estrutura do backup'));
 assert.equal(saved,1);
 
