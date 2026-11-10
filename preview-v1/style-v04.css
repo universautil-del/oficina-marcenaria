@@ -1,0 +1,27 @@
+/* OFICINA 0.4 — fornecedores, compras, produção e relatórios */
+.quick-actions{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 19px}
+.quick-actions .btn{font-size:13px;padding:9px 13px}
+.cards.cards-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cards.cards-six{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cards-six .card .value{font-size:23px}
+.chart-legend{display:flex;gap:18px;font-size:12px;color:#59645e;margin:15px 0}
+.chart-legend span{display:flex;align-items:center;gap:7px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.dot.received,.bar.received{background:#e3a436}
+.dot.paid,.bar.paid{background:#49786b}
+.chart-bars{height:210px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:end;gap:16px;padding:8px 8px 0}
+.chart-col{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:9px;min-width:0;font-size:12px;color:#697572}
+.chart-pair{width:100%;height:170px;display:flex;align-items:flex-end;gap:4px;justify-content:center;border-bottom:1px solid #e7ebe7}
+.bar{width:31%;max-width:26px;min-height:0;border-radius:5px 5px 0 0;transition:height .2s}
+.danger-text{color:#b63a2e}
+.purchase-row{display:grid;grid-template-columns:minmax(170px,2fr) 120px 145px auto;gap:10px;align-items:end;padding:10px 0;border-bottom:1px solid #e9ece8}
+.purchase-row label{font-size:12px;font-weight:600}
+.purchase-row select,.purchase-row input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #cdd6d0;border-radius:8px;font:inherit}
+.purchase-total{display:flex;justify-content:flex-end;align-items:center;gap:12px;font-size:15px;padding:18px 0}
+.purchase-total strong{font-size:22px}
+.period-filter{display:flex;gap:14px;flex-wrap:wrap}
+.period-filter label{display:flex;align-items:center;gap:8px;font-size:12px;color:#66716c}
+.period-filter input{padding:10px;border:1px solid #cdd6d0;border-radius:9px;font:inherit}
+@media(max-width:1050px){.cards.cards-six{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.cards.cards-three{grid-template-columns:1fr 1fr}.purchase-row{grid-template-columns:1fr 1fr}.purchase-row label:first-child{grid-column:1/-1}.purchase-row .btn{justify-self:start}.chart-bars{gap:6px}.period-filter{width:100%}}
+@media(max-width:430px){.cards.cards-six,.cards.cards-three{grid-template-columns:1fr}.quick-actions .btn{flex:1}.chart-pair{gap:2px}.chart-bars{padding:0;gap:3px}}

@@ -1,0 +1,14 @@
+/* OFICINA v0.6: configuração opcional do Supabase */
+.cloud-pill{border:1px solid #bdd4c9;background:#e9f5ed;color:#194f37;border-radius:20px;font-size:12px;font-weight:700;padding:9px 13px;cursor:pointer;margin-left:auto}
+.cloud-pill.cloud-warn{background:#fff0cf;color:#82510e;border-color:#f4cd80}
+.cloud-panel h3{font-size:20px;margin:0 0 8px}.cloud-panel h4{margin:0 0 12px;font-size:15px}
+.cloud-panel .cloud-state{background:#e7f4eb;border:1px solid #c5dfcb;border-radius:10px;padding:12px;margin:16px 0}
+.cloud-panel .cloud-two{display:grid;grid-template-columns:1fr 1fr;gap:20px}.cloud-panel .cloud-two>div{border:1px solid #d9e4dd;border-radius:10px;padding:16px;min-width:0}
+.cloud-panel input{width:100%;max-width:100%;padding:11px;margin-top:5px;border:1px solid #b9c8bf;border-radius:8px;background:white;color:#20272b;font:inherit}
+.cloud-panel label{display:block;font-size:13px;margin:0 0 14px;font-weight:600}
+.cloud-panel .cloud-actions{border-top:1px solid #dce6df;margin-top:20px;padding-top:20px}.cloud-panel .actions{display:flex;flex-wrap:wrap;gap:8px}
+.cloud-panel .cloud-help{color:#586d60;font-size:12px;line-height:1.5;margin-top:12px}
+@media(max-width:850px){.cloud-panel .cloud-two{grid-template-columns:1fr}.cloud-pill{font-size:10px;padding:7px}.top{gap:7px}}
+/* Menus maiores precisam rolar sem esconder Minha Empresa. */
+.sidebar nav{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;scrollbar-width:thin}
+.sidebar .sidefoot{margin-top:0;flex-shrink:0}
