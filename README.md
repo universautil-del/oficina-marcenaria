@@ -41,3 +41,7 @@ Em GitHub Pages, use `main` e `/(root)`. A versão 0.5 fica preservada em uma br
 ## Compatibilidade dos dados
 
 O modo local continua usando `oficina-marcenaria-v03` e o formato `version:3`, para preservar os registros criados nas versões anteriores. A migração para a nuvem é **manual e confirmada**: há download do backup antes de limpar a cópia local desprotegida. Se você já utiliza clientes reais na versão local, remova qualquer cópia remanescente de dispositivos compartilhados.
+
+## Padrão brasileiro de medidas
+
+O conversor usa apenas **mm, cm e m**. Nos projetos e documentos técnicos da Universalartes, **todas as medidas de fabricação devem ser lançadas em milímetros (mm)**. As demais unidades servem para consulta, sem conversão implícita dos registros existentes.
