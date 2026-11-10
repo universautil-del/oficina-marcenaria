@@ -39,3 +39,19 @@
 .ua-footnote{color:#8a948b;font-size:12px;margin:20px 0}
 @media(max-width:1050px){.ua-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ua-columns{grid-template-columns:1fr}}
 @media(max-width:580px){.ua-welcome{padding:20px;display:block}.ua-welcome h2{font-size:21px}.ua-help-link{display:inline-block;margin-top:15px}.ua-metrics{gap:9px}.ua-card{padding:13px 12px}.ua-card-value{font-size:19px}.ua-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Formulário do assistente da marcenaria */
+.ua-assistant-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.ua-assistant-grid h3{margin:0 0 8px}
+.ua-form{display:flex;flex-direction:column;gap:13px;margin-top:20px}
+.ua-form label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:#3a5344;font-weight:650}
+.ua-form input,.ua-form select,.ua-form textarea,.ua-generated{width:100%;border:1px solid #cbd9ce;border-radius:8px;padding:11px 12px;font-family:inherit;font-weight:400;color:#213c2f;background:#fff;font-size:14px;outline-offset:2px;box-sizing:border-box}
+.ua-form-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ua-generated{min-height:320px;resize:vertical;line-height:1.5;margin-top:16px;background:#f9fbf8}
+.ua-assistant-grid .btn{cursor:pointer}
+.ua-assistant-grid .btn:disabled{opacity:.55;cursor:not-allowed}
+.ua-assistant-grid .actions{display:flex;flex-wrap:wrap;gap:8px}
+#uaAssistantStatus{min-height:32px;margin:12px 0}
+@media(max-width:950px){.ua-assistant-grid{grid-template-columns:1fr}}
+@media(max-width:480px){.ua-form-3{grid-template-columns:1fr}}
