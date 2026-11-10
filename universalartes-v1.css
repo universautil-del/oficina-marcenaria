@@ -1,0 +1,41 @@
+/* UNIVERSALARTES 1.0 — identidade e painel prévio, sem alterar os módulos existentes */
+:root {--ua-forest:#214737;--ua-wood:#b68d56;--ua-cream:#f6f3ed;}
+.brand strong{font-size:16px;letter-spacing:1.15px;}
+.brand small{letter-spacing:.12px;}
+.ua-welcome{border-radius:18px;padding:28px 30px;background:linear-gradient(110deg,#214737 0%,#315b49 68%,#58715b 100%);color:#fff;display:flex;gap:20px;justify-content:space-between;align-items:center;margin-bottom:18px;box-shadow:0 10px 25px #183a2930}
+.ua-eyebrow{font-size:11px;letter-spacing:2px;font-weight:800;color:#ead09e}
+.ua-welcome h2{font-size:27px;line-height:1.2;margin:8px 0 8px}
+.ua-welcome p{margin:0;color:#e1e9e3;font-size:14px}
+.ua-help-link{color:#fff;white-space:nowrap;text-decoration:none;border:1px solid #ffffff59;padding:10px 14px;border-radius:8px;font-size:13px}
+.ua-shortcuts{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0}
+.ua-shortcuts a{display:inline-flex;text-decoration:none;border:1px solid #d4e0d8;color:#224638;background:white;border-radius:8px;padding:10px 13px;font-size:13px;font-weight:700}
+.ua-shortcuts a:hover{background:#e7f0e8}
+.ua-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:15px 0 20px}
+.ua-card{padding:18px 20px;border:1px solid #dce5de;border-left:4px solid #8caa90;border-radius:12px;text-decoration:none;color:#1c342a;background:#fff;min-width:0;box-shadow:0 2px 12px #12361e0a}
+.ua-card.ua-attention{border-left-color:#d5a14d}
+.ua-card-title{font-size:13px;color:#637269}
+.ua-card-value{font-size:25px;font-weight:800;margin:9px 0;color:#193d30;overflow-wrap:anywhere}
+.ua-card-detail{display:flex;justify-content:space-between;gap:7px;font-size:12px;color:#788b7d}
+.ua-columns{display:grid;grid-template-columns:minmax(290px,.85fr) minmax(0,1.15fr);gap:16px}
+.ua-section{border-radius:12px;background:white;border:1px solid #e0e6df;padding:19px}
+.ua-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}
+.ua-section-head h3{margin:0;font-size:16px}
+.ua-section-head span,.ua-section-head a{font-size:12px;color:#6a7f72}
+.ua-priority{display:flex;align-items:center;gap:11px;text-decoration:none;border-bottom:1px solid #edf0eb;padding:12px 0;color:#253e30}
+.ua-priority-dot{width:8px;height:8px;border-radius:50%;background:#98b09f;flex-shrink:0}
+.ua-priority.danger .ua-priority-dot{background:#cd6657}
+.ua-priority.attention .ua-priority-dot{background:#d5a14d}
+.ua-priority span:nth-child(2){display:flex;flex-direction:column;gap:3px;flex:1}
+.ua-priority strong{font-size:13px}
+.ua-priority small{color:#77897b;font-size:11px}
+.ua-priority b{font-size:18px}
+.ua-table-wrap{overflow:auto}
+.ua-table{width:100%;border-collapse:collapse;font-size:12px}
+.ua-table th{text-align:left;color:#6a7c70;white-space:nowrap;font-size:11px}
+.ua-table th,.ua-table td{padding:11px 9px;border-bottom:1px solid #ecf0ec}
+.ua-table td strong{display:block}
+.ua-table td small{display:block;color:#879588;margin-top:3px}
+.ua-no-data{padding:28px 12px;text-align:center;color:#728574;font-size:13px}
+.ua-footnote{color:#8a948b;font-size:12px;margin:20px 0}
+@media(max-width:1050px){.ua-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ua-columns{grid-template-columns:1fr}}
+@media(max-width:580px){.ua-welcome{padding:20px;display:block}.ua-welcome h2{font-size:21px}.ua-help-link{display:inline-block;margin-top:15px}.ua-metrics{gap:9px}.ua-card{padding:13px 12px}.ua-card-value{font-size:19px}.ua-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
