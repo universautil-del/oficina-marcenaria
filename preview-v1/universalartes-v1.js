@@ -58,7 +58,7 @@
       '<div class="ua-footnote">Esta é uma prévia da interface 1.0. Dados permanecem no modelo local/JSON da versão 0.6 até a migração segura para o banco de dados por empresa.</div>';
   };
   const brand = document.querySelector('.brand strong');
-  if (brand) brand.textContent='UNIVERSALARTES';
+  if (brand) brand.textContent='UNIVERSA ART';
   if ((location.hash.slice(1) || 'dashboard') === 'dashboard') render('dashboard');
 
   // Ordem de produção impressa: somente consulta, não altera estoque nem status.
