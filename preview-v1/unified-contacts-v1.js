@@ -222,5 +222,6 @@
     return originalRender(section);
   };
   window.universalartesUnifiedContacts={allEntries,openUnified,showDirectory,rolePair,describeRole};
-  if(['cadastros','clientes','fornecedores'].includes(location.hash.slice(1)))render(location.hash.slice(1));
+  // Atualiza imediatamente a navegação, inclusive quando a página abre no Dashboard.
+  render(location.hash.slice(1)||'dashboard');
 })();
