@@ -140,6 +140,8 @@
    const cost=count*cfg.boardPrice;
    if(oversize.length)bad.push(g.material+': '+oversize.length+' peça(s) não cabem na chapa informada.');
    if(g.thickness<=0)bad.push(g.material+': espessura não informada.');
+   if(g.material==='Material não identificado')bad.push('Material não identificado: confira a composição da peça.');
+   if(cfg.boardPrice===0)bad.push(g.material+': preço da chapa não informado.');
    sheets+=count;matcost+=cost;area+=g.area;band+=g.edge;
    return {...g,sheetArea,count,cost,oversize:oversize.length,cfg};
   });
@@ -203,7 +205,7 @@
   if(!root||!state.parts.length)return;
   const r=calculated();
   root.innerHTML='<div class="ua-skp-totals">'+
-   [['Peças',state.parts.reduce((s,p)=>s+p.qty,0)],['Área de peças',format(r.area,3)+' m²'],['Chapas estimadas',r.sheets],['Fita informada',format(r.band,2)+' m'],['Materiais (chapas)',cash(r.matcost)],['Fita de borda',cash(r.edgeCost)],['Custo total previsto',cash(r.cost)],['Preço sugerido',cash(r.price)]]
+   [['Peças',state.parts.reduce((s,p)=>s+p.qty,0)],['Área de peças',format(r.area,3)+' m²'],['Chapas estimadas',r.sheets],['Fita informada',format(r.band,2)+' m'],['Materiais (chapas)',cash(r.matcost)],['Fita de borda',cash(r.edgeCost)],['Custo total previsto',cash(r.cost)],['Preço preliminar (não final)',cash(r.price)]]
    .map(([k,v])=>'<div><span>'+safe(k)+'</span><strong>'+safe(v)+'</strong></div>').join('')+'</div>'+
    '<p class="ua-skp-footnote">A contagem de chapas é uma <strong>aproximação por área e aproveitamento informado</strong>, não um plano de corte otimizado. Não considera automaticamente sentido do veio, espessura do corte da serra, fita, usinagem, falhas e sobra. O custo utiliza os preços fornecidos. A margem refere-se ao preço de venda, não a impostos.</p>'+
    (r.bad.length?'<div class="ua-skp-warnings">'+r.bad.map(x=>'<p>⚠ '+safe(x)+'</p>').join('')+'</div>':'')+
