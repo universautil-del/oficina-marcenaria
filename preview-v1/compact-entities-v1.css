@@ -1,0 +1,70 @@
+/* UNIVERSALARTES 1.0 — Clientes e Fornecedores com o mesmo padrão visual de Produtos. */
+dialog.ua-entity-dialog{
+  width:min(850px,calc(100vw - 28px));max-height:92dvh;
+  padding:0;border:0;border-radius:15px;overflow:auto;position:fixed;
+  background:#f9faf7;box-shadow:0 24px 80px rgba(20,37,29,.33);
+}
+dialog.ua-entity-dialog form{margin:0;display:block;}
+dialog.ua-entity-dialog h2{
+  position:sticky;top:0;z-index:2;
+  margin:0;padding:24px 56px 20px 26px;
+  background:#fff;border-bottom:1px solid #edf0ea;
+  font-size:21px;font-weight:750;line-height:1.3;color:#203a2d;
+}
+dialog.ua-entity-dialog .ua-entity-eyebrow{
+  display:block;font-size:10px;letter-spacing:1.6px;
+  font-weight:800;color:#83978a;margin-bottom:8px;
+}
+dialog.ua-entity-dialog .ua-entity-close{
+  position:absolute;top:16px;right:18px;z-index:5;
+  display:grid;place-items:center;background:transparent;
+  border:0;border-radius:9px;color:#294737;font-size:28px;
+  width:36px;height:36px;cursor:pointer;
+}
+dialog.ua-entity-dialog .ua-entity-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px 18px;padding:20px 26px 24px;
+}
+dialog.ua-entity-dialog .ua-entity-grid label{
+  display:flex;flex-direction:column;min-width:0;gap:6px;
+  font-size:12px;font-weight:650;color:#617465;
+}
+dialog.ua-entity-dialog .ua-entity-grid input:not([type="checkbox"]),
+dialog.ua-entity-dialog .ua-entity-grid select,
+dialog.ua-entity-dialog .ua-entity-grid textarea{
+  display:block;width:100%;margin:0;min-height:42px;padding:10px 12px;
+  border:1px solid #d6dfd5;border-radius:8px;
+  background:#fff;font:inherit;font-size:14px;color:#243b31;
+  box-sizing:border-box;
+}
+dialog.ua-entity-dialog .ua-entity-grid textarea{resize:vertical;min-height:78px;}
+dialog.ua-entity-dialog .ua-entity-wide{grid-column:1/-1;}
+dialog.ua-entity-dialog .ua-entity-grid .ua-entity-section{
+  margin:8px 0 -2px;border-bottom:1px solid #e0e8e0;
+  padding-bottom:8px;color:#234937;font-size:12px;
+  font-weight:800;text-transform:uppercase;letter-spacing:1px;
+}
+dialog.ua-entity-dialog .ua-entity-grid label.ua-favorite{
+  display:flex;flex-direction:row;align-items:center;gap:10px;
+  font-size:13px;color:#2c523b;font-weight:650;
+}
+dialog.ua-entity-dialog .ua-entity-grid .ua-favorite input{width:17px;height:17px;accent-color:#28553c;}
+dialog.ua-entity-dialog .dialog-actions{
+  display:flex;position:sticky;bottom:0;z-index:2;
+  margin:0;gap:10px;padding:15px 25px;justify-content:flex-end;
+  background:#fff;border-top:1px solid #dce5db;
+  box-shadow:0 -6px 15px #1c3b2910;
+}
+dialog.ua-entity-dialog .dialog-actions .btn{padding:10px 18px;font-weight:650;}
+dialog.ua-entity-dialog .dialog-actions .btn.primary{background:#28553c;border-color:#28553c;}
+dialog.ua-entity-dialog input:focus-visible,
+dialog.ua-entity-dialog select:focus-visible,
+dialog.ua-entity-dialog textarea:focus-visible{outline:2px solid #77a888;outline-offset:1px;}
+@media(max-width:650px){
+ dialog.ua-entity-dialog{width:calc(100vw - 16px);max-height:95dvh;}
+ dialog.ua-entity-dialog h2{padding:20px 50px 17px 18px;font-size:19px;}
+ dialog.ua-entity-dialog .ua-entity-grid{
+  grid-template-columns:minmax(0,1fr);gap:11px;padding:18px 18px 22px;
+ }
+ dialog.ua-entity-dialog .dialog-actions{padding:13px 16px;}
+}
