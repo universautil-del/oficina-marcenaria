@@ -87,7 +87,7 @@ const fetch=async(url,init)=>{
 let cloudCode=cloudSource.replace(' window.oficinaCloud=state;',' window.__cloudTest={sendLocal,flush,refresh,activate,inspectConnection,getDb:()=>db};window.oficinaCloud=state;');
 assert.notEqual(cloudCode,cloudSource,'Precisa expor somente no teste os métodos privados');
 const cloudCtx={
- document:{addEventListener(){},getElementById:()=>null,querySelector:()=>null},
+ document:{addEventListener(){},getElementById:id=>id==='cloudStatus'?{textContent:'',title:'',classList:{toggle(){}},onclick:null}:null,querySelector:()=>null},
  window:{addEventListener(){}},
  localStorage:ls,sessionStorage:ss,location:{hash:'#dashboard'},
  db:JSON.parse(baseline),blank:()=>JSON.parse(baseline),load:()=>JSON.parse(baseline),
