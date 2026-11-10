@@ -6,11 +6,14 @@ on:
       - 'tests/v1-smoke.cjs'
       - 'tests/security-audit.cjs'
       - 'tests/product-excel-v1.cjs'
+      - 'tests/compact-entities-v1.cjs'
       - 'tests/xlsx-real-v1.cjs'
       - 'script.js'
       - 'cloud-v06.js'
       - 'features-v05.js'
       - 'preview-v1/product-compact-v1.css'
+      - 'preview-v1/compact-entities-v1.css'
+      - 'preview-v1/compact-entities-v1.js'
       - '.github/workflows/check-v1.yml'
   workflow_dispatch:
 permissions:
@@ -25,7 +28,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar sintaxe, CSV, cálculo e isolamento da prévia
-        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs && node tests/product-excel-v1.cjs
+        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs && node tests/product-excel-v1.cjs && node tests/compact-entities-v1.cjs
       - name: Instalar leitor Excel apenas para testar XLSX real
         run: npm install --no-save --ignore-scripts --no-audit --no-fund exceljs@4.4.0
       - name: Testar leitura de planilha real
