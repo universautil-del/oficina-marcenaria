@@ -11,9 +11,9 @@ assert(html.indexOf('menu-organizado-1-0.js')>html.indexOf('backup-oficina-v1.js
 assert(css.includes('overflow-y:auto'));
 assert(css.includes('min-height:44px'));
 const entries=[
- ['dashboard','⌂','Dashboard'],['clientes','♟','Clientes e Fornecedores'],['projetos','▥','Projetos'],
+ ['dashboard','⌂','Dashboard'],['cadastros','♟','Clientes e Fornecedores'],['projetos','▥','Projetos'],
  ['assistente','✎','Assistente'],['sketchup','▤','SketchUp'],['produtos','▤','Produtos'],
- ['compras','▥','Entrada de Materiais'],['fornecedores','♧','Fornecedores'],['orcamentos','▧','Orçamentos'],
+ ['compras','▥','Entrada de Materiais'],['orcamentos','▧','Orçamentos'],
  ['pedidos','▣','Pedidos'],['producao','▣','Produção'],['financeiro','＄','Financeiro'],
  ['notas','▤','Notas fiscais'],['documentos','▤','Documentos'],['anexos','▧','Contratos anexados'],
  ['relatorios','▤','Relatórios'],['empresa','⚙','Minha Empresa'],['seguranca','✓','Segurança'],
@@ -46,13 +46,13 @@ assert(api);
 assert.equal(sections.length,entries.length);
 assert.deepEqual(sections.map(x=>x[0]).sort(),entries.map(x=>x[0]).sort(),'Preservar todas as telas e hashes');
 assert.deepEqual(sections.slice(0,7).map(x=>x[0]),[
- 'dashboard','clientes','projetos','assistente','sketchup','orcamentos','pedidos'
+ 'dashboard','cadastros','projetos','assistente','sketchup','orcamentos','pedidos'
  ]);
-assert.equal(JSON.stringify(api.groups()[0].rows.map(x=>x[0])),JSON.stringify(['dashboard','clientes']),'Clientes e Fornecedores deve aparecer junto ao Dashboard no topo');
+assert.equal(JSON.stringify(api.groups()[0].rows.map(x=>x[0])),JSON.stringify(['dashboard','cadastros']),'Clientes e Fornecedores deve aparecer junto ao Dashboard no topo');
 const idx=key=>sections.findIndex(x=>x[0]===key);
 assert(idx('pedidos')<idx('producao')&&idx('producao')<idx('produtos'));
 assert(idx('produtos')+1===idx('compras'));
-assert(idx('compras')+1===idx('fornecedores'));
+assert(!nav.innerHTML.includes('data-section="fornecedores"'),'Cadastro de fornecedores não deve duplicar o módulo unificado');
 assert(idx('financeiro')<idx('relatorios')&&idx('relatorios')<idx('empresa'));
 context.render('compras');
 assert(nav.innerHTML.includes('PROJETOS E PEDIDOS'));
