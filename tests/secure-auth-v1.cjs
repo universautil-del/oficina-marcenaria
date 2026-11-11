@@ -68,7 +68,7 @@ const ctx={
  db:{},DB_KEY:'universalartes-preview-v1-dados',OLD_CLIENTS:'universalartes-preview-v1-clientes-antigos',
  location:{hash:'#dashboard'},navigator:{onLine:true},
  render(){rendered++},download(){},confirm(){return true},alert(){},
- document:{getElementById(){return null},querySelector(){return null},addEventListener(){}},
+ document:{getElementById(){return null},querySelector(){return null},addEventListener(){},createElement(){return {classList:{toggle(){}},textContent:'',onclick:null,title:''}}},
  blank:()=>({version:3,clients:[],products:[],quotes:[],orders:[],transactions:[],
  stockMovements:[],company:{nome:'Universalartes'},seq:{quote:1,order:1}}),
  setupExtras(){if(!Array.isArray(ctx.db.suppliers))ctx.db.suppliers=[];if(!Array.isArray(ctx.db.purchases))ctx.db.purchases=[]},
