@@ -1,6 +1,6 @@
 'use strict';
 /*
- * UNIVERSALARTES — formulários compactos de clientes e fornecedores.
+ * UNIVERSA ART — formulários compactos de clientes e fornecedores.
  * Mantém os campos antigos no mesmo objeto; adiciona os opcionais sem migração destrutiva.
  * Não envia dados para serviços externos nem altera regras de orçamento/compra.
  */

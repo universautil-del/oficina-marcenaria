@@ -1,5 +1,5 @@
 'use strict';
-/* UNIVERSALARTES — cadastro único de Clientes e Fornecedores.
+/* UNIVERSA ART — cadastro único de Clientes e Fornecedores.
    Mantém db.clients e db.suppliers para compatibilidade com orçamentos e compras.
    Uma pessoa pode ter os dois papéis, vinculados pelo mesmo ID explícito. */
 (function(){
@@ -151,7 +151,7 @@
     },dialog=>{
       dialog.classList.add('ua-entity-dialog','ua-unified-dialog');
       const heading=dialog.querySelector('h2');
-      heading?.insertAdjacentHTML('afterbegin','<small class="ua-entity-eyebrow">CADASTRO UNIFICADO · UNIVERSALARTES</small>');
+      heading?.insertAdjacentHTML('afterbegin','<small class="ua-entity-eyebrow">CADASTRO UNIFICADO · UNIVERSA ART</small>');
       const submit=dialog.querySelector('.dialog-actions [type="submit"]');
       if(submit)submit.textContent=isEdit?'Salvar alterações':'Salvar cadastro';
       const close=document.createElement('button');

@@ -9,6 +9,9 @@ on:
       - 'tests/compact-entities-v1.cjs'
       - 'tests/unified-contacts-v1.cjs'
       - 'tests/launch-readiness-v1.cjs'
+      - 'tests/opencutlist-components-v1.cjs'
+      - 'tests/drive-backup-v1.cjs'
+      - 'tests/fixtures/**'
       - 'tests/xlsx-real-v1.cjs'
       - 'script.js'
       - 'cloud-v06.js'
@@ -32,7 +35,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar sintaxe, CSV, cálculo e isolamento da prévia
-        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs && node tests/product-excel-v1.cjs && node tests/compact-entities-v1.cjs && node tests/unified-contacts-v1.cjs && node tests/launch-readiness-v1.cjs
+        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs && node tests/product-excel-v1.cjs && node tests/compact-entities-v1.cjs && node tests/unified-contacts-v1.cjs && node tests/launch-readiness-v1.cjs && node tests/opencutlist-components-v1.cjs && node tests/drive-backup-v1.cjs
       - name: Instalar leitor Excel apenas para testar XLSX real
         run: npm install --no-save --ignore-scripts --no-audit --no-fund exceljs@4.4.0
       - name: Testar leitura de planilha real

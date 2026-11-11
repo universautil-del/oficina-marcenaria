@@ -1,10 +1,11 @@
 'use strict';
-/* UNIVERSALARTES 1.0 — Importador SketchUp / OpenCutList, cálculo preliminar no navegador.
+/* UNIVERSA ART 1.0 — Importador SketchUp / OpenCutList, cálculo preliminar no navegador.
    CSV de peças, não interpreta .skp. Não grava em estoque, financeiro ou pedidos. */
 (function(){
  const state={file:'',headers:[],raw:[],map:{},parts:[],settings:{},efficiency:80,edgePrice:0,hardware:0,labor:0,install:0,delivery:0,margin:25,error:'',note:'',separator:';'};
  const fields=[
   ['name','Peça / Designação',true],
+  ['code','Código da peça',false],
   ['length','Comprimento (mm)',true],
   ['width','Largura (mm)',true],
   ['thickness','Espessura (mm)',false],
@@ -13,7 +14,8 @@
   ['edge','Fita de borda por peça (m)',false]
  ];
  const aliases={
-  name:['peca','nome','designacao','designation','part','partname','piece','descricao','description','label'],
+  name:['peca','nome','designacao','designation','partname','piece','descricao','description','label'],
+  code:['part','part#','part number','partno','codigo','codigopeca','code'],
   length:['comprimento','length','longueur','cuttinglength','final length','lengthmm'],
   width:['largura','width','largeur','cuttingwidth','final width','widthmm'],
   thickness:['espessura','thickness','epaisseur','thick','thicknessmm'],
@@ -53,20 +55,23 @@
   return line;
  }
  function detectSep(text){
-  const line=firstLine(text);const candidates=[';','\t',','];
-  const counts=candidates.map(sep=>{
-   let quotes=false,count=0;
+  // OpenCutList pode iniciar com "Components" antes do cabeçalho real.
+  const lines=String(text).replace(/^\ufeff/,'').split(/\r?\n/).filter(l=>l.trim()).slice(0,15);
+  const candidates=[';','\t',','];
+  const count=(line,sep)=>{
+   let quoted=false,n=0;
    for(let i=0;i<line.length;i++){
-    const ch=line[i];
-    if(ch==='"'&&quotes&&line[i+1]==='"'){i++;continue}
-    if(ch==='"'){quotes=!quotes;continue}
-    if(!quotes&&ch===sep)count++;
+    const c=line[i];
+    if(c==='"'&&quoted&&line[i+1]==='"'){i++;continue}
+    if(c==='"'){quoted=!quoted;continue}
+    if(!quoted&&c===sep)n++;
    }
-   return count;
-  });
-  const max=Math.max(...counts);
-  if(max===0)throw Error('CSV sem colunas separadas. Exporte com ponto e vírgula, tabulação ou vírgula.');
-  return candidates[counts.indexOf(max)];
+   return n;
+  };
+  const best=candidates.map(sep=>({sep,n:Math.max(0,...lines.map(l=>count(l,sep)))}))
+   .sort((a,b)=>b.n-a.n)[0];
+  if(!best||best.n<2)throw Error('Não encontrei colunas separadas. O arquivo OpenCutList deve ser CSV com ;, tabulação ou vírgula.');
+  return best.sep;
  }
  function parseCSV(text,sep){
   const rows=[];let row=[],item='',quoted=false;
@@ -96,6 +101,17 @@
   for(const [field] of fields)state.map[field]=guess(state.headers,field);
  }
  function get(row,field){const i=state.map[field];return i>=0?String(row[i]??'').trim():''}
+ function autoReadParts(){
+  if(state.map.name<0||state.map.length<0||state.map.width<0)return;
+  try{
+   state.parts=makeParts();
+   const total=state.parts.reduce((n,p)=>n+p.qty,0);
+   const area=state.parts.reduce((n,p)=>n+p.qty*p.length*p.width/1000000,0);
+   state.note=(state.note?state.note+' ':'')+state.parts.length+' tipo(s), '+total+
+    ' peça(s), '+format(area,3)+' m². Confira as medidas e defina os materiais antes de calcular o preço.';
+   state.error='';
+  }catch(e){state.parts=[];state.error='Não foi possível calcular automaticamente: '+e.message}
+ }
  function makeParts(){
   for(const [field,label,required] of fields)if(required&&state.map[field]<0)throw Error('Selecione a coluna '+label+' antes de calcular.');
   const list=[];
@@ -110,7 +126,8 @@
    if(!Number.isInteger(qty)||qty>100000)throw Error('Quantidade inteira inválida na linha '+(i+2));
    const ed=get(row,'edge');const edge=ed?positive(ed,'Linha '+(i+2)+': fita por peça (m)',true):0;
    if(edge>1000)throw Error('Fita por peça muito alta na linha '+(i+2)+'. Confira se está em metros.');
-   list.push({name,length,width,thickness,qty,edge,material:get(row,'material')||'Material não identificado'});
+   const material=get(row,'material'),unspecified=!material||/^(not assigned|unassigned|nao atribuido|sem material)$/i.test(material);
+   list.push({code:get(row,'code'),name,length,width,thickness,qty,edge,material:unspecified?'Material não definido':material});
   }
   if(!list.length)throw Error('Nenhuma peça válida foi encontrada no CSV.');
   return list;
@@ -140,7 +157,7 @@
    const cost=count*cfg.boardPrice;
    if(oversize.length)bad.push(g.material+': '+oversize.length+' peça(s) não cabem na chapa informada.');
    if(g.thickness<=0)bad.push(g.material+': espessura não informada.');
-   if(g.material==='Material não identificado')bad.push('Material não identificado: confira a composição da peça.');
+   if(g.material==='Material não definido'||g.material==='Material não identificado')bad.push('Material não definido no SketchUp: selecione o MDF correto antes de usar orçamento/compra.');
    if(cfg.boardPrice===0)bad.push(g.material+': preço da chapa não informado.');
    sheets+=count;matcost+=cost;area+=g.area;band+=g.edge;
    return {...g,sheetArea,count,cost,oversize:oversize.length,cfg};
@@ -213,23 +230,50 @@
    (!r.matcost?'<div class="ua-skp-warnings">⚠ Nenhum preço de chapa informado. O valor sugerido não deve ser usado como orçamento final.</div>':'');
  }
  function view(){
-  title.textContent='Calcular projeto SketchUp';
-  content.innerHTML='<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSALARTES · SKETCHUP</div>'+
-    '<h2>Do desenho ao custo do móvel</h2><p>Importe uma lista de peças exportada do SketchUp e confira materiais, quantitativos e uma estimativa preliminar.</p></div></div>'+
-    '<section class="ua-section"><h3>1. Importar lista de peças do SketchUp</h3>'+
+  title.textContent='Importar lista SketchUp';
+  content.innerHTML='<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · SKETCHUP</div>'+
+    '<h2>Lista de peças do SketchUp 2022</h2><p>Importe uma lista de peças exportada do SketchUp e confira materiais, quantitativos e uma estimativa preliminar.</p></div></div>'+
+    '<section class="ua-section"><h3>1. Importar lista OpenCutList (.csv ou .xlsx)</h3>'+
     '<p>No SketchUp 2022, exporte a lista de peças do <strong>OpenCutList</strong> como <strong>Excel (.xlsx)</strong> ou CSV. Configure as dimensões em <strong>mm</strong> e confira material, espessura, quantidade e fita.</p>'+
     '<label class="ua-skp-upload">Importar Excel (.xlsx), CSV ou TXT<input type="file" id="uaSkuFile" accept=".xlsx,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain"></label>'+
-    '<p class="muted">A planilha é lida no seu navegador. O leitor Excel é carregado por HTTPS quando necessário. O arquivo nativo .skp ainda não é interpretado diretamente.</p>'+
+    '<p class="muted">A planilha é lida no seu navegador. O leitor Excel é carregado por HTTPS quando necessário. O arquivo .skp contém o modelo 3D; esta tela importa a lista de peças exportada.</p>'+
     '<div class="actions gap-top"><button class="btn" type="button" data-ua-skp="template">Baixar modelo de CSV</button><a class="btn" href="https://extensions.sketchup.com/extension/00f0bf69-7a42-4295-9e1c-226080814e3e/opencutlist" target="_blank" rel="noopener noreferrer">Conhecer OpenCutList ↗</a></div>'+
     (state.file?'<p class="ua-skp-file">Arquivo carregado: '+safe(state.file)+' · '+state.raw.length+' linhas</p>':'')+
+    (state.note?'<p class="ua-skp-note ua-skp-detected">'+safe(state.note)+'</p>':'')+
     (state.error?'<div class="ua-skp-warnings" role="alert">'+safe(state.error)+'</div>':'')+'</section>'+
     mappingHTML()+summaryHTML();
   renderTotals();
   window.universalartesSketchUpExcel?.enhance?.();
  }
+ function extractPartTable(rows){
+  // Ignorar a primeira linha "Components" e seções-resumo após as peças.
+  let headerIndex=-1,headers=[];
+  for(let i=0;i<Math.min(rows.length,30);i++){
+   const candidate=rows[i].map(x=>String(x??'').trim());
+   if(guess(candidate,'length')>=0&&guess(candidate,'width')>=0&&
+     (guess(candidate,'name')>=0||candidate.some(x=>compact(x)==='part'))){
+    headerIndex=i;headers=candidate;break;
+   }
+  }
+  if(headerIndex<0)throw Error('Não encontrei o cabeçalho das peças (Length(L), Width(W), Description). Exporte a lista "Components" do OpenCutList.');
+  const raw=[];
+  for(let i=headerIndex+1;i<rows.length;i++){
+   const row=rows[i].map(v=>String(v??'').trim());
+   const first=String(row[0]||'').toLowerCase();
+   if(/^(total component|component materials|material|total geral|grand total)/i.test(first))break;
+   if(row.length<2||row.every(x=>!x))continue;
+   if(guess(headers,'name')>=0&&guess(headers,'length')>=0&&guess(headers,'width')>=0){
+    const n=row[guess(headers,'name')],length=row[guess(headers,'length')],width=row[guess(headers,'width')];
+    if(!n||!length||!width)break; // evita interpretar seções-resumo como peças
+   }
+   raw.push(row);
+  }
+  if(!raw.length)throw Error('A tabela de componentes está vazia. Verifique a exportação no SketchUp 2022.');
+  return {headers,raw,skipped:headerIndex};
+ }
  function readFile(file){
   if(!file)return;
-  if(!/\.(csv|txt)$/i.test(file.name))throw Error('Use CSV ou TXT exportado da lista de peças do SketchUp, não o arquivo .skp.');
+  if(!/\.(csv|txt)$/i.test(file.name))throw Error('Use CSV/TXT do OpenCutList ou Excel (.xlsx). Arquivos .skp são modelos 3D e precisam de uma extensão para extração das peças.');
   if(file.size>2*1024*1024)throw Error('Arquivo acima de 2 MB. Exporte um projeto por vez.');
   return file.arrayBuffer().then(bytes=>{
    const arr=new Uint8Array(bytes);
@@ -237,11 +281,10 @@
    const text=new TextDecoder(encoding,{fatal:true}).decode(bytes).replace(/^\uFEFF/,'');
    const sep=detectSep(text),rows=parseCSV(text,sep);
    if(rows.length<2)throw Error('CSV precisa ter cabeçalho e pelo menos uma peça.');
-   const headers=rows[0].map((x,i)=>String(x).trim()||'Coluna '+(i+1));
-   const raw=rows.slice(1);
+   const {headers,raw,skipped}=extractPartTable(rows);
    if(headers.length<3)throw Error('CSV precisa ter colunas de peça, comprimento e largura.');
-   state.file=file.name;state.headers=headers;state.raw=raw;state.parts=[];state.settings={};state.separator=sep;state.error='';
-   mapping();view();
+   state.file=file.name;state.headers=headers;state.raw=raw;state.parts=[];state.settings={};state.separator=sep;state.error='';state.note=skipped?'Cabeçalho encontrado após '+skipped+' linha(s) introdutória(s) do OpenCutList.':'';
+   mapping();autoReadParts();view();
   });
  }
  function exportText(name,text){
@@ -255,13 +298,13 @@
   return '"'+s.replace(/"/g,'""')+'"';
  }
  function exportParts(){
-  const hdr=['Peca','Comprimento_mm','Largura_mm','Espessura_mm','Quantidade','Material','Fita_m_por_peca'];
-  const rows=state.parts.map(p=>[p.name,p.length,p.width,p.thickness,p.qty,p.material,p.edge]);
+  const hdr=['Codigo','Peca','Comprimento_mm','Largura_mm','Espessura_mm','Quantidade','Material','Fita_m_por_peca'];
+  const rows=state.parts.map(p=>[p.code||'',p.name,p.length,p.width,p.thickness,p.qty,p.material,p.edge]);
   exportText('universalartes-pecas-sketchup.csv','\uFEFF'+[hdr,...rows].map(row=>row.map(csvEscape).join(';')).join('\r\n'));
  }
  function brief(){
   const r=calculated();const lines=[
-   'UNIVERSALARTES — Projeto SketchUp / Lista de peças',
+   'UNIVERSA ART — Projeto SketchUp / Lista de peças',
    'Arquivo: '+state.file,
    'Todas as dimensões de peças estão em milímetros (mm).',
    'Total de peças: '+state.parts.reduce((s,p)=>s+p.qty,0),
@@ -281,11 +324,11 @@
  const prevRender=render;
  if(!sections.some(s=>s[0]==='sketchup')){
   const pos=sections.findIndex(s=>s[0]==='assistente');
-  sections.splice(pos<0?sections.length:pos+1,0,['sketchup','▥','Calcular SketchUp']);
+  sections.splice(pos<0?sections.length:pos+1,0,['sketchup','▥','Importar SketchUp']);
  }
  render=function(section=location.hash.slice(1)||'dashboard'){
   if(section!=='sketchup')return prevRender(section);
-  title.textContent='Calcular SketchUp';
+  title.textContent='Importar SketchUp';
   nav.innerHTML=sections.map(([key,icon,label])=>'<button class="nav-btn '+(key==='sketchup'?'active':'')+'" data-section="'+key+'"><span aria-hidden="true">'+safe(icon)+'</span>'+safe(label)+'</button>').join('');
   nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.section;sidebar.classList.remove('open');if(location.hash.slice(1)===section)render(section)}));
   view();
@@ -304,7 +347,7 @@
    if(action==='template'){
     exportText('modelo-universalartes-sketchup.csv','\uFEFFPeca;Comprimento_mm;Largura_mm;Espessura_mm;Quantidade;Material;Fita_m_por_peca\r\nLateral;2100;550;15;2;MDF Branco TX;1,6\r\nPrateleira;760;500;15;3;MDF Branco TX;0,76\r\nPorta;1950;400;18;2;MDF Amadeirado;4,7');return;
    }
-   if(action==='reset'){state.file='';state.raw=[];state.headers=[];state.parts=[];state.map={};state.settings={};state.error='';view();return;}
+   if(action==='reset'){state.file='';state.raw=[];state.headers=[];state.parts=[];state.map={};state.settings={};state.error='';state.note='';view();return;}
    if(action==='calculate'){
     state.parts=makeParts();state.error='';view();return;
    }
@@ -319,5 +362,5 @@
    }
   }catch(error){alert(error.message||'Não foi possível concluir o cálculo.')}
  });
- window.universalartesSketchUp={parseCSV,detectSep,makeParts,calculated,state,mapping,view};
+ window.universalartesSketchUp={parseCSV,detectSep,extractPartTable,makeParts,autoReadParts,calculated,state,mapping,view};
 })();

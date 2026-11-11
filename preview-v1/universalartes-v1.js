@@ -1,5 +1,5 @@
 'use strict';
-/* UNIVERSALARTES — OFICINA 1.0 (prévia do painel). Leitura apenas; mantém dados legados. */
+/* UNIVERSA ART — OFICINA 1.0 (prévia do painel). Leitura apenas; mantém dados legados. */
 (function(){
   const previous = dashboardUpgrade;
   dashboardUpgrade = function universalartesToday(){
@@ -32,7 +32,7 @@
       esc((statusText && statusText[o.status]) || o.status || 'Aberto') + '</td><td>' + (o.entregaData ? date(o.entregaData) : 'A definir') +
       '</td><td>' + money(orderTotal(o)) + '</td></tr>').join('');
     content.innerHTML =
-      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSALARTES · PAINEL DO MARCENEIRO</div>' +
+      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · PAINEL DO MARCENEIRO</div>' +
       '<h2>O que precisa da sua atenção hoje?</h2><p>Uma visão da produção, das entregas e do dinheiro da marcenaria.</p></div>' +
       '<a class="ua-help-link" href="#empresa">Minha empresa ↗</a></div>' +
       notice() +
@@ -58,7 +58,7 @@
       '<div class="ua-footnote">Esta é uma prévia da interface 1.0. Dados permanecem no modelo local/JSON da versão 0.6 até a migração segura para o banco de dados por empresa.</div>';
   };
   const brand = document.querySelector('.brand strong');
-  if (brand) brand.textContent='UNIVERSALARTES';
+  if (brand) brand.textContent='UNIVERSA ART';
   if ((location.hash.slice(1) || 'dashboard') === 'dashboard') render('dashboard');
 
   // Ordem de produção impressa: somente consulta, não altera estoque nem status.
@@ -121,7 +121,7 @@
     const projects=Array.isArray(db.projects)?db.projects:[];
     const projectOptions=projects.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nome||'Projeto sem nome')+' — '+esc(p.ambiente||'Ambiente')+'</option>').join('');
     content.innerHTML=
-      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSALARTES · ASSISTENTE DE PROJETOS</div><h2>Descreva o móvel que você precisa fabricar</h2>'+
+      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · ASSISTENTE DE PROJETOS</div><h2>Descreva o móvel que você precisa fabricar</h2>'+
       '<p>Organize o projeto e leve as informações para uma conversa com o ChatGPT.</p></div></div>'+
       '<div class="ua-assistant-grid"><section class="ua-section"><h3>1. Informações do móvel</h3>'+
       '<p class="muted">Use medidas em milímetros (mm). Os campos marcados com * são obrigatórios.</p>'+
