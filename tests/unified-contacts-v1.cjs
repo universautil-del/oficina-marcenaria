@@ -11,7 +11,7 @@ assert(html.includes('unified-contacts-v1.js')&&html.includes('unified-contacts-
 assert(html.indexOf('unified-contacts-v1.js')>html.indexOf('compact-entities-v1.js'));
 assert(css.includes('.ua-directory-tabs')&&css.includes('@media(max-width:760px)'));
 const DB={clients:[],suppliers:[],quotes:[],orders:[],purchases:[]};
-let currentModal=null,saved=0,seq=0,originalCalls=0;
+let currentModal=null,saved=0,seq=0,originalCalls=0,openedSales=[];
 const location={hash:''},content={innerHTML:'',querySelectorAll(){return[]}},nav={innerHTML:'',querySelectorAll(){return[]}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ctx={
@@ -26,7 +26,7 @@ const ctx={
  table:(hdr,rows,empty)=>rows.length?'<table>'+rows.join('')+'</table>':empty,
  td:(...cols)=>'<tr>'+cols.map(x=>'<td>'+x+'</td>').join('')+'</tr>',
  render:()=>{originalCalls++},
- clientModal:()=>{},supplierModal:()=>{},
+ clientModal:()=>{},supplierModal:()=>{},openSales:(...args)=>{openedSales.push(args)},
  handleAction:(action,uid)=>{
   if(action==='delete-client')DB.clients=DB.clients.filter(x=>x.id!==uid);
   if(action==='delete-supplier')DB.suppliers=DB.suppliers.filter(x=>x.id!==uid);
@@ -60,6 +60,15 @@ assert.equal(DB.suppliers[0].categoria,'MDF e chapas');
 assert.equal(api.allEntries().length,1);
 assert.equal(api.allEntries()[0].role,'ambos');
 const sharedId=DB.clients[0].id;
+ctx.render('cadastros');
+assert(content.innerHTML.includes('ua-quote-for-client'));
+assert(content.innerHTML.includes('ua-order-for-client'));
+ctx.handleAction('ua-quote-for-client',sharedId);
+ctx.handleAction('ua-order-for-client',sharedId);
+assert.equal(openedSales.length,2);
+assert.equal(openedSales[0][0],'quote');
+assert.equal(openedSales[1][0],'order');
+assert.equal(openedSales[0][3],sharedId,'Cliente pré-selecionado sem digitar novamente');
 DB.orders.push({clientId:sharedId,clientNome:'Marcenaria Modelo'});
 DB.quotes.push({clientId:sharedId,clientNome:'Marcenaria Modelo'});
 DB.purchases.push({supplierId:sharedId,supplierNome:'Marcenaria Modelo'});
