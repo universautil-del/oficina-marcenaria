@@ -28,7 +28,7 @@ const api=ctx.window.universaArtBackup;
 assert(api);
 ctx.location.hash='#backupdrive';ctx.render('backupdrive');
 assert(ctx.content.innerHTML.includes('Backup automático semanal'));
-assert(ctx.content.innerHTML.includes('Copias semanais'));
+assert(ctx.content.innerHTML.includes('Cópias semanais'));
 assert(!ctx.content.innerHTML.includes('Google Drive'));
 assert(!ctx.content.innerHTML.includes('OAuth Client ID'));
 (async()=>{
