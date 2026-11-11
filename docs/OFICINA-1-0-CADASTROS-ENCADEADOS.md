@@ -8,6 +8,8 @@ Atualização: 11/11/2026. O objetivo é **não abandonar o formulário atual pa
 - Antes, aparecia o alerta nativo: "Cadastre uma matéria-prima em Produtos primeiro".
 - Agora, o botão **+ Nova entrada de materiais** abre diretamente **Produtos — novo cadastro**, com tipo **Matéria-prima**.
 - Ao salvar um material válido, a tela **Nova entrada de materiais** abre sozinha, com o novo material, a quantidade inicial (1) e seu custo cadastrados.
+- Neste caminho, o tipo é **Matéria-prima**, em leitura somente; não é possível escolher **Produto acabado**. O formulário oferece exemplos de **MDF 15/18/25 mm, parafusos, dobradiças, corrediças, fitas de borda e cola**. Pode-se informar espessura, comprimento e largura da chapa em **milímetros**, sem presumir o formato padrão.
+- O cadastro feito a partir de uma Entrada começa com **saldo de estoque 0**. O saldo só aumenta ao confirmar a entrada, evitando dupla contagem. O preço de venda fica oculto nesse fluxo; pede-se o custo de aquisição.
 - Ao cancelar o cadastro, nenhuma entrada, despesa ou movimentação é criada. O caminho não é retomado.
 - O formulário de entrada também tem o botão **+ Cadastrar matéria-prima**; ao salvar outro material, a nova linha é adicionada sem descartar fornecedor, datas ou outras linhas já preenchidas.
 - O campo de matéria-prima de uma linha nova começa em **Selecione a matéria-prima** para evitar a compra acidental de um item diferente.
