@@ -97,7 +97,7 @@ failSave=false;
 db.products.push({id:'legado',tipo:'acabado',codigo:'MOV-1',nome:'Legado',components:[{materialId:raw.id,quantidade:1}]});
 api.productModal('legado');
 assert(modal.fields.includes('value="MOV-1"'),'Preserva código legado não numérico');
-assert.equal(modal.onSubmit({...values,nome:'Legado editado'},dialog([{materialId:raw.id,quantidade:1}])),true);
+assert.equal(modal.onSubmit({...values,tipo:'acabado',nome:'Legado editado'},dialog([{materialId:raw.id,quantidade:1}])),true);
 assert.equal(db.products.find(p=>p.id==='legado').codigo,'MOV-1');
 assert(!alerts.length);
 console.log('OK OFICINA 1.0: botão Produtos, tipo selecionável, composição, código 01..9999, estoque e pedido sem duplicar, rollback.');
