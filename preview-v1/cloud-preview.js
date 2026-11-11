@@ -2,6 +2,7 @@
 /* OFICINA v0.6 — login + sincronização opcional no Supabase (não armazena senhas). */
 (function () {
  const CFG='universalartes-v1-cloud-config', SES='universalartes-v1-cloud-session';
+ const SECURE=!!window.UNIVERSA_REQUIRE_AUTH;
  const CACHE='universalartes-v1-cloud-cache', META='universalartes-v1-cloud-meta';
  const state={cfg:null,session:null,remote:null,rev:null,active:false,paused:false,busy:false,
    lastSynced:'',status:'Local — somente neste navegador',timer:null,userId:null};
@@ -51,6 +52,7 @@
    throw Error('Login não autorizado. Confira seu e-mail e senha.')}
   saveSession(response);
   state.active=false;state.paused=false;state.remote=null;state.lastSynced='';state.rev=null;
+  if(SECURE){await secureStart();window.dispatchEvent(new Event('ua-secure-change'));return}
   await fetchRemote();state.status='Conectado — escolha como iniciar a sincronização';
   render('empresa');
  }
@@ -59,6 +61,22 @@
   state.remote=Array.isArray(rows)?rows[0]||null:null;
   if(state.remote&&!valid(state.remote.data))throw Error('Os dados na nuvem têm formato incompatível. Não foram carregados.');
   return state.remote;
+ }
+ async function secureStart(){
+  if(!SECURE||!state.session)throw Error('Faça login para abrir o painel seguro.');
+  const remote=await fetchRemote();
+  if(remote){
+   activate(remote.data,remote.revision);
+  }else{
+   const initial=blank();
+   const revision=await request('/rest/v1/rpc/ua_iniciar_documento',{
+    method:'POST',body:{p_documento:initial}
+   });
+   if(!Number.isSafeInteger(Number(revision))||Number(revision)<1)
+    throw Error('A inicialização do banco não retornou revisão válida.');
+   activate(initial,Number(revision));
+  }
+  state.status='Acesso autenticado — sincronização por revisão';
  }
  function setDb(data){
   if(!valid(data))throw Error('Estrutura de dados incompatível.');
@@ -73,7 +91,7 @@
   setDb(data);state.rev=rev;state.active=true;state.paused=false;state.lastSynced=JSON.stringify(data);
   state.status='Sincronizado';saveLocalCloud();
   // Após exportar o backup anterior, deixa o modo visitante sem dados privados.
-  localStorage.setItem(DB_KEY,JSON.stringify(blank()));localStorage.removeItem(OLD_CLIENTS);
+  if(!SECURE){localStorage.setItem(DB_KEY,JSON.stringify(blank()));localStorage.removeItem(OLD_CLIENTS);}
   render(location.hash.slice(1)||'dashboard');
  }
  async function selectRemote(){
@@ -110,11 +128,14 @@
   if(new Blob([snap]).size>2_000_000){state.status='Backup maior que 2 MB: faça exportação e reduza anexos';state.paused=true;showStatus();return}
   state.busy=true;state.status='Enviando alterações…';showStatus();
   try{
-   const rows=await request(`/rest/v1/universalartes_preview_backups?user_id=eq.${encodeURIComponent(state.userId)}&revision=eq.${state.rev}`,{
-    method:'PATCH',body:{data:JSON.parse(snap),revision:state.rev+1},extra:{Prefer:'return=representation'}});
+   const rows=SECURE
+    ? await request('/rest/v1/rpc/ua_atualizar_documento',{
+       method:'POST',body:{p_documento:JSON.parse(snap),p_revisao_esperada:state.rev}})
+    : await request(`/rest/v1/universalartes_preview_backups?user_id=eq.${encodeURIComponent(state.userId)}&revision=eq.${state.rev}`,{
+       method:'PATCH',body:{data:JSON.parse(snap),revision:state.rev+1},extra:{Prefer:'return=representation'}});
    if(!state.active||!state.userId)return;
-   if(!Array.isArray(rows)||rows.length!==1){state.paused=true;state.status='Conflito: outro aparelho alterou os dados. Faça backup e escolha qual versão manter.';return}
-   state.rev=rows[0].revision;state.lastSynced=snap;state.status='Sincronizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+   if(SECURE?(!Number.isSafeInteger(Number(rows))||Number(rows)<=state.rev):(!Array.isArray(rows)||rows.length!==1)){state.paused=true;state.status='Conflito: outro aparelho alterou os dados. Faça backup e escolha qual versão manter.';return}
+   state.rev=SECURE?Number(rows):rows[0].revision;state.lastSynced=snap;state.status='Sincronizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
    saveLocalCloud();
   }catch(error){
    // Uma falha de rede ou permissão não pode disparar tentativas infinitas a cada 1,2 s.
@@ -150,7 +171,8 @@
   if(state.active&&JSON.stringify(db)!==state.lastSynced&&!confirm('Existem alterações não sincronizadas. Ao sair elas podem ser perdidas. Deseja continuar?'))return;
   clearTimeout(state.timer);state.active=false;state.paused=false;state.rev=null;state.remote=null;state.lastSynced='';state.userId=null;state.session=null;
   sessionStorage.removeItem(SES);sessionStorage.removeItem(CACHE);sessionStorage.removeItem(META);
-  state.status='Local — somente neste navegador';if(wasActive){db=blank();localStorage.setItem(DB_KEY,JSON.stringify(db))}else{db=load()}render('empresa');
+  state.status=SECURE?'Sessão encerrada':'Local — somente neste navegador';if(SECURE)db=blank();else if(wasActive){db=blank();localStorage.setItem(DB_KEY,JSON.stringify(db))}else{db=load()}render('empresa');
+  if(SECURE)window.dispatchEvent(new Event('ua-secure-change'));
  }
  function showStatus(){
   let item=document.getElementById('cloudStatus');
@@ -193,8 +215,9 @@
  }
  const baseSave=save;
  save=function(){
+  if(SECURE&&(!state.active||state.paused||!state.session))return false;
   if(!state.active)return baseSave();
-  try{saveLocalCloud();schedule();return true}catch(e){alert('Não foi possível manter alterações nesta sessão. Exporte backup: '+friendlyError(e));return false}
+  try{saveLocalCloud();state.status=SECURE?'Alterações locais aguardando confirmação do servidor':state.status;schedule();return true}catch(e){alert('Não foi possível manter alterações nesta sessão. Exporte backup: '+friendlyError(e));return false}
  };
  const baseRender=render;
  render=function(...args){baseRender(...args);if((args[0]||location.hash.slice(1))==='empresa')panel();showStatus()};
@@ -235,13 +258,32 @@
   if(state.active&&JSON.stringify(db)!==state.lastSynced){event.preventDefault();event.returnValue=''}
  });
  async function boot(){
-  if(!state.session?.at){state.session=null;render();return}
+  if(!state.session?.at){state.session=null;if(!SECURE)render();return}
   state.userId=state.session.id;
+  if(SECURE){
+   try{await accessToken();await secureStart()}
+   catch(e){state.active=false;state.paused=true;state.status='Acesso bloqueado: '+friendlyError(e)}
+   finally{window.dispatchEvent(new Event('ua-secure-change'))}
+   return;
+  }
   const meta=safeParse(sessionStorage.getItem(META)),cached=safeParse(sessionStorage.getItem(CACHE));
   if(meta?.active&&meta.id===state.userId&&valid(cached)){
    state.rev=meta.rev;state.lastSynced=meta.lastSynced||'';state.active=true;setDb(cached);state.status='Verificando sincronização…';render();
    try{await refresh()}catch(e){state.status='Não sincronizado: '+friendlyError(e);showStatus()}
   }else{try{await fetchRemote();state.status='Conectado — escolha como iniciar'}catch(e){state.status='Erro ao conectar: '+friendlyError(e)}render()}
+ }
+ if(SECURE){
+  state.configure=(url,key)=>{
+   if(!validURL(url))throw Error('Informe a URL HTTPS do projeto Supabase.');
+   if(!isPublicKey(key))throw Error('A chave deve ser pública (anon ou publishable).');
+   if(state.session&&state.cfg?.url!==url)throw Error('Saia da conta antes de alterar o projeto Supabase.');
+   state.cfg={url,key};localStorage.setItem(CFG,JSON.stringify(state.cfg));
+   window.dispatchEvent(new Event('ua-secure-change'));
+  };
+  state.signIn=(email,password)=>login(email,password,false);
+  state.signUp=(email,password)=>login(email,password,true);
+  state.signOut=logout;
+  state.secure=true;
  }
  window.oficinaCloud=state;
  boot();
