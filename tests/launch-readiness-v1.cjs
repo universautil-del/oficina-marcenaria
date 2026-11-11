@@ -80,7 +80,9 @@ repeatedCodes.products[1].codigo='1';
 assert(api.inspect(repeatedCodes).messages.some(x=>x.message.includes('Códigos numéricos duplicados')));
 assert.equal(ctx.save(),true);
 ctx.render('seguranca');
-assert(ctx.content.innerHTML.includes('Execute a verificação da estrutura'));
+assert(ctx.content.innerHTML.includes('Ainda não consultado nesta sessão'));
+assert(ctx.content.innerHTML.includes('Cópia semanal no Supabase'));
+assert(!ctx.content.innerHTML.includes('Estrutura do backup verificada (simulação)'));
 assert.equal(saved,1);
 
 // Executar o módulo real de nuvem com requests simulados para verificar bloqueios.
@@ -123,6 +125,14 @@ const cloud=cloudCtx.window.__cloudTest;
 cloudCtx.window.oficinaCloud.session={at:'valid-token',rt:'refresh',exp:Date.now()+1200000,id:'user-1'};
 cloudCtx.window.oficinaCloud.userId='user-1';
 (async()=>{
+  ctx.window.oficinaCloud={active:true,paused:false,session:{id:'test-user'},status:'Sincronizado',
+    weeklyBackupStatus:async()=>({agendamento_ativo:true}),
+    listWeeklyBackups:async()=>[{criado_em:'2026-11-11T15:07:29Z'}]};
+  await api.refreshBackupStatus();
+  assert(ctx.content.innerHTML.includes('1 cópia(s) encontrada(s)'));
+  assert(ctx.content.innerHTML.includes('Agendamento ativo'));
+  assert(!ctx.content.innerHTML.includes('restauração verificada'));
+  assert.equal(JSON.stringify(db),baseline,'Consulta do Supabase não altera o banco local');
   await assert.rejects(cloud.sendLocal(),/NÃO sobrescreve registros existentes/);
   assert.equal(calls.filter(x=>x.method==='POST').length,0,'Não pode sobrescrever dados existentes');
   assert.equal(confirms,0,'Não deve solicitar confirmação de sobrescrita');
