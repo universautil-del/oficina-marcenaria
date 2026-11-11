@@ -15,8 +15,8 @@
  const cleanText=(x,len=160)=>String(x??'').trim().slice(0,len);
  const getProject=pid=>(db.projects||[]).find(p=>p.id===pid);
  const totalParts=parts=>parts.reduce((n,p)=>n+p.qty,0);
- const totalArea=parts=>Math.round(parts.reduce((n,p)=>n+p.length*p.width*p.qty/1000000,0)*1000)/1000;
- const round3=n=>Math.round(n*1000)/1000;
+ const totalArea=parts=>Math.round(parts.reduce((n,p)=>n+p.length*p.width*p.qty/1000000,0)*100000)/100000;
+ const round3=n=>Math.round(n*100000)/100000;
  function normalizeParts(parts){
   if(!Array.isArray(parts)||parts.length===0)throw Error('Importe uma lista de peças antes de vinculá-la a um projeto.');
   if(parts.length>MAX_PARTS)throw Error('A lista contém mais de 1.200 tipos de peça. Divida a obra em ambientes antes de salvar.');
@@ -118,7 +118,7 @@
  function projectCutlistStats(project){
   const s=project.cutlist?.summary;
   if(!s)return '<span class="ua-cut-pending">Sem lista SketchUp vinculada</span>';
-  return '<div class="ua-cut-stats"><span>'+safe(s.pecas)+' peças</span><span>'+safe(s.tipos)+' tipos</span><span>'+safe(dec(s.areaM2))+' m²</span><span>Revisão pendente</span></div>';
+  return '<div class="ua-cut-stats"><span>'+safe(s.pecas)+' peças</span><span>'+safe(s.tipos)+' tipos</span><span>'+safe(Number(s.areaM2).toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:5}))+' m²</span><span>Revisão pendente</span></div>';
  }
  function panel(){
   const host=content.querySelector('#uaProjectBridgePanel');
