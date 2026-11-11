@@ -39,12 +39,16 @@ assert.equal(clean.warnings,0);
 assert.equal(clean.passed,true);
 ctx.render('seguranca');
 assert(ctx.content.innerHTML.includes('Segurança e confiabilidade'));
-assert(ctx.content.innerHTML.includes('não libera automaticamente o uso comercial'));
+assert(ctx.content.innerHTML.includes('Prévia de testes 1.2'));
+assert(ctx.content.innerHTML.includes('Fazer backup criptografado'));
+assert(!ctx.content.innerHTML.includes('Exportar backup JSON'));
+assert(ctx.content.innerHTML.includes('etapas conferidas'));
 assert(ctx.content.innerHTML.includes('Verificar conexão Supabase'));
 assert.equal(JSON.stringify(db),baseline,'Diagnóstico nunca altera dados');
 api.checkBackup();
 assert.equal(JSON.stringify(db),baseline);
-assert(ctx.content.innerHTML.includes('Estrutura JSON validada'));
+assert(ctx.content.innerHTML.includes('Estrutura conferida em memória'));
+assert(ctx.content.innerHTML.includes('não é um backup salvo'));
 const clone=JSON.parse(baseline);
 clone.products[0].estoque=-2;
 assert(api.inspect(clone).messages.some(x=>x.message.includes('estoque negativo')));
@@ -76,7 +80,7 @@ repeatedCodes.products[1].codigo='1';
 assert(api.inspect(repeatedCodes).messages.some(x=>x.message.includes('Códigos numéricos duplicados')));
 assert.equal(ctx.save(),true);
 ctx.render('seguranca');
-assert(ctx.content.innerHTML.includes('Teste a estrutura do backup'));
+assert(ctx.content.innerHTML.includes('Execute a verificação da estrutura'));
 assert.equal(saved,1);
 
 // Executar o módulo real de nuvem com requests simulados para verificar bloqueios.
