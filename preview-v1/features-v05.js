@@ -48,9 +48,10 @@ function v5ProjectModal(pid=''){
    const client=db.clients.find(c=>c.id===v.clientId);
    const data={...old,id:old.id||id(),number:old.number||db.seq.project,nome:name,clientId:client?.id||'',clientNome:client?.nome||'',ambiente:v.ambiente.trim(),material:v.material.trim(),acabamento:v.acabamento.trim(),status:v.status,prazo:v.prazo,largura:Number(v.largura)||0,altura:Number(v.altura)||0,profundidade:Number(v.profundidade)||0,optionA:v.optionA.trim(),optionB:v.optionB.trim(),priceA:round(v.priceA),priceB:round(v.priceB),observacoes:v.observacoes,checklist};
    const image=dlg.dataset.v5Image;if(image)data.image=image;
-   const beforeProjects=db.projects,beforeSeq={...db.seq},beforeProject=pid?{...old}:null;
-   if(pid)Object.assign(old,data);else{db.projects=[...db.projects,data];db.seq.project=Number(db.seq.project||1)+1;}
-   if(save()===false){db.projects=beforeProjects;db.seq=beforeSeq;if(pid)Object.assign(old,beforeProject);throw Error('Não foi possível salvar o projeto. Nenhum dado foi alterado.');}
+   const beforeProjects=db.projects,beforeSeq={...db.seq};
+   if(pid)db.projects=db.projects.map(p=>p.id===pid?data:p);
+   else{db.projects=[...db.projects,data];db.seq.project=Number(db.seq.project||1)+1;}
+   if(save()===false){db.projects=beforeProjects;db.seq=beforeSeq;throw Error('Não foi possível salvar o projeto. Nenhum dado foi alterado.');}
    return true;
  },dlg=>{
    const image=dlg.querySelector('#v5ProjectImage');image.addEventListener('change',async()=>{
