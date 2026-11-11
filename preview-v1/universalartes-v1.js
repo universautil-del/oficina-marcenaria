@@ -168,6 +168,17 @@
         ' · '+linkedQuotes.length+' orçamento(s) · '+linkedOrders.length+' pedido(s).';
     };
     showProjectContext(null);
+    // Ação 'Assistente' dentro de Projetos/SketchUp usa o vínculo do projeto
+    // sem repetir a seleção do cliente, materiais e medidas.
+    const requestedProject=window.universaArtAssistantProjectId;
+    if(requestedProject&&projects.some(p=>p.id===requestedProject)){
+      const selector=form.elements.namedItem('selectedProject');
+      if(selector){
+        selector.value=requestedProject;
+        selector.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      delete window.universaArtAssistantProjectId;
+    }
     document.getElementById('uaMetricApply').addEventListener('click',()=>{
       const input=document.getElementById('uaMetricValue');
       const value=String(input.value||'').trim().replace(/\s/g,'').replace(',','.');
