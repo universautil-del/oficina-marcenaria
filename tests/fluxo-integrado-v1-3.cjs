@@ -148,5 +148,35 @@ assert(manual.onSubmit({valor:'35',kind:'pagar',descricao:'Teste',dueDate:'2026-
 const purchaseCode=cut(extra,'function purchaseModal(','function receivePurchase(');
 assert(purchaseCode.includes('previousPurchases')&&purchaseCode.includes('previousTransactions'));
 assert(purchaseCode.includes('db.seq=previousSeq'));
+assert.throws(()=>manual.onSubmit({valor:'Infinity',kind:'pagar',descricao:'Inválido',dueDate:'2026-11-12'}),/inválid/);
+const collect=cut(src,'function collectSaleItems(','function calcSale(');
+vm.runInNewContext(collect,ctx,{timeout:1000});
+const fakeRow={
+ querySelector:q=>({value:({
+  '[data-item-product]':'m1','[data-item-desc]':'Chapa de MDF',
+  '[data-item-qty]':'1','[data-item-price]':'não-número'
+ })[q]})
+};
+const fakeDlg={querySelectorAll:()=>[fakeRow]};
+assert.throws(()=>ctx.collectSaleItems(fakeDlg),/valores/,'Preço inválido deve ser bloqueado');
+vm.runInNewContext(cut(extra,'function duplicateQuote(','function shareQuote('),ctx,{timeout:1000});
+const oldQuoteCount=db.quotes.length;
+const nextQ=db.seq.quote;
+saveOK=false;
+ctx.duplicateQuote(quote.id);
+assert.equal(db.quotes.length,oldQuoteCount);
+assert.equal(db.seq.quote,nextQ);
+saveOK=true;
+ctx.duplicateQuote(quote.id);
+assert.equal(db.quotes.length,oldQuoteCount+1);
+assert.equal(db.quotes.at(-1).status,'aberto');
+assert.equal(db.quotes.at(-1).projectId,'proj1');
+assert(db.quotes.at(-1).number!==db.orders[0].number);
+const oldProjectCount=db.projects.length;
+const fsrc=read('preview-v1/features-v05.js');
+vm.runInNewContext(cut(fsrc,'function v5DeleteProject(','function v5Checklist('),ctx,{timeout:1000});
+ctx.v5DeleteProject('proj1');
+assert.equal(db.projects.length,oldProjectCount,'Não excluir projeto vinculado ao orçamento');
+assert(alerts.some(v=>v.includes('vinculado')),'Explicar por que exclusão foi bloqueada');
 assert(saveCalls>5&&confirmations>0);
 console.log('OK: Projeto→Orçamento→Pedido→Parcelas→Produção, mesma numeração, precisão em estoque e rollback financeiro.');
