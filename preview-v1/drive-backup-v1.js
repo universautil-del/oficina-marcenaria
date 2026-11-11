@@ -180,20 +180,21 @@
  function renderPage(){
   // Preserva campo de senha nesta atualização da tela, mas nunca o grava no banco.
   const typed=document.querySelector('#uaDrivePass')?.value||'';
+  const advancedOpen=!!document.querySelector('#uaDriveAdvanced')?.open;
   const connected=!!hasToken();
   const list=files.map(f=>'<tr><td>'+safe(f.name)+'</td><td>'+safe(new Date(f.createdTime).toLocaleString('pt-BR'))+
     '</td><td><button type="button" class="btn" data-drive-action="download" data-fileid="'+safe(f.id)+'">Baixar</button> '+
     '<button type="button" class="btn" data-drive-action="restore" data-fileid="'+safe(f.id)+'">Restaurar</button></td></tr>').join('');
   content.innerHTML=
    '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · PROTEÇÃO DE DADOS</div>'+
-   '<h2>Backups no Google Drive</h2><p>Salve uma cópia criptografada dos cadastros, projetos, pedidos e finanças.</p></div></div>'+
-   '<section class="ua-section ua-drive-panel"><h3>1. Backup criptografado</h3>'+
+   '<h2>Backup e recuperação · Google Drive</h2><p>Primeiro faça uma cópia criptografada. Depois salve no Google Drive manualmente ou conecte sua conta.</p></div></div>'+
+   '<section class="ua-section ua-drive-panel"><h3>1. Fazer backup agora — sem configuração</h3>'+
    '<p class="muted">A senha protege o conteúdo com AES-256-GCM antes de gerar o arquivo. Ela não é salva pelo sistema. <strong>Sem essa senha, não será possível recuperar o backup.</strong></p>'+
    '<label for="uaDrivePass">Senha forte do backup (mínimo de 12 caracteres)</label><input id="uaDrivePass" type="password" autocomplete="new-password" minlength="12" maxlength="200" placeholder="Crie e guarde uma senha para recuperar os arquivos">'+
-   '<div class="ua-drive-actions"><button type="button" class="btn primary" data-drive-action="export">Baixar backup criptografado</button>'+
-   '<button type="button" class="btn" data-drive-action="open-drive">Abrir Google Drive para enviar manualmente</button></div>'+
-   '<p class="muted small">A opção manual funciona sem criar um projeto Google Cloud. Baixe o arquivo .uaenc.json e envie para a pasta de backups da sua conta Google.</p></section>'+
-   '<section class="ua-section ua-drive-panel gap-top"><h3>2. Enviar diretamente ao Google Drive</h3>'+
+   '<div class="ua-drive-actions"><button type="button" class="btn primary" data-drive-action="export">1. Baixar backup criptografado</button>'+
+   '<button type="button" class="btn" data-drive-action="open-drive">2. Abrir Google Drive e enviar o arquivo</button></div>'+
+   '<p class="muted small">Funciona agora, sem Client ID: baixe o arquivo .uaenc.json, abra o Google Drive e use Novo → Upload de arquivo. Guarde sua senha separadamente. O navegador não consegue enviar automaticamente arquivos locais sem uma autorização Google.</p></section>'+
+   '<details id="uaDriveAdvanced" class="ua-section ua-drive-panel gap-top" '+(connected||advancedOpen?'open':'')+'><summary><strong>Opcional — conectar Google Drive e enviar direto</strong> <small>Requer Client ID OAuth no Google Cloud</small></summary><div class="ua-drive-advanced"><h3>2. Conexão direta com o Google</h3>'+
    '<p class="muted">Opcional. Requer configurar uma vez um OAuth Client ID do Google Cloud para este site. A autorização usa somente o escopo <code>drive.file</code>, sem acesso a todos os seus arquivos.</p>'+
    '<label for="uaDriveClientId">Google OAuth Client ID (público, nunca segredo)</label><input id="uaDriveClientId" autocomplete="off" value="'+safe(getClientId())+'" placeholder="123456789-xxxx.apps.googleusercontent.com">'+
    '<div class="ua-drive-actions"><button class="btn" type="button" data-drive-action="save-client">Salvar Client ID</button>'+
@@ -201,14 +202,14 @@
    '<button class="btn primary" type="button" data-drive-action="upload" '+(connected?'':'disabled')+'>Salvar backup no Drive</button>'+
    '<button class="btn" type="button" data-drive-action="list" '+(connected?'':'disabled')+'>Listar backups</button></div>'+
    '<p id="uaDriveStatus" class="ua-drive-status" role="status" aria-live="polite">'+safe(notice||'Nenhum arquivo foi enviado ainda.')+'</p>'+
-   '<div class="ua-drive-box"><strong>Configuração:</strong> habilite a Google Drive API no Google Cloud, crie um cliente OAuth tipo <em>Aplicativo Web</em> e cadastre a origem JavaScript <code>https://universautil-del.github.io</code>. Configure a tela de consentimento e seus usuários de teste, se necessário. <strong>Não cole client secret aqui.</strong></div>'+
+   '<div class="ua-drive-box"><strong>Como ativar:</strong> <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">abrir Google Cloud</a>; ativar <strong>Google Drive API</strong>, criar <strong>OAuth Client ID → Aplicativo Web</strong> e configurar a origem JavaScript <code>https://universautil-del.github.io</code> (sem caminho). Configure o consentimento e o usuário de teste. Cole <strong>somente o Client ID</strong> e clique em Conectar. Caso não queira configurar isso, use o backup manual acima.</div>'+
    (list?'<div class="ua-table-wrap"><table class="ua-table"><thead><tr><th>Arquivo</th><th>Data</th><th>Ações</th></tr></thead><tbody>'+list+'</tbody></table></div>':'')+
-   '</section>'+
-   '<section class="ua-section ua-drive-panel gap-top"><h3>3. Recuperar cópia baixada</h3>'+
-   '<p class="muted">Selecione um arquivo criptografado .uaenc.json. A restauração exige a senha, confirmação e cria antes um backup local do estado atual.</p>'+
+   '</div></details>'+
+   '<section class="ua-section ua-drive-panel gap-top"><h3>3. Verificar ou restaurar um backup</h3>'+
+   '<p class="muted">Escolha o arquivo .uaenc.json e informe a senha acima. Use Verificar para confirmar que o arquivo abre <strong>sem alterar nenhum registro</strong>. Restaure somente em ambiente de testes e após salvar um backup adicional.</p>'+
    '<input id="uaDriveImport" type="file" accept=".json,application/json">'+
-   '<div class="ua-drive-actions"><button type="button" class="btn" data-drive-action="import">Validar e restaurar backup local</button></div>'+
-   '<p class="muted small">Não há backup automático diário nesta versão estática. Uma rotina agendada exige serviço no servidor e autorização segura do Google.</p></section>';
+   '<div class="ua-drive-actions"><button type="button" class="btn" data-drive-action="verify">Verificar arquivo (não altera dados)</button><button type="button" class="btn" data-drive-action="import">Restaurar backup local</button></div>'+
+   '<p class="muted small">Backups automáticos diários ainda não estão ativos: o site está hospedado no GitHub Pages e não executa tarefas em segundo plano. A versão 1.2 permanece em homologação.</p></section>';
   const passField=document.querySelector('#uaDrivePass');
   if(passField)passField.value=typed;
  }
