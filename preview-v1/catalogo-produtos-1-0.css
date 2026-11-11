@@ -7,3 +7,10 @@ dialog.ua-product-dialog .ua-product-finished #uaBomCost{padding:10px 0 0;color:
 dialog.ua-product-dialog .ua-product-component select,dialog.ua-product-dialog .ua-product-component input{background:#fff}
 dialog.ua-product-dialog .ua-product-component button{min-height:39px}
 @media(max-width:600px){.ua-product-filter{display:flex}.ua-product-filter select{flex:1;min-width:0}dialog.ua-product-dialog .ua-product-grid #uaProductTypeHelp{grid-column:1}}
+
+/* Entrada de Materiais: tipo fixo e saldo inicial controlado no recebimento. */
+dialog.ua-product-dialog [aria-label="Tipo de produto: matéria-prima"]{background:#f0f7ef;border-color:#bcd8c5;color:#20553d;font-weight:700;cursor:default}
+dialog.ua-product-dialog .ua-stock-from-purchase{padding:12px 14px;background:#f8fbf8;border:1px dashed #aecdb6;border-radius:10px}
+dialog.ua-product-dialog .ua-stock-from-purchase strong{color:#23563f}
+dialog.ua-product-dialog .ua-stock-from-purchase p{margin:5px 0 0;line-height:1.5}
+dialog.ua-product-dialog #uaMaterialPreset{background:#fff;border:1px solid #cbded2;border-radius:9px}
