@@ -11,6 +11,7 @@ const db={products:[],stockMovements:[],seq:{quote:1,order:1,productCode:1},quot
 const contentMock={innerHTML:'',querySelector(sel){return sel==='#uaProductTypeFilter'?{onchange:null}:null}};
 const ctx={
  window:{},db,content:contentMock,search:{produtos:''},lowStockOnly:false,
+ productsView:()=>{},productModal:()=>{},
  openModal:(title,fields,onSubmit,after)=>{modal={title,fields,onSubmit,after};return{}},
  esc:v=>String(v??'').replace(/[&<>"]/g,''),
  id:(()=>{let i=1;return()=>'id'+i++})(),
