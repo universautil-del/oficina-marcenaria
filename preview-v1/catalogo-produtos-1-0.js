@@ -158,7 +158,8 @@
    '<label data-ua-raw>Largura da chapa (mm), opcional<input name="chapaLarguraMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaLarguraMm??'')+'"></label>'+
    '<label data-ua-raw>Estoque mínimo<input name="minimo" type="number" min="0" step="0.001" value="'+Number(old.minimo||0)+'"></label>'+
    '<label data-ua-raw>Custo unitário (R$)<input name="custo" type="number" min="0" step="0.01" value="'+Number(old.custo||0)+'"></label>'+
-   '<label>Preço de venda (R$)<input name="preco" type="number" min="0" step="0.01" value="'+Number(old.preco||0)+'"></label>'+
+   (entryMaterial?'<input type="hidden" name="preco" value="0">':
+   '<label>Preço de venda (R$)<input name="preco" type="number" min="0" step="0.01" value="'+Number(old.preco||0)+'"></label>')+
    (entryMaterial?
     '<div class="ua-product-wide ua-stock-from-purchase" data-ua-raw><strong>Saldo inicial: 0</strong><p class="muted small">O estoque será atualizado quando você confirmar o recebimento em Entrada de Materiais. Não lance a quantidade duas vezes.</p><input type="hidden" name="estoque" value="0"></div>':
     '<label class="ua-product-wide" data-ua-raw>'+(pid?'Saldo em estoque':'Saldo inicial de estoque')+
