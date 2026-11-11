@@ -44,4 +44,21 @@ begin
   raise exception 'Revisão mudou após rejeitar gravações inválidas';
  end if;
 end $$;
+-- Novos códigos e duplicação numérica: 0999 equivale a 999.
+do $$
+begin
+ perform public.ua_validar_documento('{"version":3,"clients":[],"products":[{"id":"m1000","tipo":"materia","codigo":"1000","estoque":0},{"id":"m9999","tipo":"materia","codigo":"9999","estoque":0}],"quotes":[],"orders":[],"transactions":[],"stockMovements":[]}'::jsonb);
+end $$;
+do $$
+begin
+ perform public.ua_validar_documento('{"version":3,"clients":[],"products":[{"id":"m1","tipo":"materia","codigo":"999","estoque":0},{"id":"m2","tipo":"materia","codigo":"0999","estoque":0}],"quotes":[],"orders":[],"transactions":[],"stockMovements":[]}'::jsonb);
+ raise exception 'Código equivalente duplicado foi aceito';
+exception when invalid_parameter_value then null;
+end $$;
+do $$
+begin
+ perform public.ua_validar_documento('{"version":3,"clients":[],"products":[{"id":"m1","tipo":"materia","codigo":"1000","estoque":0},{"id":"m2","tipo":"materia","codigo":"1000","estoque":0}],"quotes":[],"orders":[],"transactions":[],"stockMovements":[]}'::jsonb);
+ raise exception 'Código 1000 duplicado foi aceito';
+exception when invalid_parameter_value then null;
+end $$;
 reset role;
