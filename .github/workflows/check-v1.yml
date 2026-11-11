@@ -6,6 +6,7 @@ on:
       - 'tests/v1-smoke.cjs'
       - 'tests/security-audit.cjs'
       - 'tests/product-excel-v1.cjs'
+      - 'tests/catalogo-produtos-1-0.cjs'
       - 'tests/material-ui-9999.cjs'
       - 'tests/entradas-seguras-v1-3.cjs'
       - 'tests/compact-entities-v1.cjs'
@@ -51,7 +52,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar sintaxe, CSV, cálculo e isolamento da prévia
-        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs && node tests/product-excel-v1.cjs && node tests/material-ui-9999.cjs && node tests/entradas-seguras-v1-3.cjs && node tests/compact-entities-v1.cjs && node tests/unified-contacts-v1.cjs && node tests/cep-autofill-v1.cjs && node tests/assistente-integrado-v1.cjs && node tests/logo-upload-oficina-1-0.cjs && node tests/documentos-padrao-1-0.cjs && node tests/launch-readiness-v1.cjs && node tests/diagnostico-oficina-1-0.cjs && node tests/opencutlist-components-v1.cjs && node tests/sketchup-project-bridge-v1.cjs && node tests/fluxo-integrado-v1-3.cjs && node tests/integracoes-produtividade-1-0.cjs && node tests/secure-auth-v1.cjs && node tests/secure-gate-dom-v1.cjs && node tests/drive-backup-v1.cjs && node tests/backup-supabase-semanal-ui.cjs && node tests/release-v1-2.cjs && node tests/release-v1-0-secure.cjs
+        run: node tests/v1-smoke.cjs && node tests/security-audit.cjs && node tests/product-excel-v1.cjs && node tests/catalogo-produtos-1-0.cjs && node tests/material-ui-9999.cjs && node tests/entradas-seguras-v1-3.cjs && node tests/compact-entities-v1.cjs && node tests/unified-contacts-v1.cjs && node tests/cep-autofill-v1.cjs && node tests/assistente-integrado-v1.cjs && node tests/logo-upload-oficina-1-0.cjs && node tests/documentos-padrao-1-0.cjs && node tests/launch-readiness-v1.cjs && node tests/diagnostico-oficina-1-0.cjs && node tests/opencutlist-components-v1.cjs && node tests/sketchup-project-bridge-v1.cjs && node tests/fluxo-integrado-v1-3.cjs && node tests/integracoes-produtividade-1-0.cjs && node tests/secure-auth-v1.cjs && node tests/secure-gate-dom-v1.cjs && node tests/drive-backup-v1.cjs && node tests/backup-supabase-semanal-ui.cjs && node tests/release-v1-2.cjs && node tests/release-v1-0-secure.cjs
       - name: Instalar leitor Excel apenas para testar XLSX real
         run: npm install --no-save --ignore-scripts --no-audit --no-fund exceljs@4.4.0
       - name: Testar leitura de planilha real
