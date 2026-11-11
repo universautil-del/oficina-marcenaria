@@ -50,38 +50,106 @@ begin
  -- Números duplicados e identificadores duplicados nas coleções principais.
  foreach k in array array['clients','products','quotes','orders','transactions','stockMovements'] loop
    if exists (
-     select 1 from jsonb_array_elements(p_documento->k) row
-     group by row->>'id' having count(*)>1
+     select 1 from jsonb_array_elements(p_documento->k) as e(value)
+     group by e.value->>'id' having count(*)>1
    ) then raise exception 'Identificadores duplicados: %',k using errcode='22023'; end if;
  end loop;
  foreach k in array array['quotes','orders'] loop
    if exists(
-    select 1 from jsonb_array_elements(p_documento->k) row
-    where row ? 'number'
-    group by row->>'number' having count(*)>1
+    select 1 from jsonb_array_elements(p_documento->k) as e(value)
+    where e.value ? 'number'
+    group by e.value->>'number' having count(*)>1
    ) then raise exception 'Números duplicados: %',k using errcode='22023';end if;
  end loop;
  if exists (
-  select 1 from jsonb_array_elements(p_documento->'products') row
-  where row->>'tipo'='materia' and
-   (row->>'estoque' is null or not (row->>'estoque' ~ '^[0-9]+(\\.[0-9]+)?$')
-    or (row->>'estoque')::numeric < 0)
+  select 1 from jsonb_array_elements(p_documento->'products') as e(value)
+  where e.value->>'tipo'='materia' and
+   (case when e.value->>'estoque' ~ '^[0-9]+([.][0-9]+)?
  ) then raise exception 'Material com estoque inválido' using errcode='22023';end if;
  if exists (
-  select 1 from jsonb_array_elements(p_documento->'products') row
-  where row->>'codigo' ~ '^[0-9]{1,3}$' and (row->>'codigo')::integer between 1 and 999
-  group by (row->>'codigo')::integer having count(*)>1
+  select 1 from jsonb_array_elements(p_documento->'products') as e(value)
+  where e.value->>'codigo' ~ '^[0-9]{1,3}$' and (e.value->>'codigo')::integer between 1 and 999
+  group by (e.value->>'codigo')::integer having count(*)>1
  ) then raise exception 'Código de material duplicado' using errcode='22023';end if;
- for item in select value from jsonb_array_elements(p_documento->'transactions') loop
-   if not (coalesce(item->>'valor','') ~ '^[0-9]+(\\.[0-9]+)?$') then
+ for item in select e.value from jsonb_array_elements(p_documento->'transactions') as e(value) loop
+   if not (coalesce(item->>'valor','') ~ '^[0-9]+([.][0-9]+)?$') then
      raise exception 'Valor de conta inválido' using errcode='22023';
    end if;
    if exists (
-     select 1 from jsonb_array_elements(coalesce(item->'payments','[]'::jsonb)) pagamento
-     where coalesce(pagamento->>'valor','') !~ '^[0-9]+(\\.[0-9]+)?$'
+     select 1 from jsonb_array_elements(coalesce(item->'payments','[]'::jsonb)) as pag(value)
+     where coalesce(pag.value->>'valor','') !~ '^[0-9]+([.][0-9]+)?
    ) then raise exception 'Valor de pagamento inválido' using errcode='22023';end if;
-   if (select coalesce(sum((pagamento->>'valor')::numeric),0)
-       from jsonb_array_elements(coalesce(item->'payments','[]'::jsonb)) pagamento)
+   ) then raise exception 'Valor de pagamento inválido' using errcode='22023';end if;
+   if (select coalesce(sum((pag.value->>'valor')::numeric),0)
+       from jsonb_array_elements(coalesce(item->'payments','[]'::jsonb)) as pag(value))
+      > (item->>'valor')::numeric+0.02 then
+     raise exception 'Pagamento superior ao saldo da conta' using errcode='22023';
+   end if;
+ end loop;
+end $$;
+revoke all on function public.ua_validar_documento(jsonb) from public,anon;
+grant execute on function public.ua_validar_documento(jsonb) to authenticated;
+
+-- A transação do PostgreSQL compara a versão esperada e grava integralmente,
+-- sem sobrescrever alterações feitas por outro aparelho.
+create or replace function public.ua_atualizar_documento(
+ p_documento jsonb,p_revisao_esperada bigint
+) returns bigint language plpgsql security invoker set search_path=''
+as $$
+declare v_revisao bigint;
+begin
+ if (select auth.uid()) is null then
+  raise exception 'Sessão inválida' using errcode='28000';
+ end if;
+ perform public.ua_validar_documento(p_documento);
+ update public.universalartes_preview_backups
+ set data=p_documento,revision=revision+1,updated_at=now()
+ where user_id=(select auth.uid()) and revision=p_revisao_esperada
+ returning revision into v_revisao;
+ if v_revisao is null then
+  raise exception 'Conflito de revisão: outro aparelho alterou os dados' using errcode='P0001';
+ end if;
+ return v_revisao;
+end $$;
+revoke all on function public.ua_atualizar_documento(jsonb,bigint) from public,anon;
+grant execute on function public.ua_atualizar_documento(jsonb,bigint) to authenticated;
+
+-- Para o primeiro uso da conta; INSERT único pela chave de usuário.
+create or replace function public.ua_iniciar_documento(p_documento jsonb)
+returns bigint language plpgsql security invoker set search_path=''
+as $$
+begin
+ if (select auth.uid()) is null then
+  raise exception 'Sessão inválida' using errcode='28000';
+ end if;
+ perform public.ua_validar_documento(p_documento);
+ insert into public.universalartes_preview_backups(user_id,data,revision)
+ values ((select auth.uid()),p_documento,1);
+ return 1;
+exception when unique_violation then
+ raise exception 'Conta já possui dados; não será sobrescrita' using errcode='P0001';
+end $$;
+revoke all on function public.ua_iniciar_documento(jsonb) from public,anon;
+grant execute on function public.ua_iniciar_documento(jsonb) to authenticated;
+commit;
+
+     then (e.value->>'estoque')::numeric < 0 else true end)
+ ) then raise exception 'Material com estoque inválido' using errcode='22023';end if;
+ if exists (
+  select 1 from jsonb_array_elements(p_documento->'products') as e(value)
+  where e.value->>'codigo' ~ '^[0-9]{1,3}$' and (e.value->>'codigo')::integer between 1 and 999
+  group by (e.value->>'codigo')::integer having count(*)>1
+ ) then raise exception 'Código de material duplicado' using errcode='22023';end if;
+ for item in select e.value from jsonb_array_elements(p_documento->'transactions') as e(value) loop
+   if not (coalesce(item->>'valor','') ~ '^[0-9]+([.][0-9]+)?$') then
+     raise exception 'Valor de conta inválido' using errcode='22023';
+   end if;
+   if exists (
+     select 1 from jsonb_array_elements(coalesce(item->'payments','[]'::jsonb)) as pag(value)
+     where coalesce(pag.value->>'valor','') !~ '^[0-9]+([.][0-9]+)?$'
+   ) then raise exception 'Valor de pagamento inválido' using errcode='22023';end if;
+   if (select coalesce(sum((pag.value->>'valor')::numeric),0)
+       from jsonb_array_elements(coalesce(item->'payments','[]'::jsonb)) as pag(value))
       > (item->>'valor')::numeric+0.02 then
      raise exception 'Pagamento superior ao saldo da conta' using errcode='22023';
    end if;
