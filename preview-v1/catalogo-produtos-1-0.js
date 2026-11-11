@@ -151,6 +151,7 @@
    '<p class="muted small">Informe as matérias-primas utilizadas para fabricar uma unidade. Cada linha será considerada na reserva e na baixa do pedido.</p>'+
    '<div id="uaBomRows"></div>'+
    '<button class="btn small" type="button" id="uaAddBomRow">+ Adicionar matéria-prima</button>'+
+   '<button class="btn small" type="button" id="uaBomNewMaterial" style="margin-left:8px">+ Cadastrar matéria-prima</button>'+
    '<p id="uaBomCost" class="muted small" role="status" aria-live="polite"></p></section>';
   return openModal(pid?'Editar produto':'Produtos — novo cadastro',fields,(v,dialog)=>{
    const kind=existing?.tipo||String(v.tipo||dialog?.querySelector('[name="tipo"]')?.value||type);
@@ -203,6 +204,21 @@
    typeEl?.addEventListener('change',()=>refreshType(dialog));
    const add=dialog.querySelector('#uaAddBomRow');
    if(add)add.onclick=()=>addComponentRow(dialog);
+   const quick=dialog.querySelector('#uaBomNewMaterial');
+   if(quick)quick.onclick=()=>{
+    const before=new Set((db.products||[]).map(p=>String(p.id)));
+    const materialDlg=productModal('','materia');
+    materialDlg?.addEventListener('close',()=>{
+     const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
+     if(!added||!dialog.isConnected)return;
+     dialog.querySelectorAll('[data-component-material]').forEach(select=>{
+      if(![...select.options].some(opt=>opt.value===String(added.id)))
+       select.add(new Option(added.nome,added.id));
+     });
+     addComponentRow(dialog,{materialId:added.id,quantidade:1});
+     updateComponentCost(dialog);
+    },{once:true});
+   };
    (Array.isArray(old.components)?old.components:[]).forEach(item=>addComponentRow(dialog,item));
    refreshType(dialog);
    dialog.querySelector('[name="nome"]')?.focus();
