@@ -79,7 +79,7 @@
     const usedCodes=new Set();
     for(const p of products){
       const c=String(p.codigo||'').trim();
-      if(!/^\\d{1,3}$/.test(c))continue;
+      if(!/^\d{1,3}$/.test(c))continue;
       const n=Number(c);if(n<1||n>999)continue;
       if(usedCodes.has(n)){messages.push({severity:'erro',message:'Códigos numéricos duplicados no cadastro de materiais.'});break}
       usedCodes.add(n);
