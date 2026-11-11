@@ -113,6 +113,7 @@ assert(modal.fields.includes('name="espessuraMm"'));
 assert(modal.fields.includes('name="chapaComprimentoMm"'));
 assert(modal.fields.includes('name="chapaLarguraMm"'));
 assert(modal.fields.includes('Saldo inicial: 0'),'Não permite contagem dupla do recebimento');
+assert(modal.fields.includes('<input type="hidden" name="preco" value="0">'),'Entrada de material não exige preço de venda');
 const newMdf={...values,tipo:'materia',nome:'MDF 25 mm',categoria:'Chapas MDF',unidade:'chapa',
  estoque:'150',espessuraMm:'25',chapaComprimentoMm:'2750',chapaLarguraMm:'1850'};
 assert.throws(()=>modal.onSubmit({...newMdf,tipo:'acabado'},dialog()),/somente matérias-primas/);
