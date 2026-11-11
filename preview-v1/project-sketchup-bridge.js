@@ -187,7 +187,7 @@
   render('sketchup');
  }
  document.addEventListener('click',e=>{
-  const btn=e.target?.closest?.('[data-ua-cut-action],[data-action^="ua-cutlist-"]');
+  const btn=e.target?.closest?.('[data-ua-cut-action],[data-action^="ua-cutlist-"],[data-action="ua-project-quote"]');
   if(!btn)return;
   try{
    const action=btn.dataset.uaCutAction||btn.dataset.action;
@@ -202,6 +202,11 @@
     const project=newProjectFromCutlist(name,clientId,cutlistFromImporter());
     alert('Projeto '+project.nome+' criado com a lista de peças. Revise as medidas externas.');
     location.hash='projetos';render('projetos');
+   }else if(action==='ua-project-quote'){
+    const p=getProject(btn.dataset.id);
+    if(!p)throw Error('Projeto não encontrado.');
+    if(!(db.clients||[]).length)throw Error('Cadastre um cliente antes de fazer um orçamento.');
+    openSales('quote','',p.id);
    }else if(action==='ua-cutlist-open')openForProject(btn.dataset.id);
    else if(action==='ua-cutlist-view')projectListModal(btn.dataset.id);
    else if(action==='ua-cutlist-export'){exportCutlist(btn.dataset.id)}
