@@ -187,8 +187,68 @@
   window.open(url,'_blank','noopener,noreferrer'); // apenas abre, não envia
   return url;
  }
+ function shortagesForOrder(order){
+  if(!order||!Array.isArray(order.materials))return [];
+  const incoming=new Map();
+  list('purchases').filter(p=>p.status==='aberta').forEach(p=>{
+   (p.items||[]).forEach(item=>{
+    incoming.set(item.productId,(incoming.get(item.productId)||0)+Math.max(0,finite(item.quantidade)));
+   });
+  });
+  return order.materials.map(item=>{
+   const product=list('products').find(p=>p.id===item.productId&&p.tipo==='materia');
+   const qty=Math.max(0,finite(item.quantidade));
+   const reserved=product&&typeof reservedQuantity==='function'?Math.max(0,finite(reservedQuantity(item.productId,order.id))):0;
+   const available=product?Math.max(0,finite(product.estoque)-reserved):0;
+   const shortage=Math.max(0,qty-available);
+   const arriving=incoming.get(item.productId)||0;
+   return {
+    productId:item.productId,name:product?.nome||'Material não localizado no cadastro',
+    unit:product?.unidade||'un',needed:qty,available,shortage,arriving,
+    buy:product?Number(Math.max(0,shortage-arriving).toFixed(3)):0,
+    cost:Math.max(0,finite(product?.custo)),missing:!product
+   };
+  }).filter(x=>x.shortage>0.0001);
+ }
+ function showOrderShortage(orderId){
+  const order=list('orders').find(o=>o.id===orderId);
+  if(!order)throw Error('Pedido não encontrado.');
+  const gaps=shortagesForOrder(order);
+  if(!gaps.length)
+   return showEmptyAction('Não foi detectada falta de materiais neste momento. Confira a reserva no pedido.',
+    'Abrir pedidos',()=>goto('pedidos'));
+  const canBuy=gaps.filter(row=>!row.missing&&row.buy>0.0001&&row.cost>0);
+  const needsCost=gaps.filter(row=>!row.missing&&row.buy>0.0001&&!(row.cost>0));
+  const missing=gaps.filter(row=>row.missing);
+  const rows=gaps.map(row=>td(safe(row.name),safe(fmtQty(row.needed))+' '+safe(row.unit),
+   safe(fmtQty(row.available)),safe(fmtQty(row.shortage)),
+   safe(fmtQty(row.arriving)),safe(fmtQty(row.buy)))).join('');
+  const dlg=document.createElement('dialog');
+  dlg.className='large ua-int-dialog';
+  dlg.innerHTML='<form method="dialog"><h2>Materiais para o pedido '+safe(control(order))+'</h2>'+
+   '<p class="muted">Necessidade calculada a partir da composição do pedido. Considerei reservas de outros pedidos e entradas ainda não recebidas.</p>'+
+   '<div class="ua-table-wrap"><table class="ua-table"><thead><tr><th>Matéria-prima</th><th>Necessário</th><th>Disponível</th><th>Falta</th><th>Entrada aberta</th><th>A comprar</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+   (missing.length?'<p class="ua-int-warning">'+missing.length+' componente(s) não estão mais cadastrados. Revise o produto acabado antes da fabricação.</p>':'')+
+   (needsCost.length?'<p class="ua-int-warning">'+needsCost.length+' matéria(s)-prima(s) precisam de custo cadastrado para gerar uma sugestão.</p>':'')+
+   '<p class="muted small">Esta conferência não reserva materiais, não cria compras, não altera estoque e não inicia a produção.</p>'+
+   '<div class="dialog-actions"><button type="button" class="btn" data-ua-int-close>Voltar</button>'+
+   '<button type="button" class="btn" data-ua-int-products>Consultar produtos</button>'+
+   '<button type="button" class="btn primary" data-ua-int-buy'+(canBuy.length?'':' disabled')+'>Preparar entrada dos materiais faltantes</button></div></form>';
+  document.body.append(dlg);
+  dlg.querySelector('[data-ua-int-close]').onclick=()=>dlg.close();
+  dlg.querySelector('[data-ua-int-products]').onclick=()=>{dlg.close();goto('produtos')};
+  dlg.querySelector('[data-ua-int-buy]').onclick=()=>{
+   if(!canBuy.length)return;
+   const prefill=canBuy.map(x=>({productId:x.productId,quantidade:x.buy,custo:x.cost}));
+   dlg.close();purchaseModal(prefill);
+  };
+  dlg.addEventListener('close',()=>dlg.remove(),{once:true});
+  dlg.showModal();
+  return gaps;
+ }
  function quickActions(){
   const low=proposedPurchase(),due=alerts();
+  const pending=list('orders').filter(o=>o.status==='confirmado'&&o.stockState==='pendente'&&shortagesForOrder(o).length).slice(0,5);
   const recent=list('projects').filter(p=>p.cutlist?.parts?.length).slice(-5).reverse();
   const projects=recent.map(p=>'<option value="'+safe(p.id)+'">'+safe(p.nome)+'</option>').join('');
   return '<section class="panel gap-top ua-integrations" id="uaIntegrationsHub">'+
@@ -202,6 +262,9 @@
     '<div><strong>Pedidos → Agenda e financeiro</strong><p>'+due.orders.length+' entrega(s) e '+due.financial.length+' conta(s) com prazo em até 7 dias ou vencido.</p>'+
       '<button class="btn" type="button" data-ua-int-action="orders">Abrir pedidos</button> '+
       '<button class="btn" type="button" data-ua-int-action="finance">Abrir financeiro</button></div>'+
+    '<div><strong>Pedidos → Materiais faltantes</strong><p>'+pending.length+' pedido(s) com componentes que precisam de reposição ou recebimento.</p>'+
+     (pending.length?pending.map(o=>'<button class="btn" type="button" data-ua-int-action="order-shortage" data-id="'+safe(o.id)+'">Conferir '+safe(control(o))+'</button>').join(''):
+      '<p class="muted small">Sem pedidos com falta de componentes.</p>')+'</div>'+
    '</div>'+
    (due.orders.length?'<h4>Próximas entregas e atrasos</h4><div class="ua-int-reminders">'+due.orders.map(o=>
     '<div class="ua-int-reminder"><span><strong>'+safe(control(o))+'</strong> · '+safe(o.clientNome)+' <small>'+safe(shortDate(o.entregaData))+' · '+safe(dueLabel(o.days))+'</small></span>'+
@@ -225,6 +288,16 @@
    if(actions&&!actions.querySelector('[data-ua-int-action="purchase-suggest"]')){
     const btn=document.createElement('button');btn.type='button';btn.className='btn small';btn.dataset.uaIntAction='purchase-suggest';
     btn.textContent='Sugestão de compra';actions.append(btn);
+   }
+  }
+  if(section==='pedidos'||section==='producao'){
+   const pending=list('orders').filter(o=>o.status==='confirmado'&&o.stockState==='pendente'&&shortagesForOrder(o).length);
+   if(pending.length&&!content.querySelector('#uaMissingMaterials')){
+    const html='<section class="panel gap-top ua-integrations" id="uaMissingMaterials">'+
+     '<h3>Materiais faltantes para produção</h3><p class="muted small">Confira as necessidades antes de criar entradas de materiais. Nenhuma compra será lançada automaticamente.</p>'+
+     '<div class="ua-int-reminders">'+pending.slice(0,6).map(o=>'<div class="ua-int-reminder"><strong>'+safe(control(o))+'</strong>'+
+       '<button class="btn small" type="button" data-ua-int-action="order-shortage" data-id="'+safe(o.id)+'">Ver materiais</button></div>').join('')+'</div></section>';
+    content.insertAdjacentHTML('beforeend',html);
    }
   }
   if(section==='projetos'){
@@ -261,11 +334,13 @@
     if(!list('projects').some(p=>p.id===pid))throw Error('Projeto não localizado.');
     button.closest('dialog')?.close();window.universaArtAssistantProjectId=pid;goto('assistente');
    }else if(action==='purchase-suggest')suggestionsModal();
+   else if(action==='order-shortage')showOrderShortage(button.dataset.id);
    else if(action==='orders'||action==='order')goto('pedidos');
    else if(action==='finance')goto('financeiro');
    else if(action==='whatsapp')whatsAppOrder(button.dataset.id);
   }catch(error){alert(error.message||'Integração indisponível. Confira os dados antes de continuar.')}
  });
- window.universaArtIntegracoes={analyzeCutlist,proposedPurchase,alerts,modalForProject,suggestionsModal,whatsAppOrder,quickActions,enhance};
+ window.universaArtIntegracoes={analyzeCutlist,proposedPurchase,alerts,modalForProject,suggestionsModal,
+  shortagesForOrder,showOrderShortage,newQuote,whatsAppOrder,quickActions,enhance};
  if(window.oficinaCloud?.active)enhance(location.hash.slice(1)||'dashboard');
 })();
