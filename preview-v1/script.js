@@ -160,8 +160,24 @@ function productModal(pid='',type='materia'){
  return dlg;
 }
 function adjustStock(pid){const p=getProduct(pid);if(!p||p.tipo!=='materia')return;openModal('Movimentar estoque — '+p.nome,`<div class="form-grid"><label>Operação<select name="operation"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></label><label>Quantidade *<input name="quantidade" type="number" step="0.001" min="0.001" required></label><label class="full">Motivo<input name="motivo" placeholder="Compra, uso avulso, correção..." required></label></div><p class="muted small">Estoque atual: ${dec(p.estoque)} ${esc(p.unidade)}. Reservas existentes são consideradas na saída.</p>`,v=>{
- const delta=(v.operation==='saida'?-1:1)*Number(v.quantidade);if(!Number.isFinite(delta)||delta===0)throw Error('Quantidade inválida.');if(delta<0&&p.estoque+delta<reservedQuantity(pid))throw Error('Estoque insuficiente, considerando pedidos reservados.');p.estoque=round(p.estoque+delta);db.stockMovements.push({id:id(),productId:pid,nome:p.nome,delta:round(delta),date:iso(),note:v.motivo});return save();});}
-function removeProduct(pid){if(db.products.some(p=>p.components?.some(c=>c.materialId===pid))||db.quotes.some(q=>q.items.some(i=>i.productId===pid))||db.orders.some(o=>o.items.some(i=>i.productId===pid)))return alert('Produto utilizado em composição, orçamento ou pedido. Exclusão bloqueada.');if(confirm('Excluir produto?')){db.products=db.products.filter(p=>p.id!==pid);save();render()}}
+ const delta=(v.operation==='saida'?-1:1)*Number(v.quantidade);if(!Number.isFinite(delta)||delta===0)throw Error('Quantidade inválida.');if(delta<0&&p.estoque+delta<reservedQuantity(pid))throw Error('Estoque insuficiente, considerando pedidos reservados.');const beforeStock=p.estoque,beforeMoves=db.stockMovements;
+ p.estoque=Math.round((Number(p.estoque)+delta)*1000)/1000;
+ db.stockMovements=[...beforeMoves,{id:id(),productId:pid,nome:p.nome,delta:Math.round(delta*1000)/1000,date:iso(),note:v.motivo}];
+ if(save()===false){p.estoque=beforeStock;db.stockMovements=beforeMoves;throw Error('Falha ao salvar movimento. O saldo anterior foi restaurado.');}
+ return true;});}
+function removeProduct(pid){
+ const linked=db.products.some(p=>p.components?.some(c=>c.materialId===pid))||
+  db.quotes.some(q=>(q.items||[]).some(i=>i.productId===pid))||
+  db.orders.some(o=>(o.items||[]).some(i=>i.productId===pid))||
+  (db.purchases||[]).some(p=>(p.items||[]).some(i=>i.productId===pid))||
+  (db.stockMovements||[]).some(m=>m.productId===pid);
+ if(linked)return alert('Material já usado em pedidos, entradas ou movimentos de estoque. Exclusão bloqueada para preservar o histórico.');
+ if(!confirm('Excluir este material sem histórico de movimentos?'))return;
+ const previous=db.products;
+ db.products=db.products.filter(p=>p.id!==pid);
+ if(save()===false){db.products=previous;return alert('Falha ao salvar. O material foi preservado.');}
+ render();
+}
 function clientOptions(chosen=''){return db.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===chosen?'selected':''}>${esc(c.nome)}</option>`).join('')}
 function quoteStatus(q){return q.status==='convertido'?pill('Convertido','success'):pill('Aberto','warn')}
 function quotesView(){const q=search.orcamentos.toLowerCase();const list=db.quotes.slice().reverse().filter(o=>[o.number,o.clientNome,o.status].some(v=>String(v||'').toLowerCase().includes(q)));
