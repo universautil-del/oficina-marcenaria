@@ -45,6 +45,7 @@ const ctx={
  clientOptions:id=>'<option value="'+id+'">Cliente</option>',
  orderTotal:o=>Math.round(((o.items||[]).reduce((sum,i)=>sum+Number(i.quantidade)*Number(i.preco),0)-Number(o.desconto||0)+Number(o.frete||0))*100)/100,
  cashReceived:t=>(t.payments||[]).reduce((v,p)=>v+Number(p.valor),0),
+ balance:t=>Math.max(0,Math.round((Number(t.valor)-(t.payments||[]).reduce((v,p)=>v+Number(p.valor),0))*100)/100),
  openModal:(title,fields,onSubmit,afterOpen)=>{const obj={title,fields,onSubmit,afterOpen};modals.push(obj);return obj},
  addSaleRow:(dlg,item)=>{filledRows.push(item)},
  calcSale:()=>{},
