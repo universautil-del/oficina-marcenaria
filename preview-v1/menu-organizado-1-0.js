@@ -12,7 +12,7 @@
   {title:'SISTEMA E SEGURANÇA',keys:['empresa','backupdrive','seguranca']}
  ];
  const labelOverrides={
-  clientes:'Clientes',projetos:'Projetos de móveis',assistente:'Assistente de projetos',sketchup:'Importar SketchUp',
+  clientes:'Clientes e fornecedores',projetos:'Projetos de móveis',assistente:'Assistente de projetos',sketchup:'Importar SketchUp',
   compras:'Entrada de Materiais',anexos:'Contratos anexados',backupdrive:'Backup e recuperação'
  };
  function availableGroups(){
