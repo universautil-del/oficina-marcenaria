@@ -90,7 +90,7 @@
   }catch(err){db=previous;if(!secure)save();throw err}
  }
 
- let notice='',working=false,snapshots=[],scanState='Verificacao pendente. As copias automaticas precisam ser ativadas no Supabase.',lastScan=0;
+ let notice='',working=false,snapshots=[],scanState='Verificação pendente. As cópias automáticas precisam ser ativadas no Supabase.',lastScan=0;
  const safe=v=>esc(String(v??''));
  function passInput(){
   const element=document.querySelector('#uaBackupPass');
@@ -105,7 +105,7 @@
   return snapshots.map(entry=>{
    const when=new Date(entry.criado_em);
    const date=Number.isFinite(when.getTime())?when.toLocaleString('pt-BR'):'Data a conferir';
-   return '<tr><td>'+safe(date)+'</td><td>Revisao '+safe(entry.revisao_origem)+'</td>'+
+   return '<tr><td>'+safe(date)+'</td><td>Revisão '+safe(entry.revisao_origem)+'</td>'+
     '<td><button type="button" class="btn" data-ua-backup-action="download-weekly" data-backup-id="'+safe(entry.id)+'">Baixar criptografado</button></td></tr>';
   }).join('');
  }
@@ -123,13 +123,13 @@
   try{
     const schedule=await cloud.weeklyBackupStatus();
     snapshots=await cloud.listWeeklyBackups();
-    scanState=(schedule.agendamento_ativo?'Agendamento semanal ativo. ':'Agendamento semanal ainda NAO ativo. ')+
-      snapshots.length+' de 4 copias no servidor. '+
-      (snapshots.length?'Ultima: '+new Date(snapshots[0].criado_em).toLocaleString('pt-BR')+'.':'Aguardando primeira copia.')+
-      (schedule.agendamento_ativo?' Confira os registros de execucao do Cron.':' Execute os scripts de instalacao para habilitar os backups.');
+    scanState=(schedule.agendamento_ativo?'Agendamento semanal ativo. ':'Agendamento semanal ainda NÃO ativo. ')+
+      snapshots.length+' de 4 cópias no servidor. '+
+      (snapshots.length?'Última: '+new Date(snapshots[0].criado_em).toLocaleString('pt-BR')+'.':'Aguardando primeira cópia.')+
+      (schedule.agendamento_ativo?' Confira os registros de execucao do Cron.':' Execute o SQL de instalação para habilitar os backups.');
   }catch(error){
     snapshots=[];
-    scanState='Nao foi possivel listar os backups automaticos: '+String(error.message||error).slice(0,150)+'. Verifique se executou os scripts de instalacao.';
+    scanState='Não foi possível listar os backups automáticos: '+String(error.message||error).slice(0,150)+'. Verifique se executou os scripts de instalacao.';
   }
   lastScan=Date.now();renderPage();
  }
@@ -137,24 +137,24 @@
   const typed=document.querySelector('#uaBackupPass')?.value||'';
   const rows=snapshotRows();
   content.innerHTML=
-   '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · PROTECAO DE DADOS</div>'+
-    '<h2>Backup e recuperacao</h2><p>Copias semanais no Supabase com quatro versoes rotativas e um backup criptografado para guardar fora do sistema.</p></div></div>'+
-   '<section class="ua-section ua-drive-panel"><h3>1. Backup automatico semanal · Supabase</h3>'+
-    '<p>O banco cria uma copia do documento aos domingos, mesmo que o site esteja fechado. Sao preservadas as <strong>4 ultimas copias por conta</strong>. Uma versao antiga so e excluida depois que a nova copia estiver salva e conferida.</p>'+
-    '<div class="ua-drive-box"><strong>Situacao:</strong> <span id="uaBackupRemoteStatus" role="status">'+safe(scanState)+'</span></div>'+
+   '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · PROTEÇÃO DE DADOS</div>'+
+    '<h2>Backup e recuperação</h2><p>Cópias semanais no Supabase com quatro versoes rotativas e um backup criptografado para guardar fora do sistema.</p></div></div>'+
+   '<section class="ua-section ua-drive-panel"><h3>1. Backup automático semanal · Supabase</h3>'+
+    '<p>O banco cria uma copia do documento aos domingos, mesmo que o site esteja fechado. São preservadas as <strong>4 ultimas copias por conta</strong>. Uma versão antiga so e excluída depois que a nova copia estiver salva e conferida.</p>'+
+    '<div class="ua-drive-box"><strong>Situação:</strong> <span id="uaBackupRemoteStatus" role="status">'+safe(scanState)+'</span></div>'+
     '<div class="ua-drive-actions"><button class="btn primary" type="button" data-ua-backup-action="refresh">Verificar backups no Supabase</button></div>'+
-    (rows?'<div class="ua-table-wrap"><table class="ua-table"><thead><tr><th>Data</th><th>Documento</th><th>Acao</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'')+
-    '<p class="muted small">Ativacao unica: abra o <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/supabase/INSTALAR-backup-automatico-OFICINA-1-0.sql" target="_blank" rel="noopener noreferrer">SQL de instalacao do backup semanal</a>, copie todo o codigo (Raw) e execute no Editor SQL do seu projeto Supabase. Esta tela nao ativa o cron sozinha; confira em Integrations → Cron → Jobs.</p>'+
+    (rows?'<div class="ua-table-wrap"><table class="ua-table"><thead><tr><th>Data</th><th>Documento</th><th>Ação</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'')+
+    '<p class="muted small">Ativação única: abra o <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/supabase/INSTALAR-backup-automatico-OFICINA-1-0.sql" target="_blank" rel="noopener noreferrer">SQL de instalação do backup semanal</a>, copie todo o codigo (Raw) e execute no Editor SQL do seu projeto Supabase. Esta tela nao ativa o cron sozinha; confira em Integrations → Cron → Jobs.</p>'+
     '<p class="muted small">Atencao: o plano Gratis do Supabase pode pausar projetos por baixa atividade. Um projeto pausado nao executara o backup agendado. Confira periodicamente o status do Cron e mantenha uma copia fora do Supabase.</p>'+
-    '<p class="muted small">As copias estao dentro do MESMO projeto Supabase e nao utilizam uma senha particular. Uma falha ou exclusao do projeto pode afetar todas. Mantenha uma copia criptografada fora do Supabase.</p></section>'+
-   '<section class="ua-section ua-drive-panel gap-top"><h3>2. Copia manual criptografada</h3>'+
-    '<p class="muted">Baixe uma copia AES-256-GCM sempre que quiser. A senha nao e salva no Oficina: guarde-a em local seguro.</p>'+
-    '<label for="uaBackupPass">Senha forte para proteger o arquivo (minimo de 12 caracteres)</label>'+
+    '<p class="muted small">As cópias estão dentro do MESMO projeto Supabase e não utilizam uma senha particular. Uma falha ou exclusão do projeto pode afetar todas. Mantenha uma copia criptografada fora do Supabase.</p></section>'+
+   '<section class="ua-section ua-drive-panel gap-top"><h3>2. Cópia manual criptografada</h3>'+
+    '<p class="muted">Baixe uma copia AES-256-GCM sempre que quiser. A senha não é salva no Oficina: guarde-a em local seguro.</p>'+
+    '<label for="uaBackupPass">Senha forte para proteger o arquivo (mínimo de 12 caracteres)</label>'+
     '<input id="uaBackupPass" type="password" autocomplete="new-password" minlength="12" maxlength="200" placeholder="Crie e guarde a senha fora do sistema">'+
     '<div class="ua-drive-actions"><button class="btn primary" type="button" data-ua-backup-action="export">Baixar backup criptografado</button></div>'+
-    '<p class="muted small">Voce pode guardar o arquivo em uma pasta privada do computador ou em outro servico de armazenamento. Nao publique os dados em repositorios GitHub.</p></section>'+
+    '<p class="muted small">Você pode guardar o arquivo em uma pasta privada do computador ou em outro servico de armazenamento. Nao publique os dados em repositorios GitHub.</p></section>'+
    '<section class="ua-section ua-drive-panel gap-top"><h3>3. Conferir ou restaurar um arquivo</h3>'+
-    '<p class="muted">Selecione um arquivo .uaenc.json e informe a senha acima. Primeiro use Verificar: isso nao altera os registros. Restaurar substitui os dados da conta atual; faca uma copia preventiva e confirme antes.</p>'+
+    '<p class="muted">Selecione um arquivo .uaenc.json e informe a senha acima. Primeiro use Verificar: isso não altera os registros. Restaurar substitui os dados da conta atual; faça uma cópia preventiva e confirme antes.</p>'+
     '<input id="uaBackupImport" type="file" accept=".uaenc.json,.json,application/json">'+
     '<div class="ua-drive-actions"><button class="btn" type="button" data-ua-backup-action="verify">Verificar arquivo sem alterar dados</button>'+
     '<button class="btn" type="button" data-ua-backup-action="restore">Restaurar arquivo no '+(window.UNIVERSA_REQUIRE_AUTH?'Supabase':'navegador')+'</button></div>'+
@@ -162,10 +162,10 @@
   const input=document.querySelector('#uaBackupPass');if(input)input.value=typed;
  }
  const prevRender=render;
- if(!sections.some(x=>x[0]==='backupdrive'))sections.push(['backupdrive','☁','Backup e recuperacao']);
+ if(!sections.some(x=>x[0]==='backupdrive'))sections.push(['backupdrive','☁','Backup e recuperação']);
  render=function(section=location.hash.slice(1)||'dashboard'){
   if(section!=='backupdrive')return prevRender(section);
-  title.textContent='Backup e recuperacao';
+  title.textContent='Backup e recuperação';
   nav.innerHTML=sections.map(([key,icon,label])=>'<button class="nav-btn '+(key===section?'active':'')+'" data-section="'+safe(key)+'"><span aria-hidden="true">'+safe(icon)+'</span>'+safe(label)+'</button>').join('');
   nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
    const next=b.dataset.section;location.hash=next;sidebar.classList.remove('open');if(next===section)render(next);
@@ -190,14 +190,14 @@
     showNotice('Arquivo criptografado gerado. Confira a pasta Downloads e depois use Verificar arquivo.');
    }else if(action==='download-weekly'){
     const candidate=snapshots.find(x=>String(x.id)===String(button.dataset.backupId));
-    if(!candidate)throw Error('Copia nao encontrada. Atualize a lista.');
+    if(!candidate)throw Error('Cópia não encontrada. Atualize a lista.');
     const pass=passInput();
     const backup=await window.oficinaCloud.getWeeklyBackup(candidate.id);
     const payload=await encryptBackup({app:'oficina',version:3,exportedAt:new Date().toISOString(),data:backup.dados},pass);
     await decryptBackup(payload,pass);
     const name='UniversaArt_Semanal_'+String(candidate.semana_utc||candidate.id)+'.uaenc.json';
     saveBlob(name,new Blob([JSON.stringify(payload)],{type:'application/json'}));
-    showNotice('Copia semanal criptografada baixada. Verifique o arquivo antes de precisar restaurar.');
+    showNotice('Cópia semanal criptografada baixada. Verifique o arquivo antes de precisar restaurar.');
    }else if(action==='verify'||action==='restore'){
     const file=document.querySelector('#uaBackupImport')?.files?.[0];
     if(!file)throw Error('Escolha um arquivo .uaenc.json.');
@@ -205,13 +205,13 @@
     const payload=JSON.parse(await file.text());
     if(action==='verify'){
       const restored=await decryptBackup(payload,passInput());
-      showNotice('Arquivo valido. '+(restored.clients?.length||0)+' clientes, '+(restored.orders?.length||0)+' pedidos. Nenhum registro foi alterado.');
+      showNotice('Arquivo válido. '+(restored.clients?.length||0)+' clientes, '+(restored.orders?.length||0)+' pedidos. Nenhum registro foi alterado.');
     }else{
       const restored=await restoreData(payload,passInput());
-      showNotice(restored?'Restauracao concluida. Confira os dados e a sincronizacao.':'Restauracao cancelada.');
+      showNotice(restored?'Restauração concluída. Confira os dados e a sincronizacao.':'Restauração cancelada.');
     }
    }
-  }catch(error){showNotice('Operacao nao concluida: '+String(error.message||error).slice(0,230))}
+  }catch(error){showNotice('Operação não concluída: '+String(error.message||error).slice(0,230))}
   finally{working=false;button.disabled=false}
  });
  window.universaArtBackup={encryptBackup,decryptBackup,buildPayload,restoreData,filename,scanWeekly,renderPage};
