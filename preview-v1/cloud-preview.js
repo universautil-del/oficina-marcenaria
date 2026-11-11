@@ -315,6 +315,12 @@
   if(!Array.isArray(rows))throw Error('Resposta inesperada da lista de backups.');
   return rows;
  };
+ state.weeklyBackupStatus=async()=>{
+  if(!state.session||!state.active||state.paused)throw Error('Entre e sincronize antes de consultar o agendamento.');
+  const status=await request('/rest/v1/rpc/ua_backup_semanal_status',{method:'POST',body:{}});
+  if(!status||typeof status.agendamento_ativo!=='boolean')throw Error('Status de backup inesperado.');
+  return status;
+ };
  state.getWeeklyBackup=async backupId=>{
   if(!state.session||!state.active||state.paused)throw Error('Entre e sincronize o Oficina antes de recuperar uma copia.');
   const id=Number(backupId);
