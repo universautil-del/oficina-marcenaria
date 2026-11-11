@@ -20,6 +20,9 @@ const snapshot={
  orders:[],transactions:[],stockMovements:[],purchases:[],projects:[],
  company:{nome:'Universa Art'},seq:{quote:1,order:1}
 };
+const FakeURL=URL;
+FakeURL.createObjectURL=function(blob){this.last=blob;return 'blob:local'};
+FakeURL.revokeObjectURL=()=>{};
 const window={
  oficinaCloud:{active:false},
  google:{accounts:{oauth2:{
@@ -67,9 +70,7 @@ const ctx={
  sections:[['dashboard','⌂','Dashboard']],render(){},
  title:{textContent:''},nav:{innerHTML:'',querySelectorAll(){return[]}},
  sidebar:{classList:{remove(){}}},content:{innerHTML:''},location:{hash:'#backupdrive'},
- crypto:webcrypto,Blob,TextEncoder,TextDecoder,URLSearchParams,URL:{
-  createObjectURL(blob){this.last=blob;return 'blob:local'},revokeObjectURL(){}
- },
+ crypto:webcrypto,Blob,TextEncoder,TextDecoder,URLSearchParams,URL:FakeURL,
  atob:str=>Buffer.from(str,'base64').toString('binary'),
  btoa:str=>Buffer.from(str,'binary').toString('base64'),
  esc:v=>String(v??'').replace(/[&<>"']/g,''),
