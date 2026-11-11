@@ -10,6 +10,13 @@
    lastSynced:'',status:'Local — somente neste navegador',timer:null,userId:null};
  const safeParse=(s)=>{try{return JSON.parse(s)}catch{return null}};
  state.cfg=safeParse(localStorage.getItem(CFG));
+ // A URL e a chave publicável não são segredos: quando o proprietário publicar
+ // preview-v1/public-cloud-config.js, a mesma conexão será sugerida no PC e no celular.
+ const published=window.UNIVERSA_PUBLIC_SUPABASE;
+ if(!state.cfg&&published&&validURL(String(published.url||''))&&isPublicKey(String(published.key||''))){
+  state.cfg={url:String(published.url),key:String(published.key)};
+ }
+
  state.session=safeParse(sessionStorage.getItem(SES));
  const msg=e=>e?.message||'Erro desconhecido';
  function valid(data){return data&&data.version===3&&['clients','products','orders','quotes','transactions','stockMovements'].every(k=>Array.isArray(data[k]))}
@@ -255,6 +262,18 @@
   finally{btn.disabled=false}
  });
  window.addEventListener('online',()=>{if(state.active)refresh().catch(e=>{state.status='Não sincronizado: '+friendlyError(e);showStatus()})});
+ // Um único responsável pode alternar entre PC e celular. Ao retornar à aba,
+ // verificar a revisão do servidor antes de continuar com dados possivelmente antigos.
+ let lastForegroundCheck=0;
+ function checkForeground(){
+  if(!SECURE||!state.active||state.paused||!navigator.onLine||document.hidden)return;
+  const now=Date.now();
+  if(now-lastForegroundCheck<5000)return;
+  lastForegroundCheck=now;
+  refresh().catch(e=>{state.status='Não sincronizado: '+friendlyError(e);showStatus()});
+ }
+ document.addEventListener('visibilitychange',checkForeground);
+ window.addEventListener('focus',checkForeground);
  window.addEventListener('beforeunload',event=>{
   // Antes de fechar, avise sobre dados comerciais ainda não recebidos pelo servidor.
   if(state.active&&JSON.stringify(db)!==state.lastSynced){event.preventDefault();event.returnValue=''}
