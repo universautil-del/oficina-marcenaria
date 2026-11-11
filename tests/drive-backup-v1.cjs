@@ -44,6 +44,13 @@ const original={app:'oficina',version:3,exportedAt:'2026-11-10T00:00:00Z',data:s
  assert.equal(encrypted.iterations,310000);
  assert(!JSON.stringify(encrypted).includes('Cliente teste'),'Backup não deve revelar dados em claro');
  assert.equal((await api.decryptBackup(encrypted,pass)).clients[0].nome,'Cliente teste');
+ const large={...original,data:{...snapshot,company:{...snapshot.company,observacoes:'X'.repeat(4*1024*1024)}}};
+ const encoded=await api.encryptBackup(large,pass);
+ assert(Buffer.byteLength(JSON.stringify(encoded))>5*1024*1024,'Arquivo em base64 ultrapassa tamanho do JSON');
+ assert(Buffer.byteLength(JSON.stringify(encoded))<8*1024*1024,'Tamanho cifrado permanece dentro do limite permitido');
+ const opened=await api.decryptBackup(encoded,pass);
+ assert.equal(opened.company.observacoes.length,4*1024*1024);
+
  await assert.rejects(api.decryptBackup(encrypted,'senha-errada-longa'),/Senha incorreta/);
  await assert.rejects(api.encryptBackup(original,'curta'),/pelo menos 12/);
  await assert.rejects(api.decryptBackup({...encrypted,iterations:100},pass),/parâmetros/);
