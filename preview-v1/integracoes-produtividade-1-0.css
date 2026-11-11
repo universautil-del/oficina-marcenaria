@@ -1,0 +1,27 @@
+/* OFICINA 1.0 — integrações produtivas, sem lançamentos automáticos. */
+.ua-integrations{display:block}
+.ua-integrations .panel-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.ua-int-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ua-int-cards>div{background:#f7faf7;border:1px solid #dce8dd;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.ua-int-cards strong{font-size:14px;color:#183e30}
+.ua-int-cards p{font-size:12px;line-height:1.5;color:#506b5d;margin:0}
+.ua-int-cards label{display:grid;gap:5px;font-size:12px}
+.ua-int-cards select{max-width:100%;min-width:0;padding:9px;border:1px solid #cbded2;border-radius:9px}
+.ua-int-cards .btn{align-self:flex-start;min-height:40px;white-space:normal}
+.ua-integrations h4{font-size:14px;margin:18px 0 8px}
+.ua-int-reminders{display:grid;gap:7px}
+.ua-int-reminder{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:#fbfcfa;border:1px solid #e4eae3;border-radius:9px}
+.ua-int-reminder span{font-size:13px;min-width:0;overflow-wrap:anywhere}
+.ua-int-reminder small{display:block;color:#637367;font-size:11px;margin-top:3px}
+.ua-int-reminder .actions{display:flex;gap:7px;flex-wrap:wrap}
+.ua-int-reminder .btn{min-height:36px}
+.ua-int-connected{color:#27664e;font-weight:600}
+.ua-int-pending{color:#986a29;font-weight:600}
+.ua-int-warning{background:#fff9ec;color:#875d25;padding:9px 11px;border:1px solid #f0ddaa;border-radius:9px;margin:10px 0;font-size:12px}
+.ua-int-note{font-size:13px;line-height:1.6}
+.ua-int-dialog .ua-int-buy-row{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(130px,190px);align-items:center;gap:10px;padding:13px 9px;border-bottom:1px solid #e4eae3;cursor:pointer}
+.ua-int-buy-row>span small{display:block;color:#647366;margin-top:4px;font-size:11px}
+.ua-int-buy-amount input{width:83px;padding:9px;border:1px solid #cbded2;border-radius:8px}
+.ua-int-buy-amount{font-size:12px}
+@media(max-width:960px){.ua-int-cards{grid-template-columns:1fr 1fr}.ua-int-cards>div:last-child{grid-column:1/-1}}
+@media(max-width:660px){.ua-int-cards{grid-template-columns:1fr}.ua-int-cards>div:last-child{grid-column:auto}.ua-int-reminder{align-items:flex-start;flex-direction:column}.ua-int-dialog .ua-int-buy-row{grid-template-columns:24px 1fr}.ua-int-buy-amount{grid-column:2}.ua-integrations .btn{min-height:44px}}
