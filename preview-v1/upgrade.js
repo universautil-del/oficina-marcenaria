@@ -30,9 +30,46 @@ function calcPurchase(dlg){const val=[...dlg.querySelectorAll('.purchase-row')].
 function purchaseModal(){if(!db.suppliers.length)return alert('Cadastre um fornecedor antes de registrar a entrada.');if(!db.products.some(p=>p.tipo==='materia'))return alert('Cadastre uma matéria-prima em Produtos primeiro.');const fields=`<div class="form-grid"><label>Fornecedor *<select name="supplierId" required>${supplierOptions()}</select></label><label>Data do registro<input type="date" name="date" value="${iso()}" required></label><label>Vencimento do pagamento<input type="date" name="dueDate" value="${iso()}" required></label><label>Referência / Nota fiscal<input name="referencia" placeholder="Número da NF ou pedido"></label></div><h3 class="form-section">Materiais da entrada</h3><div id="purchaseRows"></div><p>${button('+ Adicionar material','add-purchase-row','','small')}</p><div class="purchase-total">Total da entrada: <strong id="purchaseTotal">${money(0)}</strong></div><p class="form-note">O sistema cria uma despesa pendente. A entrada física no estoque só acontece ao confirmar o recebimento.</p>`;
  openModal('Nova entrada de materiais',fields,(v,dlg)=>{const items=[...dlg.querySelectorAll('.purchase-row')].map(r=>({productId:r.querySelector('[data-pur-product]').value,quantidade:Number(r.querySelector('[data-pur-qty]').value),custo:round(r.querySelector('[data-pur-cost]').value)}));if(!items.length||items.some(i=>!getProduct(i.productId)||!(i.quantidade>0)||!(i.custo>0)))throw Error('Informe matérias-primas, quantidades e custos positivos.');if(new Set(items.map(i=>i.productId)).size!==items.length)throw Error('Adicione cada material apenas uma vez por compra.');const sup=getSupplier(v.supplierId);if(!sup)throw Error('Fornecedor não encontrado.');const pur={id:id(),number:db.seq.purchase++,supplierId:sup.id,supplierNome:sup.nome,date:v.date,dueDate:v.dueDate,referencia:v.referencia.trim(),items,status:'aberta',receivedAt:'',accountId:''};if(!(purchaseTotal(pur)>0))throw Error('Valor total inválido.');const account={id:id(),kind:'pagar',purchaseId:pur.id,orderId:'',descricao:`Compra #${pur.number} · ${sup.nome}`,dueDate:pur.dueDate,valor:purchaseTotal(pur),payments:[]};pur.accountId=account.id;db.purchases.push(pur);db.transactions.push(account);return save();},dlg=>{dlg.querySelector('[data-action="add-purchase-row"]').onclick=()=>addPurchaseRow(dlg);addPurchaseRow(dlg)});
 }
-function receivePurchase(pid){const p=db.purchases.find(x=>x.id===pid);if(!p||p.status!=='aberta')return alert('Esta compra já foi recebida ou cancelada.');for(const i of p.items){if(!getProduct(i.productId)||getProduct(i.productId).tipo!=='materia')return alert('Material da compra não encontrado. Recebimento interrompido.')}if(!confirm(`Confirmar recebimento da compra #${p.number}? Os materiais serão adicionados ao estoque apenas uma vez.`))return;
- for(const i of p.items){const raw=getProduct(i.productId);const before=Number(raw.estoque)||0,qty=Number(i.quantidade);const next=round(before+qty);raw.custo=round((before*Number(raw.custo||0)+qty*Number(i.custo))/next);raw.estoque=next;db.stockMovements.push({id:id(),productId:raw.id,nome:raw.nome,delta:round(qty),date:iso(),purchaseId:p.id,note:`Recebimento compra #${p.number}`})}p.status='recebida';p.receivedAt=iso();save();render();}
-function cancelPurchase(pid){const p=db.purchases.find(x=>x.id===pid);if(!p||p.status!=='aberta')return alert('Não é possível cancelar esta compra.');const t=db.transactions.find(x=>x.id===p.accountId);if(t&&cashReceived(t)>0)return alert('Esta compra já possui pagamentos. Regularize os pagamentos antes do cancelamento.');if(!confirm(`Cancelar a compra #${p.number}? A conta a pagar pendente será removida.`))return;p.status='cancelada';if(t)db.transactions=db.transactions.filter(x=>x.id!==t.id);save();render();}
+function receivePurchase(pid){
+ const p=db.purchases.find(x=>x.id===pid);
+ if(!p||p.status!=='aberta')return alert('Esta entrada já foi confirmada ou cancelada.');
+ const items=(p.items||[]).map(i=>({product:getProduct(i.productId),qty:Number(i.quantidade),cost:Number(i.custo)}));
+ if(!items.length||items.some(i=>!i.product||i.product.tipo!=='materia'||!Number.isFinite(i.qty)||i.qty<=0||!Number.isFinite(i.cost)||i.cost<0))
+  return alert('Entrada inválida: confira todos os materiais, quantidades e custos antes de confirmar.');
+ if(new Set(items.map(i=>i.product.id)).size!==items.length)return alert('Entrada contém material duplicado. Revise os itens antes de receber.');
+ if(!confirm('Confirmar entrada #'+p.number+'? O estoque será atualizado uma única vez.'))return;
+ const previousProducts=db.products.map(x=>({...x})),previousMovements=db.stockMovements;
+ const previousStatus=p.status,previousDate=p.receivedAt;
+ for(const {product,qty,cost} of items){
+  const before=Number(product.estoque)||0,next=Math.round((before+qty)*1000)/1000;
+  product.custo=round((before*Number(product.custo||0)+qty*cost)/next);
+  product.estoque=next;
+  db.stockMovements=[...db.stockMovements,{id:id(),productId:product.id,nome:product.nome,
+   delta:Math.round(qty*1000)/1000,date:iso(),purchaseId:p.id,note:'Entrada de materiais #'+p.number}];
+ }
+ p.status='recebida';p.receivedAt=iso();
+ if(save()===false){
+  db.products=previousProducts;db.stockMovements=previousMovements;
+  p.status=previousStatus;p.receivedAt=previousDate;
+  return alert('Não foi possível gravar a entrada. Quantidades e movimentações foram restauradas.');
+ }
+ render();
+}
+function cancelPurchase(pid){
+ const p=db.purchases.find(x=>x.id===pid);
+ if(!p||p.status!=='aberta')return alert('Não é possível cancelar esta entrada.');
+ const t=db.transactions.find(x=>x.id===p.accountId);
+ if(t&&cashReceived(t)>0)return alert('Esta entrada possui pagamentos. Regularize os pagamentos antes do cancelamento.');
+ if(!confirm('Cancelar a entrada #'+p.number+'? A conta a pagar pendente será removida.'))return;
+ const previousTransactions=db.transactions,previousStatus=p.status;
+ p.status='cancelada';
+ if(t)db.transactions=db.transactions.filter(x=>x.id!==t.id);
+ if(save()===false){
+  p.status=previousStatus;db.transactions=previousTransactions;
+  return alert('Falha ao salvar cancelamento. Nenhum lançamento foi excluído.');
+ }
+ render();
+}
 function viewPurchase(pid){const p=db.purchases.find(x=>x.id===pid);if(!p)return;const rows=p.items.map(i=>td(esc(getProduct(i.productId)?.nome||'Produto não encontrado'),dec(i.quantidade),money(i.custo),money(i.quantidade*i.custo)));openModal('Entrada #'+p.number,`<p><strong>Fornecedor:</strong> ${esc(p.supplierNome)}<br><strong>Data:</strong> ${date(p.date)}<br><strong>Vencimento:</strong> ${date(p.dueDate)}<br><strong>Referência:</strong> ${esc(p.referencia||'—')}<br><strong>Situação:</strong> ${esc(p.status)}</p>${table(['Matéria-prima','Qtd.','Custo unit.','Subtotal'],rows)}<h3>Total: ${money(purchaseTotal(p))}</h3>`,()=>true)}
 function duplicateQuote(qid){const q=getQuote(qid);if(!q)return;if(!confirm(`Duplicar orçamento #${q.number} criando outro orçamento aberto?`))return;const clone={...q,id:id(),number:db.seq.quote++,status:'aberto',date:iso(),items:q.items.map(i=>({...i})),payment:{...q.payment}};delete clone.orderId;db.quotes.push(clone);save();render('orcamentos');}
 function shareQuote(qid){const q=getQuote(qid);if(!q)return;const c=getClient(q.clientId);const phone=String(c?.telefone||'').replace(/\D/g,'');const formatted=phone?(!phone.startsWith('55')&&phone.length>=10?'55'+phone:phone):'';const message=`Olá, ${c?.nome||q.clientNome}! Segue o resumo do orçamento nº ${q.number} da ${db.company.nome||'marcenaria'}:\n${q.items.map(i=>`• ${i.descricao} — ${dec(i.quantidade)} × ${money(i.preco)}`).join('\n')}\n*Total: ${money(orderTotal(q))}*\nPagamento: ${paymentText(q.payment)}\nPrazo: ${q.entrega||'A combinar'}${q.entregaData?' ('+date(q.entregaData)+')':''}\nPosso enviar o PDF do orçamento em anexo.`;const w=window.open(`https://wa.me/${formatted}?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer');if(!w)alert('Permita pop-ups para abrir o WhatsApp. O PDF deve ser anexado manualmente.');}
