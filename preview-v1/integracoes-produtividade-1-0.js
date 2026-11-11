@@ -103,14 +103,39 @@
   const project=list('projects').find(p=>p.id===pid);
   if(!project)throw Error('Projeto não encontrado.');
   if(!project.clientId||!list('clients').some(c=>c.id===project.clientId)){
-   throw Error('Associe um cliente ao projeto antes de preparar o orçamento.');
+   const projectDialog=v5ProjectModal(project.id);
+   projectDialog?.addEventListener('close',()=>{
+    const linked=list('projects').find(p=>p.id===project.id);
+    if(linked?.clientId&&list('clients').some(c=>c.id===linked.clientId))
+     setTimeout(()=>newQuote(project.id),0);
+   },{once:true});
+   return projectDialog;
   }
-  openSales('quote','',project.id);
+  return openSales('quote','',project.id);
+ }
+ function getRawCount(){return list('products').filter(p=>p.tipo==='materia').length}
+ function showEmptyAction(message,label,action){
+  const dlg=document.createElement('dialog');
+  dlg.className='large ua-int-dialog';
+  dlg.innerHTML='<form method="dialog"><h2>O que deseja fazer?</h2><p>'+safe(message)+'</p>'+
+   '<div class="dialog-actions"><button type="button" class="btn" data-ua-cancel>Voltar</button>'+
+   '<button type="button" class="btn primary" data-ua-next>'+safe(label)+'</button></div></form>';
+  document.body.append(dlg);
+  dlg.querySelector('[data-ua-cancel]').onclick=()=>dlg.close();
+  dlg.querySelector('[data-ua-next]').onclick=()=>{dlg.close();action()};
+  dlg.addEventListener('close',()=>dlg.remove(),{once:true});
+  dlg.showModal();
+  return dlg;
  }
  function suggestionsModal(){
   const low=proposedPurchase();
   const suggestions=low.filter(p=>p.recommended>0&&p.cost>0);
-  if(!low.length)return alert('Nenhum material está abaixo do estoque mínimo configurado.');
+  if(!getRawCount())return purchaseModal();
+  if(!low.length){
+   const message='Não há materiais abaixo do estoque mínimo. Você pode continuar com uma entrada manual.';
+   const dlg=showEmptyAction(message,'Registrar entrada de materiais',()=>purchaseModal());
+   return dlg;
+  }
   const pending=low.filter(p=>p.recommended<=0);
   const lackingCost=low.filter(p=>p.recommended>0&&p.cost<=0);
   const rows=suggestions.map(p=>
