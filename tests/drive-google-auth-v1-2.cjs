@@ -81,6 +81,13 @@ const ctx={
 };
 vm.runInNewContext(source,ctx,{timeout:3000});
 const api=window.universaArtDriveBackup;
+assert(api.validClientId('123456789-abcd.apps.googleusercontent.com'));
+assert(!api.validClientId('123456789-xxxx.apps.googleusercontent'));
+assert(!api.validClientId('sb_secret_abc'));
+assert.equal(api.diagnostics().origin,'https://universautil-del.github.io');
+assert(ctx.content.innerHTML.includes('Diagnóstico:'));
+assert(ctx.content.innerHTML.includes('Aguardando Client ID real'));
+assert(ctx.content.innerHTML.includes('Copiar origem'));
 assert(ctx.content.innerHTML.includes('Fazer backup agora — sem configuração'));
 assert(ctx.content.innerHTML.includes('Verificar arquivo (não altera dados)'));
 assert(ctx.content.innerHTML.includes('Opcional — conectar Google Drive'));
