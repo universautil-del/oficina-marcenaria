@@ -12,7 +12,7 @@
 
 ## 2. SketchUp 2022 — arquivo OpenCutList da Universalartes
 
-O arquivo fornecido `Gleice_CutList.csv` não é `.skp`; é uma exportação de componentes do SketchUp/OpenCutList.
+O arquivo fornecido **CSV fornecido pelo proprietário (nome preservado fora do repositório)** não é `.skp`; é uma exportação de componentes do SketchUp/OpenCutList.
 
 **Formato observado no arquivo real:**
 - Primeira linha isolada: `Components`
