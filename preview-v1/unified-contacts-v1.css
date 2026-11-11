@@ -62,3 +62,8 @@ dialog.ua-unified-dialog [hidden]{display:none!important}
 @media(max-width:460px){
   .ua-directory-tabs .ua-tab{font-size:12px;padding:9px 8px;gap:4px}
 }
+/* Ações de orçamento e pedido com área de toque confortável no celular. */
+@media(max-width:760px){
+  .ua-directory .row-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;min-width:204px}
+  .ua-directory .row-actions .btn{min-height:42px;padding:9px 10px;font-size:13px;white-space:normal}
+}
