@@ -73,7 +73,7 @@
   state.headers=s.rows[0].map((c,i)=>String(c).trim()||'Coluna '+(i+1));
   state.raw=s.rows.slice(1);state.file=(state.xlsxFilename||'Excel')+' · '+s.name;
   state.parts=[];state.settings={};state.error='';state.selectedExcelSheet=index;
-  tool.mapping();tool.view();
+  tool.mapping();tool.autoReadParts?.();tool.view();
  }
  async function readExcelFile(file){
   if(file.size>MAX_FILE)throw Error('Planilha maior que 3 MB. Exporte uma obra por vez.');
