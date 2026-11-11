@@ -68,7 +68,7 @@
   if(remote){
    activate(remote.data,remote.revision);
   }else{
-   const initial=blank();
+   const initial={...blank(),suppliers:[],purchases:[],projects:[],invoices:[],orderAttachments:[],seq:{quote:1,order:1,purchase:1,project:1,invoice:1}};
    const revision=await request('/rest/v1/rpc/ua_iniciar_documento',{
     method:'POST',body:{p_documento:initial}
    });
@@ -89,7 +89,7 @@
  function saveLocalCloud(){sessionStorage.setItem(CACHE,JSON.stringify(db));sessionStorage.setItem(META,JSON.stringify({id:state.userId,rev:state.rev,lastSynced:state.lastSynced,active:true}))}
  function activate(data,rev){
   setDb(data);state.rev=rev;state.active=true;state.paused=false;state.lastSynced=JSON.stringify(data);
-  state.status='Sincronizado';saveLocalCloud();
+  state.status='Sincronizado';if(SECURE){setupExtras();v5InitData();}saveLocalCloud();
   // Após exportar o backup anterior, deixa o modo visitante sem dados privados.
   if(!SECURE){localStorage.setItem(DB_KEY,JSON.stringify(blank()));localStorage.removeItem(OLD_CLIENTS);}
   render(location.hash.slice(1)||'dashboard');
