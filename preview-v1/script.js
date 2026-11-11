@@ -16,9 +16,14 @@ const blank=()=>({version:3,clients:[],products:[],quotes:[],orders:[],transacti
 function load(){try{const item=localStorage.getItem(DB_KEY);if(item){const parsed=JSON.parse(item);if(parsed.version===3&&Array.isArray(parsed.clients)&&Array.isArray(parsed.products)&&Array.isArray(parsed.orders))return parsed}}catch(e){console.error('Falha ao ler dados',e)}
  const init=blank();try{const old=JSON.parse(localStorage.getItem(OLD_CLIENTS)||'[]');if(Array.isArray(old))init.clients=old.map(c=>({id:c.id||id(),nome:c.nome||'',tipo:c.tipo||'PF',doc:c.doc||'',telefone:c.telefone||'',email:c.email||'',cep:c.cep||'',cidade:c.cidade||'',endereco:c.endereco||'',observacoes:c.observacoes||''}))}catch{}
  return init;}
-let db=load();
-function save(){try{localStorage.setItem(DB_KEY,JSON.stringify(db));return true}catch(e){alert('Não foi possível salvar neste navegador. Exporte um backup e libere espaço.');return false}}
-if(!localStorage.getItem(DB_KEY))save();
+// O acesso autenticado usa dados exclusivos da sessão Supabase.
+let db=window.UNIVERSA_REQUIRE_AUTH?blank():load();
+function save(){
+ if(window.UNIVERSA_REQUIRE_AUTH)return false; // Substituído pelo módulo de nuvem após autenticação.
+ try{localStorage.setItem(DB_KEY,JSON.stringify(db));return true}
+ catch(e){alert('Não foi possível salvar neste navegador. Exporte um backup e libere espaço.');return false}
+}
+if(!window.UNIVERSA_REQUIRE_AUTH&&!localStorage.getItem(DB_KEY))save();
 const getClient=x=>db.clients.find(c=>c.id===x);
 const getProduct=x=>db.products.find(p=>p.id===x);
 const getQuote=x=>db.quotes.find(q=>q.id===x);
