@@ -338,7 +338,13 @@ function reserveOrder(oid){
  const oldState=o.stockState;
  const ok=tryReserve(o);
  if(save()===false){o.stockState=oldState;return alert('Não foi possível salvar a reserva. Tente novamente.');}
- render();alert(ok?'Materiais reservados.':'Estoque insuficiente para reservar todos os materiais. Confira Produtos e Estoque.');
+ render();
+ if(!ok){
+  const review=window.universaArtIntegracoes?.showOrderShortage;
+  if(typeof review==='function')return review(oid);
+  return alert('Estoque insuficiente. Confira os materiais no pedido e registre a entrada antes da produção.');
+ }
+ alert('Materiais reservados.');
 }
 function startOrder(oid){
  const o=getOrder(oid);if(!o||o.status!=='confirmado')return;
