@@ -34,7 +34,7 @@ function purchaseModal(prefillItems=[]){
   const materialDialog=productModal('','materia');
   materialDialog?.addEventListener('close',()=>{
    const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
-   if(added)setTimeout(()=>purchaseModal(prefillItems),0);
+   if(added)setTimeout(()=>purchaseModal([...prefillItems,{productId:added.id,quantidade:1,custo:Math.max(0,Number(added.custo)||0)}]),0);
   },{once:true});
   return materialDialog;
  }
@@ -67,7 +67,7 @@ function purchaseModal(prefillItems=[]){
       select.value=added.id;
     },{once:true});
   };
-  const validated=prefillItems.filter(row=>db.products.some(p=>p.id===row.productId&&p.tipo==='materia')&&Number(row.quantidade)>0&&Number(row.custo)>0);
+  const validated=prefillItems.filter(row=>db.products.some(p=>p.id===row.productId&&p.tipo==='materia')&&Number(row.quantidade)>0&&Number.isFinite(Number(row.custo))&&Number(row.custo)>=0);
   if(validated.length)validated.forEach(row=>addPurchaseRow(dlg,row));
   else addPurchaseRow(dlg);
  });
