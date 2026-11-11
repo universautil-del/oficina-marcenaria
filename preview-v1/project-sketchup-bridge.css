@@ -19,3 +19,9 @@
 .ua-cut-overview p{font-size:12px;color:#738b76}
 .v5-project-card .row-actions{flex-wrap:wrap}
 @media(max-width:820px){.ua-cut-columns{grid-template-columns:1fr}.ua-cut-choice{padding:13px}.ua-project-bridge{padding:17px}.ua-cut-choice .btn{width:100%}}
+
+/* Projeto integrado ao orçamento: evidenciar vínculo e exigência de conferência. */
+.ua-project-sales-note{background:#f4f7ef;border:1px solid #d4e5d3;border-left:4px solid #3b7653;padding:12px 15px;border-radius:9px;color:#284b36;font-size:13px;line-height:1.6;margin-bottom:14px}
+.ua-project-sales-note strong{font-weight:800}
+.v5-project-card .row-actions .btn{white-space:normal}
+@media(max-width:700px){.ua-project-sales-note{padding:10px 12px}.v5-project-card .row-actions{display:flex;flex-wrap:wrap;gap:5px}}
