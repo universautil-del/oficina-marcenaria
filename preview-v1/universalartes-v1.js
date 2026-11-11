@@ -120,33 +120,112 @@
   function assistantView(){
     const projects=Array.isArray(db.projects)?db.projects:[];
     const projectOptions=projects.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nome||'Projeto sem nome')+' — '+esc(p.ambiente||'Ambiente')+'</option>').join('');
+    const customerOptions=(db.clients||[]).slice().sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR')).map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome||'Cliente')+'</option>').join('');
     content.innerHTML=
       '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · ASSISTENTE DE PROJETOS</div><h2>Descreva o móvel que você precisa fabricar</h2>'+
-      '<p>Organize o projeto e leve as informações para uma conversa com o ChatGPT.</p></div></div>'+
+      '<p>Aproveite clientes e projetos cadastrados, converta medidas em mm e prepare um modelo para SketchUp 2022 sem refazer cadastros.</p></div></div>'+
       '<div class="ua-assistant-grid"><section class="ua-section"><h3>1. Informações do móvel</h3>'+
       '<p class="muted">Use medidas em milímetros (mm). Os campos marcados com * são obrigatórios.</p>'+
       '<form id="uaAssistantForm" class="ua-form">'+
-      '<label>Usar projeto cadastrado (opcional)<select name="selectedProject" id="uaAssistantProject"><option value="">Começar um novo briefing</option>'+projectOptions+'</select></label>'+
+      '<label>Usar projeto cadastrado (opcional)<select name="selectedProject" id="uaAssistantProject"><option value="">Começar um novo briefing</option>'+projectOptions+'</select></label>'+'<label>Cliente vinculado<select name="clientId"><option value="">Sem cliente definido</option>'+customerOptions+'</select></label>'+
       '<label>Ambiente *<input name="ambiente" required maxlength="120" placeholder="Ex.: Cozinha, quarto, sala"></label>'+
       '<label>Tipo de móvel *<input name="movel" required maxlength="150" placeholder="Ex.: Armário aéreo, guarda-roupa"></label>'+
       '<div class="ua-form-3"><label>Largura (mm)<input name="largura" inputmode="decimal" placeholder="1600"></label><label>Altura (mm)<input name="altura" inputmode="decimal" placeholder="2100"></label><label>Profundidade (mm)<input name="profundidade" inputmode="decimal" placeholder="550"></label></div>'+
+      '<fieldset class="ua-quick-metric"><legend>Converter para mm e preencher uma medida</legend><div class="ua-form-3">'+
+      '<label>Valor<input id="uaMetricValue" inputmode="decimal" placeholder="Ex.: 2,5"></label>'+
+      '<label>Unidade<select id="uaMetricUnit"><option value="m">Metros (m)</option><option value="cm">Centímetros (cm)</option><option value="mm">Milímetros (mm)</option></select></label>'+
+      '<label>Preencher<select id="uaMetricTarget"><option value="largura">Largura</option><option value="altura">Altura</option><option value="profundidade">Profundidade</option></select></label>'+
+      '</div><button type="button" class="btn" id="uaMetricApply">Converter e preencher</button> <output id="uaMetricResult" aria-live="polite"></output></fieldset>'+
       '<label>Material e espessura<input name="material" maxlength="180" placeholder="Ex.: MDF branco TX de 15 mm"></label>'+
       '<label>Portas, gavetas, nichos e ferragens<textarea name="componentes" maxlength="1800" rows="3" placeholder="Ex.: 4 portas, 2 gavetas, dobradiças com amortecedor"></textarea></label>'+
       '<label>Acabamentos e detalhes<textarea name="acabamento" maxlength="1800" rows="2" placeholder="Ex.: Fitamento de bordas, acabamento amadeirado"></textarea></label>'+
       '<label>Restrições e observações<textarea name="observacoes" maxlength="2400" rows="3" placeholder="Ex.: Pia existente, tomada, parede irregular, espaço do rodapé"></textarea></label>'+
-      '<button type="submit" class="btn primary">Preparar pedido para o ChatGPT</button></form></section>'+
+      '<div class="ua-assistant-actions"><button type="submit" class="btn primary">Preparar pedido para o ChatGPT</button><button type="button" class="btn" id="uaSaveProject">Salvar no projeto</button></div></form></section>'+
       '<section class="ua-section"><h3>2. Pedido técnico organizado</h3><p class="muted">O sistema vai montar um texto com suas informações. Você copia, abre o ChatGPT e anexa as fotos ou desenhos disponíveis.</p>'+
-      '<textarea id="uaAssistantOutput" class="ua-generated" aria-label="Pedido técnico para o ChatGPT" readonly placeholder="Preencha o formulário para preparar seu projeto."></textarea>'+
+      '<div class="ua-assistant-links"><a href="#projetos">Projetos cadastrados</a><a href="#sketchup">Importar peças SketchUp</a><a href="#orcamentos">Orçamentos</a><a href="#produtos">Materiais em estoque</a></div>'+'<p id="uaAssistantContext" class="muted small" aria-live="polite">Selecione um projeto para consultar seus vínculos e a lista de peças.</p>'+'<textarea id="uaAssistantOutput" class="ua-generated" aria-label="Pedido técnico para o ChatGPT" readonly placeholder="Preencha o formulário para preparar seu projeto."></textarea>'+
       '<div class="actions gap-top"><button type="button" class="btn" id="uaCopyPrompt" disabled>Copiar pedido</button><a class="btn primary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Abrir ChatGPT ↗</a></div>'+
       '<div id="uaAssistantStatus" class="muted small" aria-live="polite"></div>'+
-      '<div class="empty">Confira todas as medidas na obra antes de fabricar. Um desenho ou plano de corte gerado por IA é uma proposta de trabalho, não substitui a conferência das ferragens, folgas, prumo, esquadro, sentido do veio e tolerâncias.</div>'+
+      '<div class="empty">O assistente prepara instruções técnicas e pode solicitar um script Ruby para gerar geometria no SketchUp 2022. A OFICINA não exporta um .skp nativo automaticamente. Confira as medidas na obra e aprove o projeto antes de cortar ou fabricar.</div>'+
       '</section></div>';
     const form=document.getElementById('uaAssistantForm');
     const status=document.getElementById('uaAssistantStatus');
     form.querySelector('#uaAssistantProject').addEventListener('change',e=>{
       const p=projects.find(x=>x.id===e.target.value);if(!p)return;
-      const fields={ambiente:p.ambiente||'',movel:p.nome||'',largura:p.largura||'',altura:p.altura||'',profundidade:p.profundidade||'',material:p.material||'',componentes:p.componentes||'',acabamento:p.acabamento||'',observacoes:p.observacoes||''};
+      const fields={clientId:p.clientId||'',ambiente:p.ambiente||'',movel:p.nome||'',largura:p.largura||'',altura:p.altura||'',profundidade:p.profundidade||'',material:p.material||'',componentes:p.componentes||'',acabamento:p.acabamento||'',observacoes:p.observacoes||''};
       Object.entries(fields).forEach(([key,val])=>{const input=form.elements.namedItem(key);if(input)input.value=String(val)});
+      showProjectContext(p);
+    });
+    const showProjectContext=p=>{
+      const node=document.getElementById('uaAssistantContext');
+      if(!node)return;
+      if(!p){node.textContent='Novo projeto: selecione cliente e medidas. Ao salvar, ele aparecerá em Projetos de móveis.';return}
+      const customer=(db.clients||[]).find(c=>c.id===p.clientId);
+      const cut=p.cutlist?.summary;
+      const linkedQuotes=(db.quotes||[]).filter(q=>q.projectId===p.id);
+      const linkedOrders=(db.orders||[]).filter(o=>o.projectId===p.id);
+      node.textContent='Projeto '+p.nome+' · Cliente '+(customer?.nome||'não definido')+
+        ' · '+(cut?cut.pecas+' peças importadas do SketchUp':'sem lista SketchUp')+
+        ' · '+linkedQuotes.length+' orçamento(s) · '+linkedOrders.length+' pedido(s).';
+    };
+    showProjectContext(null);
+    document.getElementById('uaMetricApply').addEventListener('click',()=>{
+      const input=document.getElementById('uaMetricValue');
+      const value=String(input.value||'').trim().replace(/\\s/g,'').replace(',','.');
+      const unit=document.getElementById('uaMetricUnit').value;
+      const target=document.getElementById('uaMetricTarget').value;
+      const output=document.getElementById('uaMetricResult');
+      if(!/^\\d+(?:\\.\\d+)?$/.test(value)||!['m','cm','mm'].includes(unit)){
+        output.textContent='Informe uma medida positiva válida.';return;
+      }
+      const mm=Number(value)*({m:1000,cm:10,mm:1}[unit]);
+      if(!Number.isFinite(mm)||mm<=0||mm>100000){
+        output.textContent='Medida fora do intervalo permitido.';return;
+      }
+      const valueMm=Math.round(mm*100)/100;
+      const field=form.elements.namedItem(target);
+      if(field)field.value=String(valueMm);
+      output.textContent='Resultado: '+valueMm.toLocaleString('pt-BR')+' mm. '+target+' preenchida.';
+    });
+    document.getElementById('uaSaveProject').addEventListener('click',()=>{
+      try{
+        const v=Object.fromEntries(new FormData(form));
+        const name=String(v.movel||'').trim();
+        if(!name||!String(v.ambiente||'').trim())throw Error('Informe ambiente e tipo do móvel antes de salvar.');
+        const cleanNumber=value=>{
+          const raw=String(value||'').trim().replace(',','.');
+          if(!raw)return 0;
+          if(!/^\\d+(?:\\.\\d+)?$/.test(raw)||Number(raw)<=0||Number(raw)>100000)throw Error('Confirme as medidas em milímetros.');
+          return Number(raw);
+        };
+        const customer=(db.clients||[]).find(c=>c.id===v.clientId);
+        const existing=projects.find(p=>p.id===v.selectedProject);
+        const duplicate=!existing&&projects.some(p=>String(p.nome||'').trim().toLowerCase()===name.toLowerCase()&&String(p.clientId||'')===String(v.clientId||''));
+        if(duplicate)throw Error('Já existe um projeto com esse nome e cliente. Selecione-o em Usar projeto cadastrado.');
+        if(existing&&!confirm('Atualizar o projeto '+existing.nome+' com as informações deste formulário? O histórico de orçamentos e peças será preservado.'))return;
+        const currentSeq={...db.seq},currentProjects=db.projects;
+        const project={
+          ...(existing||{}),
+          id:existing?.id||id(),
+          number:existing?.number||Number(db.seq?.project||1),
+          nome:name.slice(0,140),
+          clientId:customer?.id||'',clientNome:customer?.nome||'',
+          ambiente:String(v.ambiente||'').trim(),
+          largura:cleanNumber(v.largura),altura:cleanNumber(v.altura),profundidade:cleanNumber(v.profundidade),
+          material:String(v.material||'').trim().slice(0,180),
+          acabamento:String(v.acabamento||'').trim().slice(0,180),
+          componentes:String(v.componentes||'').trim().slice(0,1800),
+          observacoes:String(v.observacoes||'').trim().slice(0,2400),
+          status:existing?.status||'planejamento',
+          checklist:existing?.checklist||[{label:'Confirmar medidas na obra',done:false},{label:'Aprovar desenho SketchUp',done:false},{label:'Orçamento e materiais',done:false},{label:'Montagem e instalação',done:false}]
+        };
+        db.projects=existing?db.projects.map(p=>p.id===existing.id?project:p):[...db.projects,project];
+        if(!existing)db.seq.project=project.number+1;
+        try{if(save()===false)throw Error('Sincronização indisponível: nenhuma mudança foi salva.');}
+        catch(error){db.projects=currentProjects;db.seq=currentSeq;throw error}
+        if(!existing){projects.push(project);const selector=form.elements.namedItem('selectedProject');selector.add(new Option(project.nome+' — '+project.ambiente,project.id,true,true));selector.value=project.id}
+        showProjectContext(project);
+        status.textContent='Projeto '+(existing?'atualizado':'cadastrado')+'. Confira o indicador Sincronizado antes de trocar de aparelho.';
+      }catch(err){status.textContent=err.message||'Não foi possível salvar o projeto.'}
     });
     form.addEventListener('submit',e=>{
       e.preventDefault();
