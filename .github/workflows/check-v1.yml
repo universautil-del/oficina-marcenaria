@@ -1,4 +1,4 @@
-name: Validar Universa Art OFICINA 1.2
+name: Validar Universa Art OFICINA 1.0
 on:
   push:
     paths:
