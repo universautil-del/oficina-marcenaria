@@ -77,6 +77,9 @@ const entryDlg={isConnected:true,
   selector==='[data-action="add-purchase-row"]'?addBtn:null,
  querySelectorAll:selector=>selector==='[data-pur-product]'?[sel]:[]};
 entry.after(entryDlg);
+assert.equal(purchaseRows.length,1,'Primeiro material deve vir selecionado ao continuar a entrada');
+assert.equal(purchaseRows[0].productId,'mat1');
+assert.equal(purchaseRows[0].custo,100);
 assert(typeof btn.onclick==='function');
 const beforeRowCount=purchaseRows.length;
 btn.onclick();
