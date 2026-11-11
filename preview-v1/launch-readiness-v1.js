@@ -61,6 +61,44 @@
     if((data.purchases||[]).some(o=>o.supplierId&&!supplierIds.has(o.supplierId))){
       messages.push({severity:'aviso',message:'Há compra com fornecedor não encontrado.'});
     }
+    // Auditoria cruzada de integrações. Avisos não alteram dados existentes.
+    for(const type of ['quotes','orders']){
+      const used=new Set();
+      for(const row of data[type]||[]){
+        if(row.number===undefined||row.number===null)continue;
+        const number=String(row.number);
+        if(used.has(number)){
+          messages.push({severity:'erro',message:'Há números duplicados em '+(type==='orders'?'Pedidos.':'Orçamentos.')});break;
+        }
+        used.add(number);
+      }
+    }
+    const projectIds=new Set((data.projects||[]).map(p=>p.id));
+    if([...(data.quotes||[]),...(data.orders||[])].some(row=>row.projectId&&!projectIds.has(row.projectId)))
+      messages.push({severity:'aviso',message:'Há pedido ou orçamento vinculado a projeto não encontrado.'});
+    const usedCodes=new Set();
+    for(const p of products){
+      const c=String(p.codigo||'').trim();
+      if(!/^\\d{1,3}$/.test(c))continue;
+      const n=Number(c);if(n<1||n>999)continue;
+      if(usedCodes.has(n)){messages.push({severity:'erro',message:'Códigos numéricos duplicados no cadastro de materiais.'});break}
+      usedCodes.add(n);
+    }
+    for(const order of data.orders||[]){
+      if(order.status==='cancelado'||!Array.isArray(order.items)||!order.items.length)continue;
+      const expected=Math.round((order.items.reduce((sum,i)=>sum+Number(i.preco)*Number(i.quantidade),0)-
+        Number(order.desconto||0)+Number(order.frete||0))*100)/100;
+      if(!Number.isFinite(expected)||expected<0)continue;
+      const accounts=transactions.filter(t=>t.orderId===order.id&&t.kind==='receber');
+      if(!accounts.length){
+        messages.push({severity:'aviso',message:'Pedido #'+order.number+' sem receita vinculada. Confira o Financeiro.'});
+        continue;
+      }
+      const planned=Math.round(accounts.reduce((n,t)=>n+Number(t.valor||0),0)*100)/100;
+      if(Math.abs(expected-planned)>.02){
+        messages.push({severity:'aviso',message:'Pedido #'+order.number+' com valores de parcelas divergentes do total.'});
+      }
+    }
     let bytes=0;
     try{bytes=new Blob([JSON.stringify(data)]).size}
     catch{messages.push({severity:'erro',message:'Não foi possível serializar os dados atuais.'})}
