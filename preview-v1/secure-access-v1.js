@@ -21,7 +21,7 @@
   const error=(!configured&&(!state?.status||state.status.startsWith('Local')))?'Conexão na nuvem ainda não configurada':state?.status||'Pronto para entrar';
   gate.innerHTML='<section class="ua-secure-box" aria-labelledby="ua-secure-title">'+
    '<div class="ua-secure-brand"><img src="assets/universa-art-logo.webp" alt="" width="64" height="64"><div><strong>UNIVERSA ART</strong><small>OFICINA · acesso autenticado</small></div></div>'+
-   '<h1 id="ua-secure-title">OFICINA 1.2 · Acesso pessoal</h1>'+
+   '<h1 id="ua-secure-title">Entrar na OFICINA</h1><p class="ua-secure-foot">Versão 1.2 · acesso pessoal</p>'+
    '<p>Uma única conta para você trabalhar no computador e no celular. Entre sempre com o mesmo e-mail e senha para acessar os mesmos dados. Seus registros só são carregados após autenticação.</p>'+
    '<div class="ua-secure-status" role="status">'+escHtml(status||error)+'</div>'+
    '<details class="ua-secure-details" '+(!configured?'open':'')+'><summary>'+(configured?'Configuração da nuvem (avançado)':'Primeiro acesso · Conectar o banco uma vez neste aparelho')+'</summary>'+
