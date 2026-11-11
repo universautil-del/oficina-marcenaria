@@ -42,14 +42,13 @@
  gate.addEventListener('submit',async event=>{
   const form=event.target;if(!['uaSecureConfig','uaSecureLogin'].includes(form.id))return;
   event.preventDefault();if(busy)return;
+  const data=new FormData(form),mode=event.submitter?.value||'login';
   busy=true;status='Verificando no servidor…';view();
   try{
    if(form.id==='uaSecureConfig'){
-    const data=new FormData(form);
     cloud().configure(String(data.get('url')||'').trim().replace(/\/+$/,''),String(data.get('key')||'').trim());
     status='Conexão pública salva. Agora entre na conta.';
    }else{
-    const data=new FormData(form),mode=event.submitter?.value||'login';
     const email=String(data.get('email')||'').trim(),password=String(data.get('password')||'');
     if(!cloud()?.cfg)throw Error('Configure primeiro o banco Supabase.');
     if(mode==='signup'){
