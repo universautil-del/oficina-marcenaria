@@ -159,11 +159,13 @@
   return JSON.parse(text);
  }
  async function restoreData(encrypted,pass){
-  if(window.oficinaCloud?.active)throw Error('Desative a sincronização da nuvem e exporte um backup antes de restaurar. Restauração em conta ativa foi bloqueada.');
+  const secure=!!window.UNIVERSA_REQUIRE_AUTH;
+  if(!secure&&window.oficinaCloud?.active)throw Error('Desative a sincronização da nuvem e exporte um backup antes de restaurar. Restauração em conta ativa foi bloqueada.');
+  if(secure&&(!window.oficinaCloud?.active||window.oficinaCloud?.paused))throw Error('Faça login e resolva eventuais conflitos de nuvem antes de restaurar.');
   const recovered=await decryptBackup(encrypted,pass);
   const count=key=>Array.isArray(recovered[key])?recovered[key].length:0;
   const summary=count('clients')+' clientes, '+count('products')+' produtos, '+count('orders')+' pedidos e '+count('transactions')+' lançamentos.';
-  if(!confirm('ATENÇÃO: a restauração substitui dados LOCAIS neste navegador. O backup contém '+summary+' Deseja continuar?'))return false;
+  if(!confirm('ATENÇÃO: a restauração substituirá '+(secure?'os dados da SUA conta Supabase':'os dados LOCAIS deste navegador')+'. O backup contém '+summary+' Confirma a substituição?'))return false;
   // Antes de substituir, gerar cópia cifrada (nunca JSON aberto com dados pessoais).
   const current={app:'oficina',version:3,exportedAt:new Date().toISOString(),data:db};
   const safety=await encryptBackup(current,pass);
@@ -173,9 +175,15 @@
   try{
    db=recovered;
    if(typeof setupExtras==='function')setupExtras();
-   if(save()===false)throw Error('Não foi possível gravar o backup neste navegador.');
+   if(typeof v5InitData==='function')v5InitData();
+   if(save()===false)throw Error('Não foi possível preparar a restauração.');
+   if(secure){
+    await window.oficinaCloud.commit();
+    const checked=await window.oficinaCloud.inspectConnection();
+    if(!checked?.synchronized)throw Error('O servidor não confirmou a restauração. Verifique o banco antes de repetir.');
+   }
    return true;
-  }catch(err){db=previous;save();throw err}
+  }catch(err){db=previous;if(!secure)save();throw err}
  }
  function passInput(){
   const input=document.querySelector('#uaDrivePass');
@@ -216,7 +224,7 @@
    '<section class="ua-section ua-drive-panel gap-top"><h3>3. Verificar ou restaurar um backup</h3>'+
    '<p class="muted">Escolha o arquivo .uaenc.json e informe a senha acima. Use Verificar para confirmar que o arquivo abre <strong>sem alterar nenhum registro</strong>. Restaure somente em ambiente de testes e após salvar um backup adicional.</p>'+
    '<input id="uaDriveImport" type="file" accept=".json,application/json">'+
-   '<div class="ua-drive-actions"><button type="button" class="btn" data-drive-action="verify">Verificar arquivo (não altera dados)</button><button type="button" class="btn" data-drive-action="import">Restaurar backup local</button></div>'+
+   '<div class="ua-drive-actions"><button type="button" class="btn" data-drive-action="verify">Verificar arquivo (não altera dados)</button><button type="button" class="btn" data-drive-action="import">Restaurar backup '+(window.UNIVERSA_REQUIRE_AUTH?'no banco':'local')+'</button></div>'+
    '<p class="muted small">Backups automáticos diários ainda não estão ativos: o site está hospedado no GitHub Pages e não executa tarefas em segundo plano. A versão 1.2 permanece em homologação.</p></section>';
   const passField=document.querySelector('#uaDrivePass');
   if(passField)passField.value=typed;
@@ -270,7 +278,7 @@
    }else if(action==='restore'){
     const data=await loadDriveFile(b.dataset.fileid);
     const restored=await restoreData(data,passInput());
-    showNotice(restored?'Backup do Drive restaurado neste navegador. Confira os registros.':'Restauração cancelada.');
+    showNotice(restored?'Backup do Drive restaurado '+(window.UNIVERSA_REQUIRE_AUTH?'na conta autenticada.':'neste navegador.')+' Confira os registros.':'Restauração cancelada.');
    }else if(action==='import'||action==='verify'){
     const file=document.querySelector('#uaDriveImport')?.files?.[0];
     if(!file)throw Error('Selecione o arquivo .uaenc.json.');
@@ -281,7 +289,7 @@
       showNotice('Backup válido! '+(recovered.clients?.length||0)+' cliente(s), '+(recovered.orders?.length||0)+' pedido(s), '+(recovered.products?.length||0)+' produto(s). Nenhum dado foi alterado.');
     }else{
       const restored=await restoreData(payload,passInput());
-      showNotice(restored?'Backup restaurado neste navegador. Confira os registros.':'Restauração cancelada.');
+      showNotice(restored?'Backup restaurado '+(window.UNIVERSA_REQUIRE_AUTH?'na conta autenticada.':'neste navegador.')+' Confira os registros.':'Restauração cancelada.');
     }
    }
   }catch(err){showNotice('Não foi possível concluir: '+String(err?.message||err).slice(0,220))}
