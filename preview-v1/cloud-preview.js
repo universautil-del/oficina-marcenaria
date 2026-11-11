@@ -307,6 +307,23 @@
   state.commit=flush;
   state.secure=true;
  }
+ // Copias do servidor somente leitura: RLS restringe os registros ao usuario logado.
+ // Nenhum segredo de servidor entra no navegador.
+ state.listWeeklyBackups=async()=>{
+  if(!state.session||!state.active||state.paused)throw Error('Entre e sincronize o Oficina antes de consultar as copias.');
+  const rows=await request('/rest/v1/ua_backups_semanais?select=id,semana_utc,criado_em,revisao_origem&order=semana_utc.desc&limit=4');
+  if(!Array.isArray(rows))throw Error('Resposta inesperada da lista de backups.');
+  return rows;
+ };
+ state.getWeeklyBackup=async backupId=>{
+  if(!state.session||!state.active||state.paused)throw Error('Entre e sincronize o Oficina antes de recuperar uma copia.');
+  const id=Number(backupId);
+  if(!Number.isSafeInteger(id)||id<=0)throw Error('Identificador de backup invalido.');
+  const rows=await request('/rest/v1/ua_backups_semanais?id=eq.'+id+'&select=id,dados,revisao_origem,criado_em&limit=1');
+  const item=Array.isArray(rows)?rows[0]:null;
+  if(!item||!valid(item.dados))throw Error('Copia nao localizada ou estrutura invalida.');
+  return item;
+ };
  window.oficinaCloud=state;
  boot();
 })();
