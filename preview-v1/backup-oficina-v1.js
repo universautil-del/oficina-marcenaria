@@ -7,7 +7,7 @@
  const TYPE='universa-art-encrypted-backup-v1';
  const PREFIX='UniversaArt_Backup_';
  const enc=new TextEncoder(),dec=new TextDecoder();
- const safe=v=>esc(String(v??''));
+
  const b64=bytes=>{
    let s='';for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode(...bytes.subarray(i,i+8192));
    return btoa(s);
