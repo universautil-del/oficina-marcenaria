@@ -142,6 +142,10 @@
       (audit.messages.length?'<div class="ua-launch-findings"><h4>Itens para revisar</h4><ul>'+audit.messages.map(m=>'<li><strong>'+escape(m.severity==='erro'?'Erro':'Atenção')+':</strong> '+escape(m.message)+'</li>').join('')+'</ul></div>':
        '<p class="muted small">A checagem local não encontrou erros conhecidos, mas não verifica a autenticidade de todos os documentos nem substitui auditoria de banco.</p>')+
       '</section>'+
+      '<section class="ua-section gap-top ua-launch"><h3>Entrar com login e banco autenticado</h3>'+
+       '<p>Uma nova entrada separada usa autenticação Supabase e confirmação de revisão pelo servidor. Não carrega cadastros da prévia local sem importação autorizada.</p>'+
+       '<p><a class="btn primary" href="seguro.html">Abrir OFICINA com login (homologação)</a></p>'+
+       '<p class="muted small">Primeiro configure o banco com o SQL documentado. O acesso seguro depende de validação real de RLS com duas contas e do processo de backup.</p></section>'+
       '<section class="ua-section gap-top ua-launch"><h3>O que ainda impede sair da versão de testes</h3>'+
       '<div class="ua-launch-remaining"><div><strong>1. Testar duas contas separadas</strong><p>Confirmar no Supabase que uma conta não consegue ler ou escrever dados da outra (RLS). Verificar permissões reais.</p></div>'+
       '<div><strong>2. Testar restauração completa</strong><p>Exportar um backup, restaurar em ambiente descartável e conferir cadastros, pedidos e valores. A verificação JSON acima não substitui este teste.</p></div>'+
