@@ -120,6 +120,9 @@
   if(filter)filter.onchange=()=>{catalogTypeFilter=filter.value;productsView()};
  };
  productModal=function(pid='',initialType='materia'){
+  // Chamadas a partir de Entrada de Materiais são SEMPRE matéria-prima.
+  // O formulário geral de Produtos continua permitindo escolher os dois tipos.
+  const entryMaterial=initialType==='materia-entrada'&&!pid;
   const existing=pid?(db.products||[]).find(p=>p.id===pid):null;
   if(pid&&!existing)return alert('Produto não encontrado.');
   const old=existing||{tipo:'materia',unidade:'un',estoque:0,minimo:0,preco:0,custo:0,components:[],observacoes:''};
@@ -128,22 +131,38 @@
   const units=['un','chapa','m','m²','m³','par','jogo','kg','pacote'];
   if(old.unidade&&!units.includes(old.unidade))units.push(old.unidade);
   const unitOptions=units.map(v=>'<option value="'+safe(v)+'"'+(old.unidade===v?' selected':'')+'>'+safe(v)+'</option>').join('');
-  const type=existing?.tipo||(['materia','acabado'].includes(initialType)?initialType:'materia');
+  const type=entryMaterial?'materia':existing?.tipo||(['materia','acabado'].includes(initialType)?initialType:'materia');
   const disable=existing?' disabled title="O tipo não pode ser alterado após o cadastro para preservar os pedidos"':'';
-  const fields='<div class="ua-product-grid">'+
+  const typeField=entryMaterial?
+   '<label>Tipo de produto *<input value="Matéria-prima" readonly aria-readonly="true" aria-label="Tipo de produto: matéria-prima"></label>'+
+    '<input type="hidden" name="tipo" value="materia">':
    '<label>Tipo de produto *<select name="tipo" required'+disable+'>'+
     '<option value="materia"'+(type==='materia'?' selected':'')+'>Matéria-prima</option>'+
-    '<option value="acabado"'+(type==='acabado'?' selected':'')+'>Produto acabado</option></select></label>'+
+    '<option value="acabado"'+(type==='acabado'?' selected':'')+'>Produto acabado</option></select></label>';
+  const fields='<div class="ua-product-grid">'+typeField+
    '<label>Código automático<input name="codigoDisplay" readonly aria-readonly="true" value="'+safe(code)+'" title="Código gerado automaticamente"></label>'+
    '<p class="ua-product-wide muted small" id="uaProductTypeHelp"></p>'+
    '<label>Unidade *<select name="unidade" required>'+unitOptions+'</select></label>'+
-   '<label class="ua-product-wide"><span data-product-name-label>Descrição do produto *</span><input name="nome" required maxlength="180" placeholder="Ex.: Armário aéreo de MDF ou MDF branco TX 15 mm" value="'+safe(old.nome||'')+'"></label>'+
+   (!pid?'<label class="ua-product-wide" data-ua-raw>Escolha um exemplo para preencher mais rápido (opcional)<select id="uaMaterialPreset" aria-label="Exemplo de material">'+
+    '<option value="">Selecione um exemplo ou cadastre livremente</option>'+
+    '<option value="mdf18">Chapa MDF 18 mm</option><option value="mdf25">Chapa MDF 25 mm</option>'+
+    '<option value="mdf15">Chapa MDF 15 mm</option><option value="parafuso">Parafusos</option>'+
+    '<option value="dobradica">Dobradiças</option><option value="corredica">Corrediças</option>'+
+    '<option value="fita">Fita de borda</option><option value="cola">Cola para madeira</option>'+
+    '</select></label>':'')+
+   '<label class="ua-product-wide"><span data-product-name-label>Descrição do produto *</span><input name="nome" required maxlength="180" autocomplete="off" placeholder="Ex.: MDF branco TX 18 mm, MDF 25 mm, parafuso 4 × 40 mm" value="'+safe(old.nome||'')+'"></label>'+
+   '<label data-ua-raw>Espessura (mm), quando aplicável<input name="espessuraMm" type="number" inputmode="decimal" min="0" max="1000" step="0.1" placeholder="Ex.: 18 ou 25" value="'+safe(old.espessuraMm??'')+'"></label>'+
+   '<label data-ua-raw>Comprimento da chapa (mm), opcional<input name="chapaComprimentoMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaComprimentoMm??'')+'"></label>'+
+   '<label data-ua-raw>Largura da chapa (mm), opcional<input name="chapaLarguraMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaLarguraMm??'')+'"></label>'+
    '<label data-ua-raw>Estoque mínimo<input name="minimo" type="number" min="0" step="0.001" value="'+Number(old.minimo||0)+'"></label>'+
    '<label data-ua-raw>Custo unitário (R$)<input name="custo" type="number" min="0" step="0.01" value="'+Number(old.custo||0)+'"></label>'+
    '<label>Preço de venda (R$)<input name="preco" type="number" min="0" step="0.01" value="'+Number(old.preco||0)+'"></label>'+
-   '<label class="ua-product-wide" data-ua-raw>'+(pid?'Saldo em estoque':'Saldo inicial de estoque')+
-    '<input name="estoque" type="number" min="0" step="0.001" value="'+Number(old.estoque||0)+'"></label>'+
-   '<label class="ua-product-wide">Categoria (opcional)<input name="categoria" maxlength="120" value="'+safe(old.categoria||'')+'" placeholder="Ex.: Chapas, ferragens, painéis"></label>'+
+   (entryMaterial?
+    '<div class="ua-product-wide ua-stock-from-purchase" data-ua-raw><strong>Saldo inicial: 0</strong><p class="muted small">O estoque será atualizado quando você confirmar o recebimento em Entrada de Materiais. Não lance a quantidade duas vezes.</p><input type="hidden" name="estoque" value="0"></div>':
+    '<label class="ua-product-wide" data-ua-raw>'+(pid?'Saldo em estoque':'Saldo inicial de estoque')+
+    '<input name="estoque" type="number" min="0" step="0.001" value="'+Number(old.estoque||0)+'"></label>')+
+   '<label class="ua-product-wide">Categoria (opcional)<input name="categoria" list="uaMarcenariaCategorias" maxlength="120" value="'+safe(old.categoria||'')+'" placeholder="Ex.: Chapas MDF, parafusos, ferragens"></label>'+
+   '<datalist id="uaMarcenariaCategorias"><option value="Chapas MDF"><option value="Fitas de borda"><option value="Parafusos"><option value="Dobradiças"><option value="Corrediças"><option value="Puxadores"><option value="Colas e adesivos"><option value="Outros insumos"></datalist>'+
    '<label class="ua-product-wide">Observações<textarea name="observacoes" maxlength="2500" rows="2">'+safe(old.observacoes||'')+'</textarea></label>'+
    '</div>'+
    '<section class="ua-product-finished" data-ua-finished hidden>'+
@@ -153,8 +172,9 @@
    '<button class="btn small" type="button" id="uaAddBomRow">+ Adicionar matéria-prima</button>'+
    '<button class="btn small" type="button" id="uaBomNewMaterial" style="margin-left:8px">+ Cadastrar matéria-prima</button>'+
    '<p id="uaBomCost" class="muted small" role="status" aria-live="polite"></p></section>';
-  return openModal(pid?'Editar produto':'Produtos — novo cadastro',fields,(v,dialog)=>{
-   const kind=existing?.tipo||String(v.tipo||dialog?.querySelector('[name="tipo"]')?.value||type);
+  return openModal(pid?'Editar produto':entryMaterial?'Cadastrar matéria-prima':'Produtos — novo cadastro',fields,(v,dialog)=>{
+   if(entryMaterial&&v.tipo&&v.tipo!=='materia')throw Error('Entrada de Materiais aceita somente matérias-primas.');
+   const kind=entryMaterial?'materia':existing?.tipo||String(v.tipo||dialog?.querySelector('[name="tipo"]')?.value||type);
    if(!['materia','acabado'].includes(kind))throw Error('Selecione um tipo válido.');
    if(existing&&v.tipo&&v.tipo!==existing.tipo)throw Error('Não altere o tipo de um produto já cadastrado.');
    const data={...old,id:pid||id(),tipo:kind,codigo:code,nome:String(v.nome||'').trim(),
@@ -168,8 +188,17 @@
       Number(p.codigo)===Number(code):String(p.codigo)===code));
    if(isDuplicate)throw Error('Este código já pertence a outro produto.');
    if(kind==='materia'){
-    const custo=Number(v.custo),estoque=Number(v.estoque),minimo=Number(v.minimo);
+    const custo=Number(v.custo),estoque=entryMaterial?0:Number(v.estoque),minimo=Number(v.minimo);
     if(![custo,estoque,minimo].every(n=>Number.isFinite(n)&&n>=0))throw Error('Custo, saldo e mínimo devem ser números não negativos.');
+    const dimensions=['espessuraMm','chapaComprimentoMm','chapaLarguraMm'];
+    for(const dimension of dimensions){
+     const value=v[dimension];
+     if(value==null||String(value).trim()===''){data[dimension]=null;continue}
+     const num=Number(value);
+     if(!Number.isFinite(num)||num<=0||num>10000||
+        (dimension==='espessuraMm'&&num>1000))throw Error('Confira as medidas da matéria-prima em milímetros.');
+     data[dimension]=num;
+    }
     data.custo=round(custo);data.estoque=estoque;data.minimo=minimo;data.components=[];
     if(data.estoque+0.000001<reservedQuantity(data.id))throw Error('O estoque não pode ficar abaixo da quantidade reservada.');
    }else{
@@ -201,13 +230,34 @@
    close.onclick=()=>dialog.close();
    dialog.insertBefore(close,dialog.firstChild);
    const typeEl=dialog.querySelector('[name="tipo"]');
+   if(entryMaterial&&typeEl)typeEl.value='materia';
    typeEl?.addEventListener('change',()=>refreshType(dialog));
+   const sample=dialog.querySelector('#uaMaterialPreset');
+   if(sample)sample.onchange=()=>{
+    const options={
+     mdf18:{nome:'MDF 18 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:18},
+     mdf25:{nome:'MDF 25 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:25},
+     mdf15:{nome:'MDF 15 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:15},
+     parafuso:{nome:'Parafuso',categoria:'Parafusos',unidade:'un'},
+     dobradica:{nome:'Dobradiça',categoria:'Dobradiças',unidade:'un'},
+     corredica:{nome:'Corrediça',categoria:'Corrediças',unidade:'par'},
+     fita:{nome:'Fita de borda',categoria:'Fitas de borda',unidade:'m'},
+     cola:{nome:'Cola para madeira',categoria:'Colas e adesivos',unidade:'un'}
+    };
+    const chosen=options[sample.value];
+    if(!chosen)return;
+    for(const key of ['nome','categoria','unidade','espessuraMm']){
+     const input=dialog.querySelector('[name="'+key+'"]');
+     if(input)input.value=chosen[key]??'';
+    }
+    dialog.querySelector('[name="nome"]')?.focus();
+   };
    const add=dialog.querySelector('#uaAddBomRow');
    if(add)add.onclick=()=>addComponentRow(dialog);
    const quick=dialog.querySelector('#uaBomNewMaterial');
    if(quick)quick.onclick=()=>{
     const before=new Set((db.products||[]).map(p=>String(p.id)));
-    const materialDlg=productModal('','materia');
+    const materialDlg=productModal('','materia-entrada');
     materialDlg?.addEventListener('close',()=>{
      const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
      if(!added||!dialog.isConnected)return;
