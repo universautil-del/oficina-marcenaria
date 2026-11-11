@@ -1,0 +1,9 @@
+/* OFICINA 1.0 — seletor de tipo, composição e filtros em Produtos. */
+.ua-product-filter{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:700;color:#3c5947;margin:4px 0 6px}
+.ua-product-filter select{min-width:170px;padding:9px 12px;border:1px solid #d4e0d4;background:#fff;border-radius:8px;color:#243b31;font-size:13px}
+dialog.ua-product-dialog .ua-product-grid #uaProductTypeHelp{margin:0;color:#456950;background:#f0f7ef;border:1px solid #dfebdb;border-radius:9px;padding:9px 12px;line-height:1.5}
+dialog.ua-product-dialog .ua-product-finished{background:#fcfdfb;border-top:1px solid #e4eae5;padding-top:17px}
+dialog.ua-product-dialog .ua-product-finished #uaBomCost{padding:10px 0 0;color:#28543c}
+dialog.ua-product-dialog .ua-product-component select,dialog.ua-product-dialog .ua-product-component input{background:#fff}
+dialog.ua-product-dialog .ua-product-component button{min-height:39px}
+@media(max-width:600px){.ua-product-filter{display:flex}.ua-product-filter select{flex:1;min-width:0}dialog.ua-product-dialog .ua-product-grid #uaProductTypeHelp{grid-column:1}}
