@@ -77,24 +77,41 @@ function clientModal(clientId=''){
  return save();});
 }
 function removeClient(cid){if(db.quotes.some(q=>q.clientId===cid)||db.orders.some(o=>o.clientId===cid))return alert('Cliente vinculado a orçamentos ou pedidos: exclusão bloqueada.');if(confirm('Excluir este cliente?')){db.clients=db.clients.filter(c=>c.id!==cid);save();render()}}
-function productsView(){const q=search.produtos.toLowerCase();const list=db.products.filter(p=>[p.nome,p.codigo,p.categoria,p.tipo].some(v=>String(v||'').toLowerCase().includes(q)));const raw=db.products.filter(p=>p.tipo==='materia');
- content.innerHTML=`${intro('Produtos e Estoque','Matérias-primas, produtos acabados, composições e movimentações.',`${db.products.length} produto(s)`)}<section class="panel"><div class="toolbar">${inputSearch('produtos')}<div class="actions">${button('+ Matéria-prima','new-raw','','primary')}${button('+ Produto acabado','new-finished','','accent')}</div></div>${table(['Código / Produto','Tipo','Custo / Venda','Estoque','Ações'],list.map(p=>td(`<strong>${esc(p.nome)}</strong><div class="small muted">${esc(p.codigo||'—')} · ${esc(p.categoria||'Sem categoria')}</div>`,pill(kindText[p.tipo]),`${money(productCost(p))}<br><span class="muted small">Venda: ${money(p.preco)}</span>`,p.tipo==='materia'?`${dec(p.estoque)} ${esc(p.unidade)} ${p.estoque<=p.minimo?pill('Mínimo','warn'):''}`:`${p.components?.length||0} componente(s)`,`<div class="row-actions">${button('Editar','edit-product',p.id,'small')}${p.tipo==='materia'?button('Movimentar','adjust-stock',p.id,'small'):''}${button('Excluir','delete-product',p.id,'small danger')}</div>`)))}</section>
+
+function nextMaterialCode(){
+ const max=(db.products||[]).reduce((m,p)=>{
+  const code=String(p.codigo||'').trim();
+  if(!/^\d{1,3}$/.test(code))return m;
+  const number=Number(code);
+  return number>=1&&number<=999?Math.max(m,number):m;
+ },0);
+ const sequence=Number(db.seq?.productCode||1);
+ const next=Math.max(max+1,Number.isSafeInteger(sequence)&&sequence>=1?sequence:1);
+ return next<=999?String(next).padStart(2,'0'):'';
+}
+
+function productsView(){const q=search.produtos.toLowerCase();const raw=db.products.filter(p=>p.tipo==='materia');const legacy=db.products.filter(p=>p.tipo==='acabado');const list=raw.filter(p=>[p.nome,p.codigo,p.categoria,p.unidade].some(v=>String(v||'').toLowerCase().includes(q)));
+ content.innerHTML=`${intro('Produtos e Estoque','Cadastro de matérias-primas com estoque e movimentações.',`${raw.length} material(is)`)}<section class="panel"><div class="toolbar">${inputSearch('produtos')}<div class="actions">${button('+ Nova matéria-prima','new-raw','','primary')}</div></div><p class="ua-code-helper">Código automático de 01 até 999. Próximo: <strong>${nextMaterialCode()||'Limite atingido'}</strong></p>${table(['Código / Matéria-prima','Tipo','Custo / Venda','Estoque','Ações'],list.map(p=>td(`<strong>${esc(p.codigo||'Legado')}</strong><div class="small muted">${esc(p.nome)} · ${esc(p.categoria||'Sem categoria')}</div>`,pill(kindText[p.tipo]),`${money(productCost(p))}<br><span class="muted small">Venda: ${money(p.preco)}</span>`,p.tipo==='materia'?`${dec(p.estoque)} ${esc(p.unidade)} ${p.estoque<=p.minimo?pill('Mínimo','warn'):''}`:`${p.components?.length||0} componente(s)`,`<div class="row-actions">${button('Editar','edit-product',p.id,'small')}${p.tipo==='materia'?button('Movimentar','adjust-stock',p.id,'small'):''}${button('Excluir','delete-product',p.id,'small danger')}</div>`)))}
+ ${legacy.length?'<p class="ua-legacy-hint">'+legacy.length+' produto(s) acabado(s) de versões antigas preservado(s) para pedidos e backups.</p>':''}</section>
  <section class="panel gap-top"><div class="panel-head"><h3>Movimentações recentes</h3><span class="muted small">${raw.length} matérias-primas</span></div>${table(['Data','Material','Movimentação','Motivo'],db.stockMovements.slice(-15).reverse().map(m=>td(date(m.date),esc(getProduct(m.productId)?.nome||m.nome||'Produto excluído'),`${m.delta>0?'+':''}${dec(m.delta)}`,esc(m.note))))}</section>`;
 }
 function productCost(p){if(p.tipo!=='acabado')return Number(p.custo||0);return round((p.components||[]).reduce((s,c)=>s+(getProduct(c.materialId)?.custo||0)*c.quantidade,0))}
 function productModal(pid='',type='materia'){
+ if(!pid&&type==='acabado')return alert('Produto acabado não está disponível. Cadastre matérias-primas ou utilize Projetos de móveis.');
  const existing=pid?db.products.find(p=>p.id===pid):null;
  if(pid&&!existing)return alert('Produto não encontrado.');
- const old=existing||{tipo:type==='acabado'?'acabado':'materia',estoque:0,minimo:0,unidade:'un',components:[],observacoes:''};
+ if(existing?.tipo==='acabado')return alert('Produto acabado legado preservado para pedidos e backups, sem edição nesta tela.');
+ const old=existing||{tipo:'materia',estoque:0,minimo:0,unidade:'un',components:[],observacoes:''};
+ const codePreview=String(old.codigo||nextMaterialCode());
+ if(!codePreview)return alert('Códigos de 01 a 999 esgotados. Revise o cadastro antes de adicionar materiais.');
  const allUnits=['un','chapa','m','m²','m³','par','jogo','kg','pacote'];
  if(old.unidade&&!allUnits.includes(old.unidade))allUnits.push(old.unidade);
  const units=allUnits.map(unit=>`<option value="${esc(unit)}" ${old.unidade===unit?'selected':''}>${esc(unit)}</option>`).join('');
- const materialOptions=db.products.filter(p=>p.tipo==='materia').map(p=>`<option value="${esc(p.id)}">${esc(p.nome)} (${esc(p.unidade||'un')})</option>`).join('');
+
  const fields=`<div class="ua-product-grid">
-  <label>Código<input name="codigo" maxlength="80" value="${esc(old.codigo||'')}" placeholder="Ex.: MDF-015"></label>
-  <label>Tipo de produto *<select name="tipo" ${pid?'disabled':''}><option value="materia" ${old.tipo==='materia'?'selected':''}>Matéria-prima</option><option value="acabado" ${old.tipo==='acabado'?'selected':''}>Produto acabado</option></select></label>
-  <label class="ua-product-wide">Descrição do produto *<input name="nome" required maxlength="180" placeholder="Ex.: MDF branco TX 15 mm ou Painel de TV" value="${esc(old.nome||'')}"></label>
+  <label>Código automático<input name="codigoDisplay" readonly aria-readonly="true" value="${esc(codePreview)}" title="Código gerado automaticamente"></label>
   <label>Unidade *<select name="unidade" required>${units}</select></label>
+  <label class="ua-product-wide">Descrição da matéria-prima *<input name="nome" required maxlength="180" placeholder="Ex.: MDF branco TX 15 mm" value="${esc(old.nome||'')}"></label>
   <label data-ua-raw>Estoque mínimo<input name="minimo" type="number" min="0" step="0.001" value="${Number(old.minimo||0)}"></label>
   <label data-ua-raw>Custo unitário (R$)<input name="custo" type="number" min="0" step="0.01" value="${Number(old.custo||0)}"></label>
   <label>Preço de venda (R$)<input name="preco" type="number" min="0" step="0.01" value="${Number(old.preco||0)}"></label>
@@ -102,76 +119,65 @@ function productModal(pid='',type='materia'){
   <label class="ua-product-wide">Categoria (opcional)<input name="categoria" maxlength="120" value="${esc(old.categoria||'')}" placeholder="Ex.: Chapas, ferragens ou painéis"></label>
   <label class="ua-product-wide">Observações<textarea name="observacoes" maxlength="2500" rows="2" placeholder="Medidas, cor, fornecedor ou detalhes importantes">${esc(old.observacoes||'')}</textarea></label>
  </div>
- <div class="ua-product-finished" data-ua-finished>
-  <h3>Composição do produto acabado</h3>
-  <p class="muted">Indique os materiais usados para fabricar uma unidade deste móvel.</p>
-  <div id="bomRows"></div>
-  <div class="actions gap-top">${button('+ Adicionar matéria-prima','add-bom')}</div>
-  ${materialOptions?'':'<p class="muted gap-top">Cadastre primeiro ao menos uma matéria-prima.</p>'}
- </div>`;
- const dlg=openModal(pid?'Editar produto':'Novo produto',fields,(v,dialog)=>{
-  const kind=pid?old.tipo:v.tipo;
-  if(!['materia','acabado'].includes(kind))throw Error('Selecione o tipo de produto.');
+`;
+ const dlg=openModal(pid?'Editar matéria-prima':'Nova matéria-prima',fields,(v,dialog)=>{
+  const kind='materia';
   const data={
-   ...old,id:pid||id(),tipo:kind,codigo:String(v.codigo||'').trim(),
+   ...old,id:pid||id(),tipo:kind,codigo:codePreview,
    nome:String(v.nome||'').trim(),categoria:String(v.categoria||'').trim(),
    unidade:String(v.unidade||'un').trim()||'un',preco:round(v.preco),
    observacoes:String(v.observacoes||'').trim()
   };
   if(!data.nome)throw Error('Informe a descrição do produto.');
   if(!Number.isFinite(data.preco)||data.preco<0)throw Error('Preço de venda inválido.');
-  if(db.products.some(x=>x.id!==pid&&data.codigo&&x.codigo===data.codigo))throw Error('Já existe um produto com esse código.');
-  if(kind==='materia'){
-   data.custo=round(v.custo);data.estoque=Number(v.estoque);data.minimo=Number(v.minimo);
-   if(!Number.isFinite(data.custo)||data.custo<0||![data.estoque,data.minimo].every(x=>Number.isFinite(x)&&x>=0))throw Error('Custo ou estoque inválido.');
-   if(data.estoque+0.000001<reservedQuantity(data.id))throw Error('O estoque não pode ficar abaixo da quantidade reservada para pedidos.');
-   data.components=[];
-  }else{
-   const rows=[...dialog.querySelectorAll('.bom-row')];
-   const comps=rows.map(row=>({materialId:row.querySelector('[data-material]').value,quantidade:Number(row.querySelector('[data-bom-qty]').value)}));
-   if(!comps.length)throw Error('Adicione pelo menos uma matéria-prima na composição.');
-   if(comps.some(c=>!getProduct(c.materialId)||!Number.isFinite(c.quantidade)||c.quantidade<=0))throw Error('Revise os materiais e as quantidades da composição.');
-   if(new Set(comps.map(c=>c.materialId)).size!==comps.length)throw Error('Não repita matérias-primas na composição.');
-   data.components=comps;data.estoque=0;data.custo=0;data.minimo=0;
-  }
-  if(pid)db.products=db.products.map(x=>x.id===pid?data:x);else db.products.push(data);
+  if(!pid&&nextMaterialCode()!==codePreview)throw Error('A sequência mudou. Abra o cadastro novamente para obter o novo código.');
+  if(db.products.some(x=>x.id!==pid&&data.codigo&&(/^[0-9]{1,3}$/.test(x.codigo||'')&&/^[0-9]{1,3}$/.test(data.codigo)?Number(x.codigo)===Number(data.codigo):x.codigo===data.codigo)))throw Error('Já existe um produto com esse código.');
+  const custo=Number(v.custo),estoque=Number(v.estoque),minimo=Number(v.minimo);
+  if(![custo,estoque,minimo].every(n=>Number.isFinite(n)&&n>=0))
+   throw Error('Custo, saldo e estoque mínimo precisam ser números não negativos.');
+  data.custo=round(custo);data.estoque=estoque;data.minimo=minimo;data.components=[];
+  if(data.estoque+0.000001<reservedQuantity(data.id))
+   throw Error('O estoque não pode ficar abaixo da quantidade reservada para pedidos.');
+  const oldProducts=db.products,oldMoves=db.stockMovements,oldSeq={...db.seq};
+  if(pid)db.products=db.products.map(x=>x.id===pid?data:x);else db.products=[...db.products,data];
   if(kind==='materia'&&Number(old.estoque||0)!==Number(data.estoque)){
-   db.stockMovements.push({id:id(),date:iso(),productId:data.id,nome:data.nome,delta:round(data.estoque-Number(old.estoque||0)),note:pid?'Ajuste no cadastro':'Estoque inicial'});
+   db.stockMovements=[...db.stockMovements,{id:id(),date:iso(),productId:data.id,nome:data.nome,delta:round(data.estoque-Number(old.estoque||0)),note:pid?'Ajuste no cadastro':'Estoque inicial'}];
   }
-  return save();
+  if(!pid||!old.codigo)db.seq.productCode=Math.max(Number(db.seq.productCode||1),Number(data.codigo)+1||1);
+  if(save()===false){db.products=oldProducts;db.stockMovements=oldMoves;db.seq=oldSeq;throw Error('Falha ao salvar: nenhum dado foi alterado.');}
+  return true;
  },dialog=>{
   dialog.classList.add('ua-product-dialog');
   const heading=dialog.querySelector('h2');
-  heading.insertAdjacentHTML('afterbegin','<small class="ua-product-eyebrow">CADASTRO DE PRODUTO</small>');
+  heading?.insertAdjacentHTML('afterbegin','<small class="ua-product-eyebrow">CADASTRO DE MATÉRIA-PRIMA</small>');
   const footer=dialog.querySelector('.dialog-actions');
-  footer.querySelector('[type=submit]').textContent=pid?'Salvar alterações':'Salvar produto';
-  const close=document.createElement('button');close.type='button';close.className='ua-product-close';close.setAttribute('aria-label','Fechar cadastro');close.textContent='×';close.onclick=()=>dialog.close();dialog.insertBefore(close,dialog.firstChild);
-  const typeSelect=dialog.querySelector('[name=tipo]'),rawFields=[...dialog.querySelectorAll('[data-ua-raw]')],finished=dialog.querySelector('[data-ua-finished]');
-  const toggle=()=>{
-   const isRaw=typeSelect.value==='materia';
-   rawFields.forEach(label=>{label.hidden=!isRaw;label.querySelectorAll('input').forEach(input=>input.disabled=!isRaw)});
-   finished.hidden=isRaw;
-   finished.querySelectorAll('select,input').forEach(control=>{control.disabled=isRaw});
-  };
-  typeSelect.addEventListener('change',toggle);
-  toggle();
-  const rows=finished.querySelector('#bomRows');
-  const add=(component={})=>{
-   const line=document.createElement('div');
-   line.className='bom-row ua-product-component';
-   line.innerHTML=`<label>Matéria-prima<select data-material required>${materialOptions}</select></label><label>Quantidade por unidade<input data-bom-qty type="number" min="0.001" step="0.001" required value="${Number(component.quantidade||1)}"></label><button type="button" class="btn danger" data-del-bom>Remover</button>`;
-   rows.append(line);
-   if(component.materialId)line.querySelector('select').value=component.materialId;
-   line.querySelector('[data-del-bom]').onclick=()=>line.remove();
-  };
-  (old.components||[]).forEach(add);
-  finished.querySelector('[data-action="add-bom"]').onclick=()=>add();
+  const submit=footer?.querySelector('[type=submit]');
+  if(submit)submit.textContent=pid?'Salvar alterações':'Salvar material';
+  const close=document.createElement('button');close.type='button';close.className='ua-product-close';
+  close.setAttribute('aria-label','Fechar cadastro');close.textContent='×';
+  close.onclick=()=>dialog.close();dialog.insertBefore(close,dialog.firstChild);
  });
  return dlg;
 }
 function adjustStock(pid){const p=getProduct(pid);if(!p||p.tipo!=='materia')return;openModal('Movimentar estoque — '+p.nome,`<div class="form-grid"><label>Operação<select name="operation"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></label><label>Quantidade *<input name="quantidade" type="number" step="0.001" min="0.001" required></label><label class="full">Motivo<input name="motivo" placeholder="Compra, uso avulso, correção..." required></label></div><p class="muted small">Estoque atual: ${dec(p.estoque)} ${esc(p.unidade)}. Reservas existentes são consideradas na saída.</p>`,v=>{
- const delta=(v.operation==='saida'?-1:1)*Number(v.quantidade);if(!Number.isFinite(delta)||delta===0)throw Error('Quantidade inválida.');if(delta<0&&p.estoque+delta<reservedQuantity(pid))throw Error('Estoque insuficiente, considerando pedidos reservados.');p.estoque=round(p.estoque+delta);db.stockMovements.push({id:id(),productId:pid,nome:p.nome,delta:round(delta),date:iso(),note:v.motivo});return save();});}
-function removeProduct(pid){if(db.products.some(p=>p.components?.some(c=>c.materialId===pid))||db.quotes.some(q=>q.items.some(i=>i.productId===pid))||db.orders.some(o=>o.items.some(i=>i.productId===pid)))return alert('Produto utilizado em composição, orçamento ou pedido. Exclusão bloqueada.');if(confirm('Excluir produto?')){db.products=db.products.filter(p=>p.id!==pid);save();render()}}
+ const delta=(v.operation==='saida'?-1:1)*Number(v.quantidade);if(!Number.isFinite(delta)||delta===0)throw Error('Quantidade inválida.');if(delta<0&&p.estoque+delta<reservedQuantity(pid))throw Error('Estoque insuficiente, considerando pedidos reservados.');const beforeStock=p.estoque,beforeMoves=db.stockMovements;
+ p.estoque=Math.round((Number(p.estoque)+delta)*1000)/1000;
+ db.stockMovements=[...beforeMoves,{id:id(),productId:pid,nome:p.nome,delta:Math.round(delta*1000)/1000,date:iso(),note:v.motivo}];
+ if(save()===false){p.estoque=beforeStock;db.stockMovements=beforeMoves;throw Error('Falha ao salvar movimento. O saldo anterior foi restaurado.');}
+ return true;});}
+function removeProduct(pid){
+ const linked=db.products.some(p=>p.components?.some(c=>c.materialId===pid))||
+  db.quotes.some(q=>(q.items||[]).some(i=>i.productId===pid))||
+  db.orders.some(o=>(o.items||[]).some(i=>i.productId===pid))||
+  (db.purchases||[]).some(p=>(p.items||[]).some(i=>i.productId===pid))||
+  (db.stockMovements||[]).some(m=>m.productId===pid);
+ if(linked)return alert('Material já usado em pedidos, entradas ou movimentos de estoque. Exclusão bloqueada para preservar o histórico.');
+ if(!confirm('Excluir este material sem histórico de movimentos?'))return;
+ const previous=db.products;
+ db.products=db.products.filter(p=>p.id!==pid);
+ if(save()===false){db.products=previous;return alert('Falha ao salvar. O material foi preservado.');}
+ render();
+}
 function clientOptions(chosen=''){return db.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===chosen?'selected':''}>${esc(c.nome)}</option>`).join('')}
 function quoteStatus(q){return q.status==='convertido'?pill('Convertido','success'):pill('Aberto','warn')}
 function quotesView(){const q=search.orcamentos.toLowerCase();const list=db.quotes.slice().reverse().filter(o=>[o.number,o.clientNome,o.status].some(v=>String(v||'').toLowerCase().includes(q)));
@@ -291,7 +297,7 @@ function handleAction(action,item){switch(action){
  case 'duplicate-quote':return duplicateQuote(item);case 'share-quote':return shareQuote(item);
  case 'export-finance':return exportFinanceCsv();case 'export-report':return exportReportCsv();case 'print-report':return printReport();
  case 'goto-products':location.hash='produtos';return;case 'goto-orders':location.hash='pedidos';return;case 'goto-finance':location.hash='financeiro';return;
- case 'new-raw':return productModal('','materia');case 'new-finished':return productModal('','acabado');case 'edit-product':return productModal(item);case 'adjust-stock':return adjustStock(item);case 'delete-product':return removeProduct(item);
+ case 'new-raw':return productModal('','materia');case 'edit-product':return productModal(item);case 'adjust-stock':return adjustStock(item);case 'delete-product':return removeProduct(item);
  case 'new-quote':return openSales('quote');case 'edit-quote':return openSales('quote',item);case 'convert-quote':return convertQuote(item);case 'delete-quote':return removeQuote(item);
  case 'print-quote':{const o=getQuote(item);if(o)salesPrint(o,'Orçamento');return}
  case 'new-order':return openSales('order');case 'view-order':return orderDetails(item);case 'reserve-order':return reserveOrder(item);case 'start-order':return startOrder(item);
