@@ -202,7 +202,7 @@
     '<button type="button" class="btn" data-drive-action="restore" data-fileid="'+safe(f.id)+'">Restaurar</button></td></tr>').join('');
   content.innerHTML=
    '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · PROTEÇÃO DE DADOS</div>'+
-   '<h2>Backup e recuperação · Google Drive</h2><p>Primeiro faça uma cópia criptografada. Depois salve no Google Drive manualmente ou conecte sua conta.</p></div></div>'+
+   '<h2>Backup e recuperação</h2><p>O backup manual criptografado funciona sem configurar o Google Drive. Baixe o arquivo, guarde a senha e depois salve uma cópia no seu Drive pessoal.</p></div></div>'+
    '<section class="ua-section ua-drive-panel"><h3>1. Fazer backup agora — sem configuração</h3>'+
    '<p class="muted">A senha protege o conteúdo com AES-256-GCM antes de gerar o arquivo. Ela não é salva pelo sistema. <strong>Sem essa senha, não será possível recuperar o backup.</strong></p>'+
    '<label for="uaDrivePass">Senha forte do backup (mínimo de 12 caracteres)</label><input id="uaDrivePass" type="password" autocomplete="new-password" minlength="12" maxlength="200" placeholder="Crie e guarde uma senha para recuperar os arquivos">'+
@@ -230,10 +230,10 @@
   if(passField)passField.value=typed;
  }
  const prevRender=render;
- if(!sections.some(x=>x[0]==='backupdrive'))sections.push(['backupdrive','☁','Backup Google Drive']);
+ if(!sections.some(x=>x[0]==='backupdrive'))sections.push(['backupdrive','☁','Backup e recuperação']);
  render=function(section=location.hash.slice(1)||'dashboard'){
   if(section!=='backupdrive')return prevRender(section);
-  title.textContent='Backup Google Drive';
+  title.textContent='Backup e recuperação';
   nav.innerHTML=sections.map(([key,icon,label])=>'<button class="nav-btn '+(key===section?'active':'')+'" data-section="'+safe(key)+'"><span aria-hidden="true">'+safe(icon)+'</span>'+safe(label)+'</button>').join('');
   nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{const next=b.dataset.section;location.hash=next;sidebar.classList.remove('open');if(next===section)render(next)}));
   renderPage();
