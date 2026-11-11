@@ -31,7 +31,7 @@ class FakeElement{
  querySelector(){return null}
 }
 const db={company:{nome:'Universalartes',nomeFantasia:'',logo:''}};
-const coName=new FakeElement('input');coName.id='coNome';coName.value=db.company.nome;
+const coName=new FakeElement('input');coName.id='coNome';coName.value=db.company.nome;coName.focus=()=>{};
 const row=new FakeElement('label');row.childNodes=[{nodeType:3,textContent:'Nome / Razão social'}];
 coName.closest=()=>row;
 const identity=new FakeElement('section');identity.querySelector=s=>s==='#coNome'?coName:null;
