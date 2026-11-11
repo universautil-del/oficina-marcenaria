@@ -5,6 +5,7 @@ on:
       - 'supabase/secure-document-v1.sql'
       - 'supabase/migrate-material-codes-9999.sql'
       - 'supabase/verificar-oficina-1-0.sql'
+      - 'supabase/conferir-dados-sincronizados-oficina-1-0.sql'
       - 'tests/sql/**'
       - '.github/workflows/validate-secure-sql.yml'
   workflow_dispatch:
@@ -44,3 +45,4 @@ jobs:
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/migrate-material-codes-9999.sql
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f tests/sql/secure-document-check.sql
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/verificar-oficina-1-0.sql
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/conferir-dados-sincronizados-oficina-1-0.sql
