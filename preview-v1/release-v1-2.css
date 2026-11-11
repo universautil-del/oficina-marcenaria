@@ -11,6 +11,7 @@
 .ua-release-links{display:flex;flex-wrap:wrap;gap:8px}
 .ua-release-links a{font-size:12px;font-weight:750;padding:9px 12px;border:1px solid #cfdbcf;color:#29553c;text-decoration:none;background:white;border-radius:8px}
 .ua-release-links a:hover{background:#e6f0e7}
+.settings-grid .form-grid>.ua-fantasia-field,.settings-grid .form-grid>.ua-legacy-identity{grid-column:1/-1}
 .ua-fantasia-field{margin-top:10px;padding:13px;border-radius:9px;border:1px solid #e2e7dc;background:#fcfcfa}
 .ua-fantasia-field label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:750;color:#385d48}
 .ua-fantasia-field input{width:100%;min-height:42px;border:1px solid #cbd9cc;border-radius:7px;padding:10px;font-size:14px;background:white;color:#253d31}
