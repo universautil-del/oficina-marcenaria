@@ -122,7 +122,7 @@
     ];
     const finished=steps.filter(x=>x.ok).length;
     const metric=(label,n)=>'<div><small>'+escape(label)+'</small><strong>'+escape(n)+'</strong></div>';
-    const currentState=cloud.paused?'Sincronização interrompida':cloud.active?(cloud.status==='Sincronizado'?'Sincronizado':'Nuvem ativada — confira a sincronização'):cloud.session?'Conta conectada, sem sincronização':'Modo local / sem login';
+    const currentState=cloud.paused?'Sincronização interrompida':cloud.active?(String(cloud.status||'').startsWith('Sincronizado')?cloud.status:'Nuvem ativada — confira a sincronização'):cloud.session?'Conta conectada, sem sincronização':'Modo local / sem login';
     content.innerHTML=
       '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · '+(isSecure?'OFICINA 1.0':'AMBIENTE DE TESTES')+'</div><h2>Segurança e confiabilidade</h2>'+
       '<p>Confira seus registros, a conexão com a nuvem e os backups antes de começar a usar o sistema na oficina.</p></div></div>'+
@@ -147,7 +147,7 @@
       '<section class="ua-section gap-top ua-launch"><h3>Como concluir os testes da OFICINA 1.0</h3>'+
       '<div class="ua-launch-remaining"><div><strong>1. Teste a conexão</strong><p>Clique em Verificar conexão Supabase e confira a leitura autenticada. O resultado não comprova sozinho isolamento de usuários.</p></div>'+
       '<div><strong>2. Teste a sincronização</strong><p>Crie um cliente fictício no PC, espere Sincronizado e confirme no celular. Repita no sentido inverso.</p></div>'+
-      '<div><strong>3. Faça um backup recuperável</strong><p>Use Backup Google Drive → Baixar backup criptografado. Guarde a senha e teste a recuperação em ambiente separado, sem substituir sua base.</p></div>'+
+      '<div><strong>3. Faça um backup recuperável</strong><p>Use Backup e recuperação → Baixar backup criptografado. Guarde a senha e teste a recuperação em ambiente separado, sem substituir sua base.</p></div>'+
       '<div><strong>4. Confira segurança e estoque</strong><p>Teste as permissões RLS de duas contas em ambiente separado e o fluxo orçamento → pedido → estoque → financeiro, sem lançamento duplicado.</p></div></div>'+
       '<p class="muted small">As quatro etapas do quadro acima são checagens de diagnóstico, não uma certificação de segurança. A restauração completa e o uso no celular exigem testes reais.</p>'+
       '<p class="muted small">Se ainda não atualizou o Supabase para códigos 01–9999, execute a <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/supabase/migrate-material-codes-9999.sql" target="_blank" rel="noopener noreferrer">migração SQL preparada</a> após guardar backup. Não execute novamente o SQL inicial.</p></section>':
