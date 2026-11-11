@@ -10,6 +10,7 @@
     sections.splice(idx<0?sections.length:idx,0,['seguranca','✓','Segurança e lançamento']);
   }
   const status={remote:null,error:'',testedAt:'',backupChecked:false,message:''};
+  const isSecure=!!window.UNIVERSA_REQUIRE_AUTH;
   function inspect(data){
     const messages=[],metrics={};
     const required=['clients','products','quotes','orders','transactions','stockMovements'];
@@ -117,16 +118,16 @@
       {title:'Estrutura e consistência dos registros',ok:audit.passed,description:audit.passed?'Nenhuma inconsistência crítica detectada na checagem local.':'Corrija os erros antes de usar cadastros reais.'},
       {title:'Conta autenticada e nuvem ativa',ok:!!connection,description:connection?'A nuvem está ativada. Execute também o teste da conexão.':'Necessário entrar no Supabase e ativar a sincronização.'},
       {title:'Leitura autenticada do banco',ok:status.remote?.auth&&status.remote?.table,description:status.remote?.auth?'Leitura da tabela com sua conta verificada nesta sessão.':'Clique em Verificar conexão após entrar na nuvem.'},
-      {title:'Backup estruturado testado',ok:status.backupChecked,description:status.backupChecked?'O arquivo de teste foi validado em memória, sem substituir registros.':'Teste a estrutura do backup e baixe uma cópia.'}
+      {title:'Estrutura do backup verificada (simulação)',ok:status.backupChecked,description:status.backupChecked?'Estrutura JSON conferida apenas na memória. Ainda é necessário baixar, abrir e testar a recuperação real do arquivo criptografado.':'Execute a verificação da estrutura. Depois faça um backup criptografado e teste a recuperação do arquivo.'}
     ];
     const finished=steps.filter(x=>x.ok).length;
     const metric=(label,n)=>'<div><small>'+escape(label)+'</small><strong>'+escape(n)+'</strong></div>';
-    const currentState=cloud.paused?'Sincronização interrompida':cloud.active?'Nuvem ativada':cloud.session?'Conta conectada, sem sincronização':'Modo local / sem login';
+    const currentState=cloud.paused?'Sincronização interrompida':cloud.active?(cloud.status==='Sincronizado'?'Sincronizado':'Nuvem ativada — confira a sincronização'):cloud.session?'Conta conectada, sem sincronização':'Modo local / sem login';
     content.innerHTML=
-      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · PREPARAR LANÇAMENTO</div><h2>Segurança e confiabilidade</h2>'+
+      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · '+(isSecure?'OFICINA 1.0':'AMBIENTE DE TESTES')+'</div><h2>Segurança e confiabilidade</h2>'+
       '<p>Confira seus registros, a conexão com a nuvem e os backups antes de começar a usar o sistema na oficina.</p></div></div>'+
       '<section class="ua-section ua-launch"><div class="ua-launch-header"><div><h3>Diagnóstico do sistema</h3><p class="muted">Verificação local somente leitura. Não altera pedidos, estoque ou finanças.</p></div>'+
-      '<div class="ua-launch-score">'+finished+' de '+steps.length+' verificações locais</div></div>'+
+      '<div class="ua-launch-score">'+finished+' de '+steps.length+' etapas conferidas</div></div>'+
       '<div class="ua-launch-stats">'+metric('Clientes',audit.metrics.clients??'—')+metric('Fornecedores',audit.metrics.suppliers??'—')+
        metric('Produtos',audit.metrics.products??'—')+metric('Pedidos',audit.metrics.orders??'—')+
        metric('Financeiro',audit.metrics.transactions??'—')+metric('Estado da nuvem',currentState)+'</div>'+
@@ -135,24 +136,22 @@
       '<div class="ua-launch-actions">'+
        '<button class="btn primary" type="button" data-launch-action="run">Atualizar diagnóstico</button>'+
        '<button class="btn" type="button" data-launch-action="check-cloud">Verificar conexão Supabase</button>'+
-       '<button class="btn" type="button" data-launch-action="check-backup">Validar estrutura do backup</button>'+
-       '<button class="btn" type="button" data-launch-action="export-backup">Exportar backup JSON</button>'+
+       '<button class="btn" type="button" data-launch-action="check-backup">Verificar estrutura dos dados</button>'+
+       '<button class="btn" type="button" data-launch-action="open-encrypted-backup">Fazer backup criptografado</button>'+
        '</div>'+
-      '<p class="muted small" id="uaLaunchStatus" role="status" aria-live="polite">'+escape(status.message||status.error||'Nenhum teste externo foi executado nesta sessão.')+'</p>'+
+      '<p class="muted small" id="uaLaunchStatus" role="status" aria-live="polite">'+escape(status.message||status.error||'A leitura autenticada e a verificação da estrutura ainda não foram executadas nesta sessão.')+'</p>'+
       (audit.messages.length?'<div class="ua-launch-findings"><h4>Itens para revisar</h4><ul>'+audit.messages.map(m=>'<li><strong>'+escape(m.severity==='erro'?'Erro':'Atenção')+':</strong> '+escape(m.message)+'</li>').join('')+'</ul></div>':
-       '<p class="muted small">A checagem local não encontrou erros conhecidos, mas não verifica a autenticidade de todos os documentos nem substitui auditoria de banco.</p>')+
+       '<p class="muted small">Sem erros conhecidos no diagnóstico local. Os indicadores acima não comprovam, sozinhos, recuperação de backup, isolamento entre contas ou sincronização no celular.</p>')+
       '</section>'+
-      '<section class="ua-section gap-top ua-launch"><h3>Entrar com login e banco autenticado</h3>'+
-       '<p>Uma nova entrada separada usa autenticação Supabase e confirmação de revisão pelo servidor. Não carrega cadastros da prévia local sem importação autorizada.</p>'+
-       '<p><a class="btn primary" href="seguro.html">Abrir OFICINA com login (homologação)</a></p>'+
-       '<p class="muted small">Primeiro configure o banco com o SQL documentado. O acesso seguro depende de validação real de RLS com duas contas e do processo de backup.</p></section>'+
-      '<section class="ua-section gap-top ua-launch"><h3>O que ainda impede sair da versão de testes</h3>'+
-      '<div class="ua-launch-remaining"><div><strong>1. Testar duas contas separadas</strong><p>Confirmar no Supabase que uma conta não consegue ler ou escrever dados da outra (RLS). Verificar permissões reais.</p></div>'+
-      '<div><strong>2. Testar restauração completa</strong><p>Exportar um backup, restaurar em ambiente descartável e conferir cadastros, pedidos e valores. A verificação JSON acima não substitui este teste.</p></div>'+
-      '<div><strong>3. Garantir transações de estoque e financeiro</strong><p>O sistema ainda usa um documento JSON por usuário; alterações simultâneas e operações críticas precisam de validação e proteção no servidor.</p></div>'+
-      '<div><strong>4. Proteger anexos e dados pessoais</strong><p>Validar storage privado, política de acesso e isolamento do ambiente de produção antes de cadastrar informações reais.</p></div></div>'+
-      '<p class="muted small"><strong>Este diagnóstico não libera automaticamente o uso comercial.</strong> A prévia continua em modo de testes até concluirmos a validação externa.</p>'+
-      '<p><a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/docs/FINALIZACAO-UNIVERSA ART-V1.md" target="_blank" rel="noopener noreferrer">Abrir roteiro completo de conclusão</a></p></section>';
+      (isSecure?
+      '<section class="ua-section gap-top ua-launch"><h3>Como concluir os testes da OFICINA 1.0</h3>'+
+      '<div class="ua-launch-remaining"><div><strong>1. Teste a conexão</strong><p>Clique em Verificar conexão Supabase e confira a leitura autenticada. O resultado não comprova sozinho isolamento de usuários.</p></div>'+
+      '<div><strong>2. Teste a sincronização</strong><p>Crie um cliente fictício no PC, espere Sincronizado e confirme no celular. Repita no sentido inverso.</p></div>'+
+      '<div><strong>3. Faça um backup recuperável</strong><p>Use Backup Google Drive → Baixar backup criptografado. Guarde a senha e teste a recuperação em ambiente separado, sem substituir sua base.</p></div>'+
+      '<div><strong>4. Confira segurança e estoque</strong><p>Teste as permissões RLS de duas contas em ambiente separado e o fluxo orçamento → pedido → estoque → financeiro, sem lançamento duplicado.</p></div></div>'+
+      '<p class="muted small">As quatro etapas do quadro acima são checagens de diagnóstico, não uma certificação de segurança. A restauração completa e o uso no celular exigem testes reais.</p>'+
+      '<p class="muted small">Se ainda não atualizou o Supabase para códigos 01–9999, execute a <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/supabase/migrate-material-codes-9999.sql" target="_blank" rel="noopener noreferrer">migração SQL preparada</a> após guardar backup. Não execute novamente o SQL inicial.</p></section>':
+      '<section class="ua-section gap-top ua-launch"><h3>Prévia de testes 1.2</h3><p>Esta página permite dados locais de teste e não deve ser usada com informações reais. Para trabalhar com uma conta Supabase, abra o ambiente autenticado.</p><p><a class="btn primary" href="../oficina.html">Abrir OFICINA 1.0 com login</a></p></section>');
   }
   async function runCloud(){
     status.remote=null;status.error='';status.message='Consultando login e tabela no Supabase…';renderHealth();
@@ -172,7 +171,7 @@
       const snap=JSON.parse(JSON.stringify({app:'oficina',version:3,exportedAt:new Date().toISOString(),data:db}));
       const test=validateBackup(snap);
       if(test.kind!==3||test.data.clients.length!==db.clients.length||test.data.orders.length!==db.orders.length)throw Error('Dados divergentes ao validar o backup.');
-      status.backupChecked=true;status.message='Estrutura JSON validada em memória. Faça também o download e teste a restauração em ambiente descartável.';
+      status.backupChecked=true;status.message='Estrutura conferida em memória (não é um backup salvo). Abra Backup Google Drive, baixe o arquivo criptografado e teste sua recuperação em outro ambiente.';
     }catch(err){status.backupChecked=false;status.message='Falha no teste do backup: '+String(err?.message||err).slice(0,200)}
     renderHealth();
   }
@@ -184,7 +183,7 @@
       if(action==='run'){status.message='Diagnóstico local atualizado.';renderHealth()}
       else if(action==='check-cloud')await runCloud();
       else if(action==='check-backup')checkBackup();
-      else if(action==='export-backup'){backup();status.message='Download do backup solicitado. Verifique o arquivo na pasta de downloads.';renderHealth()}
+      else if(action==='open-encrypted-backup'){location.hash='backupdrive';render('backupdrive')}
     }finally{btn.disabled=false}
   };
   document.addEventListener('click',handle);
