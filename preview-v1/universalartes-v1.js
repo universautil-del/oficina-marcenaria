@@ -170,11 +170,11 @@
     showProjectContext(null);
     document.getElementById('uaMetricApply').addEventListener('click',()=>{
       const input=document.getElementById('uaMetricValue');
-      const value=String(input.value||'').trim().replace(/\\s/g,'').replace(',','.');
+      const value=String(input.value||'').trim().replace(/\s/g,'').replace(',','.');
       const unit=document.getElementById('uaMetricUnit').value;
       const target=document.getElementById('uaMetricTarget').value;
       const output=document.getElementById('uaMetricResult');
-      if(!/^\\d+(?:\\.\\d+)?$/.test(value)||!['m','cm','mm'].includes(unit)){
+      if(!/^\d+(?:\.\d+)?$/.test(value)||!['m','cm','mm'].includes(unit)){
         output.textContent='Informe uma medida positiva válida.';return;
       }
       const mm=Number(value)*({m:1000,cm:10,mm:1}[unit]);
@@ -194,7 +194,7 @@
         const cleanNumber=value=>{
           const raw=String(value||'').trim().replace(',','.');
           if(!raw)return 0;
-          if(!/^\\d+(?:\\.\\d+)?$/.test(raw)||Number(raw)<=0||Number(raw)>100000)throw Error('Confirme as medidas em milímetros.');
+          if(!/^\d+(?:\.\d+)?$/.test(raw)||Number(raw)<=0||Number(raw)>100000)throw Error('Confirme as medidas em milímetros.');
           return Number(raw);
         };
         const customer=(db.clients||[]).find(c=>c.id===v.clientId);
