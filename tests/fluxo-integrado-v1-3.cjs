@@ -58,13 +58,11 @@ const ctx={
 };
 const functions=[
  cut(src,'function nextSaleNumber(','function ordersView('),
- cut(src,'function addMonths(','function ordersView(').replace(/function nextSaleNumber\([\s\S]*/,''),
  cut(src,'function reserveOrder(','function orderDetails('),
  cut(src,'function transactionModal(','function receiptModal('),
  cut(extra,'function purchaseModal(','function receivePurchase(')
 ];
-/* nextSaleNumber..ordersView inclui openSales/createOrder; addMonths..nextSaleNumber contém buildInstallments e materiais. */
-functions[1]=cut(src,'function addMonths(','function nextSaleNumber(');
+/* nextSaleNumber..ordersView inclui openSales, addMonths, buildInstallments e createOrder. */
 for(const frag of functions)vm.runInNewContext(frag,ctx,{timeout:2000});
 ctx.openSales('quote','','proj1');
 assert.equal(modals[0].title,'Novo orçamento');
