@@ -8,7 +8,8 @@
  const CFG='universa-art-drive-client-id-v1';
  const SCOPE='https://www.googleapis.com/auth/drive.file';
  const ITERATIONS=310000;
- const MAX_BACKUP=5*1024*1024;
+ const MAX_BACKUP=8*1024*1024; // Arquivo codificado em base64 fica maior que o JSON original.
+ const MAX_PLAINTEXT=5*1024*1024;
  const TYPE='universa-art-encrypted-backup-v1';
  const PREFIX='UniversaArt_Backup_';
  const enc=new TextEncoder(),dec=new TextDecoder();
@@ -38,7 +39,7 @@
  async function encryptBackup(backup,pass){
   if(!crypto?.subtle)throw Error('Criptografia disponível apenas em HTTPS.');
   const source=JSON.stringify(backup);
-  if(enc.encode(source).length>MAX_BACKUP)throw Error('Backup maior que 5 MB. Faça um backup local e revise o tamanho dos anexos.');
+  if(enc.encode(source).length>MAX_PLAINTEXT)throw Error('Dados de backup acima de 5 MB. Revise o tamanho dos anexos antes de continuar.');
   const salt=crypto.getRandomValues(new Uint8Array(16));
   const iv=crypto.getRandomValues(new Uint8Array(12));
   const key=await derive(pass,salt);
@@ -49,7 +50,7 @@
   if(!obj||obj.format!==TYPE||obj.algorithm!=='AES-256-GCM'||obj.kdf!=='PBKDF2-SHA256'||obj.iterations!==ITERATIONS)
     throw Error('Formato de backup não reconhecido ou parâmetros de criptografia inválidos.');
   const salt=unb64(obj.salt),iv=unb64(obj.iv),cipher=unb64(obj.ciphertext);
-  if(salt.length!==16||iv.length!==12||cipher.length<16||cipher.length>MAX_BACKUP+64)throw Error('Backup criptografado corrompido.');
+  if(salt.length!==16||iv.length!==12||cipher.length<16||cipher.length>MAX_PLAINTEXT+64)throw Error('Backup criptografado corrompido.');
   try{
    const key=await derive(pass,salt);
    const bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,cipher);
@@ -118,7 +119,7 @@
  }
  async function sendDrive(pass){
   const data=await buildPayload(pass),name=filename(),body=JSON.stringify(data);
-  if(enc.encode(body).length>MAX_BACKUP)throw Error('Arquivo criptografado maior que 5 MB. Baixe um backup e revise o tamanho.');
+  if(enc.encode(body).length>MAX_BACKUP)throw Error('Arquivo criptografado maior que 8 MB. Baixe um backup e revise o tamanho.');
   const boundary='ua_'+Array.from(crypto.getRandomValues(new Uint8Array(10))).map(b=>b.toString(16).padStart(2,'0')).join('');
   const multipart=new Blob([
    '--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n',
@@ -147,7 +148,7 @@
  async function loadDriveFile(id){
   const found=files.find(f=>f.id===id);
   if(!found)throw Error('Escolha um backup da lista de arquivos gerados pelo sistema.');
-  if(Number(found.size)>MAX_BACKUP)throw Error('Backup maior que 5 MB: não é possível restaurar por esta tela.');
+  if(Number(found.size)>MAX_BACKUP)throw Error('Backup maior que 8 MB: não é possível restaurar por esta tela.');
   const res=await requestDrive('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(id)+'?alt=media');
   const text=await res.text();
   if(enc.encode(text).length>MAX_BACKUP)throw Error('Arquivo muito grande.');
@@ -261,7 +262,7 @@
    }else if(action==='import'||action==='verify'){
     const file=document.querySelector('#uaDriveImport')?.files?.[0];
     if(!file)throw Error('Selecione o arquivo .uaenc.json.');
-    if(file.size>MAX_BACKUP)throw Error('Arquivo maior que 5 MB.');
+    if(file.size>MAX_BACKUP)throw Error('Arquivo maior que 8 MB.');
     const payload=JSON.parse(await file.text());
     if(action==='verify'){
       const recovered=await decryptBackup(payload,passInput());
