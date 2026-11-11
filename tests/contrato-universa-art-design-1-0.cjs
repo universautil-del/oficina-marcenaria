@@ -78,7 +78,7 @@ assert(missing.includes('RASCUNHO — DADOS PENDENTES'));
 assert(missing.includes('CPF/CNPJ do contratante'));
 assert(missing.includes('data prevista de entrega'));
 assert(missing.includes('____/____/________'));
-assert(!missing.includes('07/12/2026'));
+assert(missing.includes('dia <strong>____/____/________</strong>'),'Sem data de entrega, o contrato não deve inventá-la; datas de vencimento existentes continuam no quadro de pagamento');
 const malicious=api.htmlForContract({...order,items:[{descricao:'<script>alert(1)</script>',quantidade:1,preco:5300}],
  observacoes:'<img src=x onerror=alert(1)>'});
 assert(!malicious.includes('<script>')&&!malicious.includes('<img src=x'),'Texto do usuário deve ser escapado');
