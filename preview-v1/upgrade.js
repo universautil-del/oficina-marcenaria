@@ -75,7 +75,7 @@ function duplicateQuote(qid){
  const q=getQuote(qid);if(!q)return;
  if(!confirm('Duplicar orçamento #'+q.number+' criando outro orçamento aberto?'))return;
  const beforeQuotes=db.quotes,beforeSeq={...db.seq};
- const clone={...q,id:id(),number:nextSaleNumber(),status:'aberto',date:iso(),items:q.items.map(i=>({...i})),payment:{...q.payment}};
+ const clone={...q,id:id(),number:nextSaleNumber(),controlCode:nextControlCode('quote',iso()),status:'aberto',date:iso(),items:q.items.map(i=>({...i})),payment:{...q.payment}};
  delete clone.orderId;
  db.quotes=[...db.quotes,clone];
  if(save()===false){db.quotes=beforeQuotes;db.seq=beforeSeq;return alert('Falha ao duplicar. O número e o orçamento anterior foram preservados.');}
