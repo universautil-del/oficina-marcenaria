@@ -10,7 +10,7 @@ const purchaseSource=cut(purchase,'function purchaseModal(','function receivePur
 const salesSource=cut(sales,'function openSales(','function addMonths(');
 new vm.Script(purchaseSource);new vm.Script(salesSource);
 assert(!purchaseSource.includes("return alert('Cadastre uma matéria-prima"));
-assert(purchaseSource.includes("productModal('','materia')"));
+assert(purchaseSource.includes("productModal('','materia-entrada')"));
 assert(purchaseSource.includes('data-quick-material'));
 assert(salesSource.includes('data-quick-product'));
 assert(catalog.includes('id="uaBomNewMaterial"'));
@@ -53,7 +53,7 @@ vm.runInNewContext(purchaseSource+'\n'+salesSource,ctx,{timeout:2500});
 // Primeira entrada: não pede para navegar e não abre compra vazia.
 const first=ctx.purchaseModal();
 assert.equal(first,productDialogs[0].dialog);
-assert.equal(productDialogs[0].type,'materia');
+assert.equal(productDialogs[0].type,'materia-entrada');
 assert.equal(modalObjects.length,0);
 productDialogs[0].dialog.close(); // Cancelou, continua sem comprar.
 assert.equal(modalObjects.length,0);
@@ -63,6 +63,7 @@ ctx.purchaseModal();
 db.products.push({id:'mat1',tipo:'materia',nome:'MDF TX 15 mm',custo:100,preco:130,unidade:'chapa',estoque:0});
 productDialogs[1].dialog.close();
 assert.equal(modalObjects.length,1,'Após cadastrar matéria-prima, abrir Entrada de Materiais');
+assert.equal(productDialogs[1].type,'materia-entrada');
 const entry=modalObjects[0];
 assert(entry.fields.includes('Fornecedor'));
 assert(entry.fields.includes('+ Cadastrar matéria-prima'));
@@ -86,6 +87,7 @@ btn.onclick();
 db.products.push({id:'mat2',tipo:'materia',nome:'Dobradiça',custo:8,preco:12,unidade:'un',estoque:0});
 productDialogs[2].dialog.close();
 assert.equal(purchaseRows.length,beforeRowCount+1);
+assert.equal(productDialogs[2].type,'materia-entrada');
 assert.equal(purchaseRows.at(-1).productId,'mat2');
 assert.equal(purchaseRows.at(-1).custo,8);
 assert(sel.options.some(option=>option.value==='mat2'));
