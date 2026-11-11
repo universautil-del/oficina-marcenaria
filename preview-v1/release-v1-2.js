@@ -21,8 +21,8 @@
 
     const identityIntro=document.createElement('section');
     identityIntro.className='ua-release-intro';
-    identityIntro.innerHTML='<h3>Configurações da Universa Art · versão 1.2</h3>'+
-      '<p>Confira a identidade da empresa, teste os cadastros e proteja os dados. Os registros permanecem neste navegador até você conectar e validar o Supabase.</p>'+
+    identityIntro.innerHTML='<h3>Configurações da Universa Art · versão '+(window.UNIVERSA_REQUIRE_AUTH?'1.0':'1.2')+'</h3>'+
+      (window.UNIVERSA_REQUIRE_AUTH?'<p>Seu acesso usa a conta Supabase configurada neste aparelho. Confira a situação da sincronização e teste a recuperação do backup antes de operar com dados reais.</p>':'<p>Esta é a prévia de testes. Confira os cadastros e proteja os dados. Os registros permanecem neste navegador até conectar e validar o Supabase.</p>')+
       '<div class="ua-release-links"><a href="#backupdrive">Backup criptografado Google Drive</a>'+
       '<a href="#seguranca">Conferir segurança</a><a href="#sketchup">Testar importação SketchUp</a></div>';
     settings.before(identityIntro);
