@@ -61,4 +61,8 @@ begin
  raise exception 'Código 1000 duplicado foi aceito';
 exception when invalid_parameter_value then null;
 end $$;
+do $$
+begin
+ perform public.ua_validar_documento('{"version":3,"clients":[],"products":[{"id":"legado","tipo":"acabado","codigo":"MOV-1"},{"id":"m9999","tipo":"materia","codigo":"9999","estoque":0}],"quotes":[],"orders":[],"transactions":[],"stockMovements":[]}'::jsonb);
+end $$;
 reset role;
