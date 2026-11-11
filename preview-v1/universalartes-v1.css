@@ -69,3 +69,17 @@
 .ua-sketch-cost{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between;margin:20px 0;padding:13px;border-top:1px solid #dbe6dc}
 .ua-sketch-cost strong{font-size:18px;color:#214737}
 @media(max-width:750px){.ua-sketch-input{grid-template-columns:1fr}.ua-sketch-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* OFICINA 1.0 — assistente integrado: medidas e atalhos de projeto. */
+.ua-quick-metric{border:1px solid #d5e5d7;background:#f5faf4;border-radius:10px;padding:12px;margin:4px 0}
+.ua-quick-metric legend{font-size:12px;font-weight:700;color:#315b42;padding:0 6px}
+.ua-quick-metric .btn{margin-top:8px;min-height:38px}
+.ua-quick-metric output{display:inline-block;font-size:12px;font-weight:650;margin-left:7px;color:#345944}
+.ua-assistant-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:5px}
+.ua-assistant-actions .btn{flex:1;min-width:170px;min-height:44px}
+.ua-assistant-links{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.ua-assistant-links a{display:inline-flex;align-items:center;padding:9px 10px;border:1px solid #d9e5d9;background:#f7faf6;color:#23553b;border-radius:8px;text-decoration:none;font-size:12px;font-weight:650}
+.ua-assistant-links a:hover{background:#e8f3e7}
+.ua-cep-status{display:block;margin-top:5px;font-size:11px;color:#287248;line-height:1.35}
+.ua-cep-status.ua-cep-error{color:#9d4b2e}
+@media(max-width:550px){.ua-quick-metric .ua-form-3{grid-template-columns:1fr}.ua-assistant-actions .btn{width:100%}.ua-quick-metric output{display:block;margin:8px 0 0}}
