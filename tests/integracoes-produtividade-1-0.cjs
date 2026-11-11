@@ -22,7 +22,8 @@ const db={
   {id:'p3',nome:'Corrediça',tipo:'materia',codigo:'03',estoque:6,minimo:3,custo:20,unidade:'par'}
  ],
  purchases:[{id:'pur1',status:'aberta',items:[{productId:'p1',quantidade:2},{productId:'p2',quantidade:1}]}],
- orders:[{id:'o1',controlCode:'PED-2026-001',status:'confirmado',clientId:'c1',clientNome:'Cliente Demonstrativo',entregaData:'2026-11-12'}],
+ orders:[{id:'o1',controlCode:'PED-2026-001',status:'confirmado',clientId:'c1',clientNome:'Cliente Demonstrativo',entregaData:'2026-11-12'},
+ {id:'o2',controlCode:'PED-2026-002',status:'confirmado',stockState:'pendente',clientId:'c1',clientNome:'Cliente Demonstrativo',materials:[{productId:'p1',quantidade:6}]}],
  transactions:[{id:'t1',kind:'receber',descricao:'Parcela pendente',dueDate:'2026-11-11',valor:500,payments:[]}],
  quotes:[],stockMovements:[]
 };
@@ -36,7 +37,9 @@ const contentMock={
 const makeDialog=()=>({
  className:'',innerHTML:'',_listeners:{},removed:false,
  querySelector(selector){
-  if(selector==='[data-ua-int-close]')return{onclick:null};
+  if(['[data-ua-int-close]','[data-ua-int-buy]','[data-ua-int-products]'].includes(selector)){
+    this.buttons??={};return this.buttons[selector]??=( {onclick:null} );
+  }
   if(selector==='form'){if(!this.form)this.form={};return this.form}
   const m=/^\[name="qty-(.*?)"\]$/.exec(selector);
   if(m)return {value:m[1]==='p1'?'1':'1'};
@@ -96,6 +99,19 @@ assert.equal(due.orders[0].days,1);
 assert.equal(due.financial.length,1);
 assert.equal(due.financial[0].days,0);
 assert(api.quickActions().includes('Central de integrações'));
+const shortfall=api.shortagesForOrder(db.orders[1]);
+assert.equal(shortfall.length,1);
+assert.equal(shortfall[0].shortage,4,'Descontar saldo 2 de 6');
+assert.equal(shortfall[0].arriving,2,'Entrada ainda aberta não gera compra duplicada');
+assert.equal(shortfall[0].buy,2,'Só sugerir as 2 unidades realmente descobertas');
+const inspected=api.showOrderShortage('o2');
+assert.equal(inspected.length,1);
+const shortageDialog=dialogs.at(-1);
+assert(shortageDialog.innerHTML.includes('PED-2026-002'));
+assert(shortageDialog.innerHTML.includes('não reserva materiais'));
+shortageDialog.buttons['[data-ua-int-buy]'].onclick();
+assert.deepEqual(JSON.parse(JSON.stringify(imported.at(-1).items)),[{productId:'p1',quantidade:2,custo:60}]);
+assert.equal(db.purchases.length,1,'Revisão não cria entrada sem confirmar');
 mock.render('dashboard');
 assert(contentMock.innerHTML.includes('Central de integrações'),'Dashboard precisa exibir integração');
 api.modalForProject('pr1');
@@ -116,9 +132,9 @@ api.suggestionsModal();
 assert.equal(dialogs.length,1);
 assert(dialogs[0].innerHTML.includes('Entradas já abertas'));
 dialogs[0].form.onsubmit({preventDefault(){}});
-assert.equal(imported.length,2);
-assert.equal(imported[1].items[0].productId,'p1');
-assert.equal(imported[1].items[0].quantidade,1);
+assert.equal(imported.length,3);
+assert.equal(imported[2].items[0].productId,'p1');
+assert.equal(imported[2].items[0].quantidade,1);
 assert.equal(db.purchases.length,1,'Sugestão não deve criar compra no banco');
 assert.equal(db.transactions.length,1,'Sugestão não deve criar lançamento financeiro');
 assert.equal(db.products[0].estoque,2,'Sugestão não baixa estoque');
