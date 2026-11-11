@@ -16,7 +16,7 @@ const document={
  createElement(){return{href:'',download:'',click(){downloaded++},remove(){}}}
 };
 const URL={last:null,createObjectURL(blob){this.last=blob;return'blob:teste'},revokeObjectURL(){}};
-const ctx={db:data,window:{UNIVERSA_REQUIRE_AUTH:true,oficinaCloud:{active:true,paused:false,async listWeeklyBackups(){scans++;return list},async getWeeklyBackup(id){gets++;assert.equal(id,22);return {id,dados:data,revisao_origem:7}}}},
+const ctx={db:data,window:{UNIVERSA_REQUIRE_AUTH:true,oficinaCloud:{active:true,paused:false,async weeklyBackupStatus(){return {agendamento_ativo:true,quantidade:2,retencao:4}},async listWeeklyBackups(){scans++;return list},async getWeeklyBackup(id){gets++;assert.equal(id,22);return {id,dados:data,revisao_origem:7}}}},
  sections:[['dashboard','▦','Dashboard']],content:{innerHTML:''},nav:{innerHTML:'',querySelectorAll(){return[]}},
  title:{textContent:''},sidebar:{classList:{remove(){}}},location:{hash:'#dashboard'},
  render(){},document,crypto:webcrypto,TextEncoder,TextDecoder,Blob,URL,
@@ -35,6 +35,7 @@ assert(!ctx.content.innerHTML.includes('OAuth Client ID'));
  await api.scanWeekly();
  assert(scans>=1);
  assert(ctx.content.innerHTML.includes('2 de 4 copias'));
+ assert(ctx.content.innerHTML.includes('Agendamento semanal ativo'));
  assert(ctx.content.innerHTML.includes('data-backup-id="22"'));
  const unchanged=JSON.stringify(ctx.db);
  await listeners.click({target:{closest(){return {dataset:{uaBackupAction:'download-weekly',backupId:'22'},disabled:false}}}});
