@@ -1,0 +1,42 @@
+name: Testar SQL e RLS da Universalartes
+on:
+  push:
+    paths:
+      - 'supabase/secure-document-v1.sql'
+      - 'tests/sql/**'
+      - '.github/workflows/validate-secure-sql.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  testar-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar cliente PostgreSQL
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Criar ambiente sintético e testar migração SQL
+        run: |
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f tests/sql/supabase-stub.sql
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/secure-document-v1.sql
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f tests/sql/secure-document-check.sql
