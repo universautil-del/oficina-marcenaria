@@ -1,0 +1,14 @@
+-- Supabase local sintético, apenas para a suíte CI de sintaxe e RLS.
+create role anon;
+create role authenticated;
+create schema auth;
+create table auth.users(id uuid primary key);
+insert into auth.users(id) values
+ ('00000000-0000-0000-0000-000000000001'),
+ ('00000000-0000-0000-0000-000000000002');
+create function auth.uid() returns uuid language sql stable as $$
+ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
+$$;
+grant usage on schema auth to authenticated;
+grant execute on function auth.uid() to authenticated;
+grant usage on schema public to authenticated;
