@@ -10,6 +10,7 @@ const events={};
 const mk=()=>({textContent:'',value:'',disabled:true,listeners:{},addEventListener(k,fn){this.listeners[k]=fn},focus(){},select(){},add(opt){this.value=opt.value}});
 const values={selectedProject:'',clientId:'c1',ambiente:'Cozinha',movel:'Balcão em L',largura:'2500',altura:'900',profundidade:'600',material:'MDF TX 15 mm',componentes:'4 gavetas',acabamento:'Amadeirado',observacoes:'Rodapé de 90 mm'};
 const fields=Object.fromEntries(Object.entries(values).map(([k,v])=>[k,{value:v}]));
+fields.selectedProject.add=function(option){this.value=option.value};
 const form={listeners:{},elements:{namedItem:k=>fields[k]},addEventListener(k,fn){this.listeners[k]=fn},querySelector(sel){return sel==='#uaAssistantProject'?projectSelect:null}};
 const projectSelect=mk();projectSelect.value='';
 const nodes={uaAssistantForm:form,uaAssistantStatus:mk(),uaAssistantProject:projectSelect,
