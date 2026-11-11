@@ -38,7 +38,7 @@ assert(prompt.includes('MDF TX 15 mm'));
 assert(prompt.includes('NÃO invente'));
 assert.equal(saved,0,'Gerar pedido não grava sem clicar em salvar');
 nodes.uaSaveProject.listeners.click();
-assert.equal(saved,1);
+assert.equal(saved,1,'Falha no cadastro: '+nodes.uaAssistantStatus.textContent);
 assert.equal(db.projects.length,1);
 assert.equal(db.projects[0].clientId,'c1');
 assert.equal(db.projects[0].largura,2500);
