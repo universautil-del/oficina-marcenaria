@@ -1,0 +1,31 @@
+/* Universa Art — identidade da versão 1.2 e formulários de configuração */
+.ua-release-alert{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:11px 20px;background:#fcf6e9;color:#654915;border-bottom:1px solid #e5d5aa;font-size:12px;line-height:1.45;text-align:center}
+.ua-release-alert strong{letter-spacing:.09em;color:#29553c;white-space:nowrap}
+.ua-release-alert a{color:#265c43;font-weight:750;text-underline-offset:3px}
+.sidefoot{display:flex;flex-direction:column;gap:4px;line-height:1.25}
+.sidefoot strong{color:#edc485;letter-spacing:1.2px;font-size:12px}
+.sidefoot small{font-size:11px;color:#bbcebf}
+.ua-release-intro{padding:16px 18px;border:1px solid #dfebdf;background:#f7faf5;border-radius:12px;margin-bottom:17px}
+.ua-release-intro h3{font-size:16px;margin:0 0 5px;color:#204533}
+.ua-release-intro p{font-size:12px;color:#687e6d;line-height:1.6;margin:3px 0 12px}
+.ua-release-links{display:flex;flex-wrap:wrap;gap:8px}
+.ua-release-links a{font-size:12px;font-weight:750;padding:9px 12px;border:1px solid #cfdbcf;color:#29553c;text-decoration:none;background:white;border-radius:8px}
+.ua-release-links a:hover{background:#e6f0e7}
+.settings-grid .form-grid>.ua-fantasia-field,.settings-grid .form-grid>.ua-legacy-identity{grid-column:1/-1}
+.ua-fantasia-field{margin-top:10px;padding:13px;border-radius:9px;border:1px solid #e2e7dc;background:#fcfcfa}
+.ua-fantasia-field label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:750;color:#385d48}
+.ua-fantasia-field input{width:100%;min-height:42px;border:1px solid #cbd9cc;border-radius:7px;padding:10px;font-size:14px;background:white;color:#253d31}
+.ua-fantasia-field p{margin:8px 0 0;font-size:12px;color:#78887a;line-height:1.5}
+.ua-legacy-identity{margin-top:11px;padding:11px 13px;background:#fff7e6;border:1px solid #ecd8ab;border-radius:9px;display:flex;gap:11px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.ua-legacy-identity p{margin:0;font-size:12px;color:#725821;max-width:380px}
+.ua-legacy-identity button{white-space:normal;font-size:12px}
+.ua-backup-recommended{padding:13px 16px;border:1px solid #cfe0cf;background:#eff7ef;border-radius:10px;margin:12px 0}
+.ua-backup-recommended strong{color:#214e34;font-size:13px}
+.ua-backup-recommended p{color:#587462;font-size:12px;margin:6px 0 12px;line-height:1.5}
+.ua-backup-recommended a{display:inline-flex;background:#28553c;color:white;border-radius:8px;padding:10px 13px;font-size:12px;text-decoration:none;font-weight:750}
+.ua-backup-insecure{font-size:11px;color:#7b6641;margin-top:10px;line-height:1.4}
+.cloud-panel .ua-cloud-start{border:1px solid #d5e4d4;background:#f4f9f2;border-radius:9px;color:#315c3e;margin:14px 0;padding:12px 14px;font-size:12px;line-height:1.5}
+.cloud-panel .ua-cloud-start.warn{border-color:#eddaad;background:#fff7e8;color:#755921}
+.cloud-panel form[data-cloud-form="auth"] button:disabled{cursor:not-allowed;opacity:.55}
+.cloud-panel .cloud-help{line-height:1.55}
+@media(max-width:760px){.ua-release-alert{gap:6px;padding:9px 12px}.ua-legacy-identity{align-items:stretch}.ua-legacy-identity button{width:100%}.ua-release-links a{flex:1;text-align:center}}

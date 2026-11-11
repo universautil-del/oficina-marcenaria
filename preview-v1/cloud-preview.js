@@ -165,14 +165,30 @@
   el=document.createElement('section');el.id='cloudPanel';el.className='panel cloud-panel gap-top';
   const email=esc(state.session?.email||'');
   const configured=Boolean(state.cfg?.url&&state.cfg?.key);
-  el.innerHTML=`<h3>☁️ Login da Universalartes — banco de testes</h3><p class="muted">Configuração opcional para a prévia 1.0. Cada usuário guarda seus dados de teste separadamente. Para sincronizar entre seus aparelhos, entre com a <strong>mesma conta</strong>. Não use dados reais até validar o acesso e os backups.</p>
+  el.innerHTML=`<h3>☁️ Nuvem e login · Universa Art 1.2</h3><p class="muted">Configure o Supabase para testar o login e a sincronização. O site ainda tem acesso local sem autenticação obrigatória; não use dados reais até verificar as permissões e os backups.</p>
   <div class="cloud-state"><strong>Estado:</strong> <span data-cloud-status>${esc(state.status)}</span></div>
   <div class="cloud-two">
-   <div><h4>1. Conectar ao Supabase</h4><form data-cloud-form="config"><label>Project URL<input name="url" type="url" placeholder="https://projeto.supabase.co" value="${esc(state.cfg?.url||'')}" required></label><label>Chave pública (publishable / anon)<input name="key" type="text" autocomplete="off" value="${esc(state.cfg?.key||'')}" required></label><button class="btn" type="submit">Salvar configuração</button></form><p class="cloud-help">Antes de entrar, abra o <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/preview-v1/supabase-preview.sql" target="_blank" rel="noopener noreferrer">SQL do banco de testes</a>, copie seu conteúdo e execute no SQL Editor do Supabase. Nunca cole aqui chaves secretas ou service_role.</p></div>
-   <div><h4>2. Entrar ou criar conta</h4>${state.session?`<p>Usuário: <strong>${email}</strong></p><div class="actions"><button class="btn" type="button" data-cloud-action="logout">Sair</button></div>`:`<form data-cloud-form="auth"><label>E-mail<input name="email" type="email" autocomplete="email" required></label><label>Senha<input name="password" type="password" minlength="8" autocomplete="current-password" required></label><div class="actions"><button class="btn primary" name="mode" value="login" type="submit" ${configured?'':'disabled'}>Entrar</button><button class="btn" name="mode" value="signup" type="submit" ${configured?'':'disabled'}>Criar conta</button></div></form>`}</div>
+   <div><h4>1. Conectar projeto Supabase</h4><form data-cloud-form="config"><label>URL do projeto (Project URL)<input name="url" type="url" placeholder="https://projeto.supabase.co" value="${esc(state.cfg?.url||'')}" required></label><label>Chave pública (publishable / anon) — nunca service_role<input name="key" type="text" autocomplete="off" value="${esc(state.cfg?.key||'')}" required></label><button class="btn" type="submit">Salvar configuração</button></form><p class="cloud-help">Antes de entrar, abra o <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/preview-v1/supabase-preview.sql" target="_blank" rel="noopener noreferrer">SQL do banco de testes</a>, copie seu conteúdo e execute no SQL Editor do Supabase. Nunca cole aqui chaves secretas ou service_role.</p></div>
+   <div><h4>2. Entrar ou criar conta de teste</h4>${state.session?`<p>Usuário: <strong>${email}</strong></p><div class="actions"><button class="btn" type="button" data-cloud-action="logout">Sair</button></div>`:`<form data-cloud-form="auth"><label>E-mail<input name="email" type="email" autocomplete="email" required></label><label>Senha<input name="password" type="password" minlength="8" autocomplete="current-password" required></label><div class="actions"><button class="btn primary" name="mode" value="login" type="submit" ${configured?'':'disabled'}>Entrar</button><button class="btn" name="mode" value="signup" type="submit" ${configured?'':'disabled'}>Criar conta</button></div></form>`}</div>
   </div>
   ${state.session?`<div class="cloud-actions"><h4>3. Vincular dados deste aparelho à nuvem</h4><p class="muted">Envio inicial disponível apenas quando a nuvem está vazia. O sistema NÃO sobrescreve um registro existente por esse botão. Conflitos interrompem a sincronização, e você deve manter um backup de segurança.</p><div class="actions"><button type="button" class="btn primary" data-cloud-action="load">Usar dados da nuvem</button><button type="button" class="btn" data-cloud-action="upload">Enviar dados deste aparelho</button><button type="button" class="btn" data-cloud-action="refresh">Verificar atualizações</button><button type="button" class="btn" data-cloud-action="flush">Sincronizar agora</button></div></div>`:''}
   <p class="cloud-help">Enquanto a nuvem não estiver configurada, este site continua no modo local de testes. Em modo nuvem, os dados também permanecem temporariamente nesta aba para tolerar falhas de conexão. Não use equipamentos compartilhados e faça backups frequentes.</p>`;
+  // Não exibir e-mail/senha quando não há projeto Supabase configurado.
+  if(!configured&&!state.session){
+    const authForm=el.querySelector('form[data-cloud-form="auth"]');
+    if(authForm){
+      authForm.hidden=true;
+      const note=document.createElement('p');
+      note.className='ua-cloud-start warn';
+      note.textContent='A nuvem ainda não foi configurada. Informe a URL e a chave pública do seu projeto Supabase à esquerda. Depois de salvar, os campos de login serão habilitados.';
+      authForm.before(note);
+    }
+  }else if(configured){
+    const note=document.createElement('p');
+    note.className='ua-cloud-start';
+    note.textContent=state.session?'Conta conectada. Confira seus backups antes de sincronizar.':'Projeto configurado. Crie uma conta de teste ou entre com seu usuário Supabase. Nenhuma senha é fornecida pelo sistema.';
+    el.querySelector('.cloud-state')?.after(note);
+  }
   content.append(el);
  }
  const baseSave=save;
@@ -191,7 +207,7 @@
     if(!validURL(url))throw Error('Use a URL HTTPS do projeto Supabase (*.supabase.co).');
     if(!isPublicKey(key))throw Error('Use somente a chave pública anon (JWT) ou sb_publishable_. Não use nenhuma chave secreta ou service_role.');
     if(state.session&&url!==state.cfg?.url)throw Error('Saia da conta antes de mudar de projeto.');
-    state.cfg={url,key};localStorage.setItem(CFG,JSON.stringify(state.cfg));alert('Configuração pública salva neste navegador.');render('empresa');
+    state.cfg={url,key};localStorage.setItem(CFG,JSON.stringify(state.cfg));alert('Configuração pública salva neste navegador. Confira o acesso com sua conta de teste.');render('empresa');
    }else{
     const mode=btn?.value||'login';await login(String(data.get('email')||'').trim(),String(data.get('password')||''),mode==='signup');
    }
