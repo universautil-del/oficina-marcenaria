@@ -48,7 +48,7 @@ assert.deepEqual(sections.map(x=>x[0]).sort(),entries.map(x=>x[0]).sort(),'Prese
 assert.deepEqual(sections.slice(0,7).map(x=>x[0]),[
  'dashboard','clientes','projetos','assistente','sketchup','orcamentos','pedidos'
  ]);
-assert.deepEqual(api.groups()[0].rows.map(x=>x[0]),['dashboard','clientes'],'Clientes e Fornecedores deve aparecer junto ao Dashboard no topo');
+assert.equal(JSON.stringify(api.groups()[0].rows.map(x=>x[0])),JSON.stringify(['dashboard','clientes']),'Clientes e Fornecedores deve aparecer junto ao Dashboard no topo');
 const idx=key=>sections.findIndex(x=>x[0]===key);
 assert(idx('pedidos')<idx('producao')&&idx('producao')<idx('produtos'));
 assert(idx('produtos')+1===idx('compras'));
