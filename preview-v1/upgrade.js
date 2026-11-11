@@ -27,9 +27,34 @@ function purchasesView(){const q=search.compras.toLowerCase();const list=(db.pur
 }
 function addPurchaseRow(dlg,item={}){const wrap=dlg.querySelector('#purchaseRows');const options=db.products.filter(p=>p.tipo==='materia').map(p=>`<option value="${esc(p.id)}">${esc(p.nome)} (${esc(p.unidade||'un')})</option>`).join('');const el=document.createElement('div');el.className='purchase-row';el.innerHTML=`<label>Matéria-prima<select data-pur-product required>${options}</select></label><label>Quantidade *<input type="number" min="0.001" step="0.001" data-pur-qty required value="${item.quantidade||1}"></label><label>Custo unitário (R$) *<input type="number" min="0.01" step="0.01" data-pur-cost required value="${item.custo||0}"></label><button type="button" class="btn danger" data-del-purchase>Remover</button>`;wrap.append(el);const sel=el.querySelector('select');if(item.productId)sel.value=item.productId;const refreshCost=()=>{const p=getProduct(sel.value);el.querySelector('[data-pur-cost]').value=Number(p?.custo||0);calcPurchase(dlg)};sel.addEventListener('change',refreshCost);el.querySelectorAll('input').forEach(a=>a.addEventListener('input',()=>calcPurchase(dlg)));el.querySelector('[data-del-purchase]').onclick=()=>{el.remove();calcPurchase(dlg)};if(!item.productId)refreshCost();}
 function calcPurchase(dlg){const val=[...dlg.querySelectorAll('.purchase-row')].reduce((s,r)=>s+(Number(r.querySelector('[data-pur-qty]').value)||0)*(Number(r.querySelector('[data-pur-cost]').value)||0),0);const e=dlg.querySelector('#purchaseTotal');if(e)e.textContent=money(val)}
-function purchaseModal(prefillItems=[]){if(!Array.isArray(prefillItems))prefillItems=[];if(!db.products.some(p=>p.tipo==='materia'))return alert('Cadastre uma matéria-prima em Produtos primeiro.');const fields=`<div class="form-grid"><label>Fornecedor *<select name="supplierId" required><option value="">Selecione um fornecedor</option>${supplierOptions()}</select><button type="button" class="btn small" data-quick-supplier style="margin-top:8px">+ Novo fornecedor</button></label><label>Data do registro<input type="date" name="date" value="${iso()}" required></label><label>Vencimento do pagamento<input type="date" name="dueDate" value="${iso()}" required></label><label>Referência / Nota fiscal<input name="referencia" placeholder="Número da NF ou pedido"></label></div><h3 class="form-section">Materiais da entrada</h3><div id="purchaseRows"></div><p>${button('+ Adicionar material','add-purchase-row','','small')}</p><div class="purchase-total">Total da entrada: <strong id="purchaseTotal">${money(0)}</strong></div><p class="form-note">O sistema cria uma despesa pendente. A entrada física no estoque só acontece ao confirmar o recebimento.</p>`;
+function purchaseModal(prefillItems=[]){
+ if(!Array.isArray(prefillItems))prefillItems=[];
+ if(!db.products.some(p=>p.tipo==='materia')){
+  const before=new Set((db.products||[]).map(p=>String(p.id)));
+  const materialDialog=productModal('','materia');
+  materialDialog?.addEventListener('close',()=>{
+   const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
+   if(added)setTimeout(()=>purchaseModal(prefillItems),0);
+  },{once:true});
+  return materialDialog;
+ }
+ const fields=`<div class="form-grid"><label>Fornecedor *<select name="supplierId" required><option value="">Selecione um fornecedor</option>${supplierOptions()}</select><button type="button" class="btn small" data-quick-supplier style="margin-top:8px">+ Novo fornecedor</button></label><label>Data do registro<input type="date" name="date" value="${iso()}" required></label><label>Vencimento do pagamento<input type="date" name="dueDate" value="${iso()}" required></label><label>Referência / Nota fiscal<input name="referencia" placeholder="Número da NF ou pedido"></label></div><h3 class="form-section">Materiais da entrada</h3><div id="purchaseRows"></div><p>${button('+ Adicionar material','add-purchase-row','','small')}<button type="button" class="btn small" data-quick-material style="margin-left:8px">+ Cadastrar matéria-prima</button></p><div class="purchase-total">Total da entrada: <strong id="purchaseTotal">${money(0)}</strong></div><p class="form-note">O sistema cria uma despesa pendente. A entrada física no estoque só acontece ao confirmar o recebimento.</p>`;
  openModal('Nova entrada de materiais',fields,(v,dlg)=>{const items=[...dlg.querySelectorAll('.purchase-row')].map(r=>({productId:r.querySelector('[data-pur-product]').value,quantidade:Number(r.querySelector('[data-pur-qty]').value),custo:round(r.querySelector('[data-pur-cost]').value)}));if(!items.length||items.some(i=>!getProduct(i.productId)||!(i.quantidade>0)||!(i.custo>0)))throw Error('Informe matérias-primas, quantidades e custos positivos.');if(new Set(items.map(i=>i.productId)).size!==items.length)throw Error('Adicione cada material apenas uma vez por compra.');const sup=getSupplier(v.supplierId);if(!sup)throw Error('Fornecedor não encontrado.');const purchaseNumber=Number(db.seq.purchase||1);const pur={id:id(),number:purchaseNumber,supplierId:sup.id,supplierNome:sup.nome,date:v.date,dueDate:v.dueDate,referencia:String(v.referencia||'').trim(),items,status:'aberta',receivedAt:'',accountId:''};if(!(purchaseTotal(pur)>0))throw Error('Valor total inválido.');const account={id:id(),kind:'pagar',purchaseId:pur.id,orderId:'',descricao:`Entrada de Materiais #${pur.number} · ${sup.nome}`,dueDate:pur.dueDate,valor:purchaseTotal(pur),payments:[]};pur.accountId=account.id;const previousPurchases=db.purchases,previousTransactions=db.transactions,previousSeq={...db.seq};db.purchases=[...db.purchases,pur];db.transactions=[...db.transactions,account];db.seq.purchase=purchaseNumber+1;if(save()===false){db.purchases=previousPurchases;db.transactions=previousTransactions;db.seq=previousSeq;throw Error('Não foi possível gravar a entrada. Nenhum lançamento foi confirmado.');}return true;},dlg=>{
   dlg.querySelector('[data-action="add-purchase-row"]').onclick=()=>addPurchaseRow(dlg);
+  dlg.querySelector('[data-quick-material]').onclick=()=>{
+    const before=new Set((db.products||[]).map(p=>String(p.id)));
+    const materialDialog=productModal('','materia');
+    materialDialog?.addEventListener('close',()=>{
+      const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
+      if(!added||!dlg.isConnected)return;
+      dlg.querySelectorAll('[data-pur-product]').forEach(select=>{
+        if(![...select.options].some(option=>option.value===String(added.id)))
+          select.add(new Option(added.nome,added.id));
+      });
+      addPurchaseRow(dlg,{productId:added.id,quantidade:1,custo:Number(added.custo)||0});
+      calcPurchase(dlg);
+    },{once:true});
+  };
   dlg.querySelector('[data-quick-supplier]').onclick=()=>{
     const existing=new Set((db.suppliers||[]).map(p=>String(p.id)));
     const supplierDialog=supplierModal();
