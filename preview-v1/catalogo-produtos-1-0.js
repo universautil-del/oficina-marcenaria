@@ -76,7 +76,9 @@
   if(nameLabel)nameLabel.textContent=finished?'Descrição do produto acabado *':'Descrição da matéria-prima *';
   const hint=dialog.querySelector('#uaProductTypeHelp');
   if(hint)hint.textContent=finished?'Produto acabado: defina os materiais utilizados em uma unidade. A baixa será feita somente quando iniciar a produção de um pedido.':
-   'Matéria-prima: configure custo, estoque e mínimo. As entradas de materiais atualizam o saldo ao confirmar o recebimento.';
+   dialog.querySelector('.ua-stock-from-purchase')?
+   'Matéria-prima da marcenaria: MDF de 18 mm ou 25 mm, parafusos, fitas, dobradiças, corrediças e outros insumos. O saldo será atualizado quando confirmar a entrada.':
+   'Matéria-prima: cadastre chapas de MDF, parafusos, fitas, ferragens e demais insumos. Configure custo, estoque mínimo e unidade.';
   const title=dialog.querySelector('.ua-product-eyebrow');
   if(title)title.textContent=finished?'CADASTRO DE PRODUTO ACABADO':'CADASTRO DE MATÉRIA-PRIMA';
   updateComponentCost(dialog);
