@@ -250,23 +250,66 @@ function createOrder(data,quoteId=''){
  }
 }
 function convertQuote(qid){const q=getQuote(qid);if(!q||q.status==='convertido')return alert('Orçamento já convertido.');if(!confirm(`Converter orçamento #${q.number} em pedido? O financeiro será gerado automaticamente.`))return;try{if(createOrder({clientId:q.clientId,clientNome:q.clientNome,date:iso(),items:q.items.map(i=>({...i})),desconto:q.desconto,frete:q.frete||0,ambientes:q.ambientes||'',entrega:q.entrega,entregaData:q.entregaData||"",observacoes:q.observacoes,projectId:q.projectId||'',projectNome:q.projectNome||'',payment:{...q.payment}},qid)){location.hash='pedidos';render('pedidos')}}catch(e){alert(e.message)}}
-function removeQuote(qid){const q=getQuote(qid);if(!q||q.status!=='aberto')return;if(confirm('Excluir este orçamento?')){db.quotes=db.quotes.filter(q=>q.id!==qid);save();render()}}
+function removeQuote(qid){const q=getQuote(qid);if(!q||q.status!=='aberto')return;if(confirm('Excluir este orçamento?')){const before=db.quotes;db.quotes=db.quotes.filter(q=>q.id!==qid);if(save()===false){db.quotes=before;return alert('Não foi possível excluir o orçamento.');}render()}}
 function ordersView(){const q=search.pedidos.toLowerCase();const list=db.orders.slice().reverse().filter(o=>[o.number,o.clientNome,statusText[o.status]].some(v=>String(v||'').toLowerCase().includes(q)));
  content.innerHTML=`${intro('Pedidos','Controle de produção, estoque e cobrança.',`${db.orders.length} pedido(s)`)}<section class="panel"><div class="toolbar">${inputSearch('pedidos')}<div class="actions">${button('+ Novo pedido','new-order','','primary')}</div></div>${table(['Pedido / Cliente','Valor e recebimento','Entrega','Produção / Materiais','Ações'],list.map(o=>{
  const state=o.stockState==='reservado'?pill('Materiais reservados','success'):o.stockState==='baixado'?pill('Estoque baixado','success'):pill('Reserva pendente','warn');
  return td(`<strong>#${o.number} · ${esc(o.clientNome)}</strong><div class="small muted">${date(o.date)}</div>`,`<strong>${money(orderTotal(o))}</strong><div class="small muted">Recebido: ${money(orderPaid(o))}</div>`,esc(o.entrega||'A combinar'),`${pill(statusText[o.status]||o.status,o.status==='cancelado'?'danger':o.status==='entregue'?'success':'')}<div style="margin-top:6px">${o.status==='cancelado'?'':state}</div>`,`<div class="row-actions">${button('Detalhes','view-order',o.id,'small')}${o.status==='confirmado'&&o.stockState==='pendente'?button('Reservar','reserve-order',o.id,'small accent'):''}${o.status==='confirmado'?button('Produção','start-order',o.id,'small'):''}${o.status==='producao'?button('Pronto','ready-order',o.id,'small'):''}${o.status==='pronto'?button('Entregar','deliver-order',o.id,'small'):''}${o.status==='confirmado'?button('Cancelar','cancel-order',o.id,'small danger'):''}</div>`)}))}</section>`;
 }
-function reserveOrder(oid){const o=getOrder(oid);if(!o||o.status!=='confirmado')return;if(tryReserve(o)){save();render();alert('Materiais reservados.')}else{save();render();alert('Estoque disponível insuficiente para reservar todos os materiais. Confira Produtos e Estoque.')}}
-function startOrder(oid){const o=getOrder(oid);if(!o||o.status!=='confirmado')return;if(o.stockState!=='reservado')return alert('Reserve os materiais antes de iniciar a produção.');
- const needed=o.materials||[];for(const m of needed){const p=getProduct(m.productId);if(!p||p.estoque+0.000001<m.quantidade)return alert('Não há estoque suficiente para iniciar produção.');}
- if(!confirm(`Iniciar produção do pedido #${o.number} e baixar materiais do estoque?`))return;
- // Uma única gravação do estado, sem descontar novamente após status mudar.
- for(const m of needed){const p=getProduct(m.productId);p.estoque=round(p.estoque-m.quantidade);db.stockMovements.push({id:id(),productId:p.id,nome:p.nome,delta:round(-m.quantidade),date:iso(),orderId:o.id,note:`Consumo pedido #${o.number}`})}
- o.stockState='baixado';o.status='producao';if(save())render();
+function reserveOrder(oid){
+ const o=getOrder(oid);if(!o||o.status!=='confirmado')return;
+ const oldState=o.stockState;
+ const ok=tryReserve(o);
+ if(save()===false){o.stockState=oldState;return alert('Não foi possível salvar a reserva. Tente novamente.');}
+ render();alert(ok?'Materiais reservados.':'Estoque insuficiente para reservar todos os materiais. Confira Produtos e Estoque.');
 }
-function advanceOrder(oid,newStatus){const o=getOrder(oid);if(!o)return;const allowed={producao:'pronto',pronto:'entregue'};if(allowed[o.status]!==newStatus)return alert('Transição de status inválida.');o.status=newStatus;save();render()}
-function cancelOrder(oid){const o=getOrder(oid);if(!o||o.status!=='confirmado')return alert('Somente pedidos confirmados podem ser cancelados nesta versão.');if(orderPaid(o)>0)return alert('Há pagamento recebido. Estorne ou regularize financeiramente antes de cancelar.');if(!confirm(`Cancelar pedido #${o.number}? Reservas serão liberadas e contas ainda não pagas serão removidas.`))return;
- o.status='cancelado';o.stockState='liberado';db.transactions=db.transactions.filter(t=>t.orderId!==oid);save();render()}
+function startOrder(oid){
+ const o=getOrder(oid);if(!o||o.status!=='confirmado')return;
+ if(o.stockState!=='reservado')return alert('Reserve os materiais antes de iniciar a produção.');
+ const needed=o.materials||[];
+ for(const m of needed){
+  const p=getProduct(m.productId);
+  if(!p||!Number.isFinite(Number(m.quantidade))||m.quantidade<=0||p.estoque+0.000001<m.quantidade)
+   return alert('Estoque insuficiente ou quantidade inválida para iniciar a produção.');
+ }
+ if(!confirm('Iniciar produção do pedido #'+o.number+' e baixar materiais do estoque?'))return;
+ const oldStocks=needed.map(m=>({id:m.productId,stock:getProduct(m.productId).estoque}));
+ const oldMoves=db.stockMovements,oldStatus=o.status,oldState=o.stockState;
+ try{
+  const moves=[];
+  for(const m of needed){
+   const p=getProduct(m.productId);
+   p.estoque=qty3(Number(p.estoque)-Number(m.quantidade));
+   moves.push({id:id(),productId:p.id,nome:p.nome,delta:qty3(-Number(m.quantidade)),date:iso(),orderId:o.id,note:'Consumo pedido #'+o.number});
+  }
+  db.stockMovements=[...oldMoves,...moves];
+  o.stockState='baixado';o.status='producao';
+  if(save()===false)throw Error('Não foi possível salvar a produção.');
+  render();
+ }catch(error){
+  for(const row of oldStocks){const p=getProduct(row.id);if(p)p.estoque=row.stock}
+  db.stockMovements=oldMoves;o.stockState=oldState;o.status=oldStatus;
+  alert(error.message+' Nenhum material foi baixado.');
+ }
+}
+function advanceOrder(oid,newStatus){
+ const o=getOrder(oid);if(!o)return;
+ const allowed={producao:'pronto',pronto:'entregue'};
+ if(allowed[o.status]!==newStatus)return alert('Transição de status inválida.');
+ const previous=o.status;o.status=newStatus;
+ if(save()===false){o.status=previous;return alert('Falha ao salvar. Situação anterior preservada.');}
+ render();
+}
+function cancelOrder(oid){
+ const o=getOrder(oid);if(!o||o.status!=='confirmado')return alert('Somente pedidos confirmados podem ser cancelados nesta versão.');
+ if(orderPaid(o)>0)return alert('Há pagamento recebido. Regularize financeiramente antes de cancelar.');
+ if(!confirm('Cancelar pedido #'+o.number+'? Reservas e contas ainda não pagas serão liberadas.'))return;
+ const before={status:o.status,stockState:o.stockState,transactions:db.transactions};
+ o.status='cancelado';o.stockState='liberado';
+ db.transactions=db.transactions.filter(t=>t.orderId!==oid);
+ if(save()===false){o.status=before.status;o.stockState=before.stockState;db.transactions=before.transactions;return alert('Falha ao cancelar. Lançamentos preservados.');}
+ render();
+}
 function orderDetails(oid){const o=getOrder(oid);if(!o)return;const mats=o.materials||[];openModal(`Pedido #${o.number}`,`<div class="summary-list"><div class="summary-row"><span>Cliente</span><strong>${esc(o.clientNome)}</strong></div><div class="summary-row"><span>Status</span><strong>${esc(statusText[o.status]||o.status)}</strong></div><div class="summary-row"><span>Entrega</span><strong>${esc(o.entrega||'A combinar')}${o.entregaData?' · '+date(o.entregaData):''}</strong></div><div class="summary-row"><span>Valor total</span><strong>${money(orderTotal(o))}</strong></div><div class="summary-row"><span>Recebido</span><strong>${money(orderPaid(o))}</strong></div></div><h3 class="form-section">Itens</h3>${table(['Descrição','Qtd','Valor unit.','Total'],o.items.map(i=>td(esc(i.descricao),dec(i.quantidade),money(i.preco),money(i.preco*i.quantidade))))}<h3 class="form-section">Materiais para produção</h3>${table(['Material','Quantidade necessária'],mats.map(m=>td(esc(getProduct(m.productId)?.nome||'Material não encontrado'),dec(m.quantidade))))}<p class="inline-note">Estoque: ${esc(o.stockState)}</p>${button('Imprimir pedido','print-order',o.id)} ${button('Gerar contrato','print-contract',o.id)} ${button('Anexos de contratos','v5-go-attachments',o.id)} ${orderPaid(o)+.005>=orderTotal(o)?button('Recibo de quitação','v5-paid-receipt',o.id):''}`,(v,d)=>true);
 }
 function financeView(){const q=search.financeiro.toLowerCase();const list=db.transactions.slice().sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).filter(t=>[t.descricao,t.kind,t.dueDate].some(v=>String(v||'').toLowerCase().includes(q)));
@@ -275,8 +318,8 @@ function financeView(){const q=search.financeiro.toLowerCase();const list=db.tra
  content.innerHTML=`${intro('Financeiro','Receitas, despesas, parcelas e pagamentos parciais.')}<div class="cards"><div class="card"><div class="label">A receber</div><div class="value">${money(due)}</div></div><div class="card"><div class="label">A pagar</div><div class="value">${money(owing)}</div></div><div class="card"><div class="label">Recebido</div><div class="value">${money(earned)}</div></div><div class="card"><div class="label">Saldo de caixa</div><div class="value">${money(earned-spent)}</div></div></div>
  <section class="panel gap-top"><div class="toolbar">${inputSearch('financeiro')}<div class="actions">${button('Exportar CSV','export-finance')}${button('+ Receita / Despesa','new-transaction','','primary')}</div></div>${table(['Lançamento','Vencimento','Valor','Saldo','Situação','Ações'],list.map(t=>{const paid=cashReceived(t);return td(`<strong>${esc(t.descricao)}</strong><div class="small muted">${esc(kindText[t.kind])}${t.orderId?' · Pedido #'+getOrder(t.orderId)?.number:''}</div>`,date(t.dueDate),money(t.valor),money(balance(t)),pill(balance(t)<0.005?'Pago':paid>0?'Parcial':'Pendente',balance(t)<0.005?'success':paid>0?'warn':''),`<div class="row-actions">${balance(t)>0?button('Registrar pagamento','pay-transaction',t.id,'small'):''}${t.kind==='receber'&&paid>0?button('Recibos','show-receipts',t.id,'small'):''}${!t.orderId&&paid===0?button('Excluir','delete-transaction',t.id,'small danger'):''}</div>`)}))}</section>`;
 }
-function transactionModal(){openModal('Nova receita ou despesa',`<div class="form-grid"><label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label><label>Vencimento<input type="date" name="dueDate" value="${iso()}" required></label><label class="full">Descrição *<input name="descricao" required></label><label>Valor (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label></div>`,v=>{if(!(Number(v.valor)>0))throw Error('Valor inválido.');db.transactions.push({id:id(),kind:v.kind,descricao:v.descricao.trim(),dueDate:v.dueDate,valor:round(v.valor),payments:[],orderId:''});return save()})}
-function paymentModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t)return;const left=balance(t);if(left<=0)return alert('Lançamento quitado.');openModal('Registrar '+(t.kind==='receber'?'recebimento':'pagamento'),`<p class="form-note">${esc(t.descricao)}<br>Saldo em aberto: <strong>${money(left)}</strong></p><div class="form-grid"><label>Valor ${t.kind==='receber'?'recebido':'pago'} *<input type="number" name="valor" required min="0.01" step="0.01" max="${left}" value="${left}"></label><label>Data<input type="date" name="date" required value="${iso()}"></label><label class="full">Forma de pagamento<input name="method" placeholder="Pix, dinheiro, transferência, cartão..."></label></div>`,v=>{const val=round(v.valor);if(!(val>0)||val>balance(t)+.001)throw Error('Valor deve ser maior que zero e não ultrapassar o saldo.');t.payments.push({id:id(),valor:val,date:v.date,method:v.method||''});return save()})}
+function transactionModal(){openModal('Nova receita ou despesa',`<div class="form-grid"><label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label><label>Vencimento<input type="date" name="dueDate" value="${iso()}" required></label><label class="full">Descrição *<input name="descricao" required></label><label>Valor (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label></div>`,v=>{if(!(Number(v.valor)>0))throw Error('Valor inválido.');const before=db.transactions;db.transactions=[...db.transactions,{id:id(),kind:v.kind,descricao:v.descricao.trim(),dueDate:v.dueDate,valor:round(v.valor),payments:[],orderId:''}];if(save()===false){db.transactions=before;throw Error('Não foi possível salvar o lançamento.');}return true})}
+function paymentModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t)return;const left=balance(t);if(left<=0)return alert('Lançamento quitado.');openModal('Registrar '+(t.kind==='receber'?'recebimento':'pagamento'),`<p class="form-note">${esc(t.descricao)}<br>Saldo em aberto: <strong>${money(left)}</strong></p><div class="form-grid"><label>Valor ${t.kind==='receber'?'recebido':'pago'} *<input type="number" name="valor" required min="0.01" step="0.01" max="${left}" value="${left}"></label><label>Data<input type="date" name="date" required value="${iso()}"></label><label class="full">Forma de pagamento<input name="method" placeholder="Pix, dinheiro, transferência, cartão..."></label></div>`,v=>{const val=round(v.valor);if(!(val>0)||val>balance(t)+.001)throw Error('Valor deve ser maior que zero e não ultrapassar o saldo.');const oldPayments=t.payments||[];t.payments=[...oldPayments,{id:id(),valor:val,date:v.date,method:v.method||''}];if(save()===false){t.payments=oldPayments;throw Error('Não foi possível registrar o pagamento; o saldo foi preservado.');}return true})}
 function receiptModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t||t.kind!=='receber')return;const rows=(t.payments||[]).slice().reverse().map(p=>td(date(p.date),money(p.valor),esc(p.method||'—'),button('Imprimir recibo','print-receipt',`${t.id}:${p.id}`,'small')));openModal('Recibos — '+t.descricao,table(['Data','Valor','Forma','Ação'],rows,'Nenhum recebimento.'),()=>true)}
 const defaultContract=`CONTRATO DE FORNECIMENTO DE MÓVEIS / SERVIÇOS\n\nCONTRATADA: {{empresa}}\nCONTRATANTE: {{cliente}}\nPEDIDO Nº {{pedido}} — DATA: {{data}}\n\nOBJETO DO CONTRATO:\n{{itens}}\n\nVALOR TOTAL: {{total}}\nCONDIÇÃO DE PAGAMENTO: {{pagamento}}\nPRAZO OU PREVISÃO DE ENTREGA: {{entrega}}\n\nOUTRAS CONDIÇÕES / OBSERVAÇÕES:\n{{observacoes}}\n\nAs condições de instalação, garantia, alterações de projeto e responsabilidades devem ser definidas e revisadas pelas partes antes da assinatura.\n\n{{assinaturas}}`;
 function companyView(){const c=db.company||{};
