@@ -101,6 +101,17 @@
   for(const [field] of fields)state.map[field]=guess(state.headers,field);
  }
  function get(row,field){const i=state.map[field];return i>=0?String(row[i]??'').trim():''}
+ function autoReadParts(){
+  if(state.map.name<0||state.map.length<0||state.map.width<0)return;
+  try{
+   state.parts=makeParts();
+   const total=state.parts.reduce((n,p)=>n+p.qty,0);
+   const area=state.parts.reduce((n,p)=>n+p.qty*p.length*p.width/1000000,0);
+   state.note=(state.note?state.note+' ':'')+state.parts.length+' tipo(s), '+total+
+    ' peça(s), '+format(area,3)+' m². Confira as medidas e defina os materiais antes de calcular o preço.';
+   state.error='';
+  }catch(e){state.parts=[];state.error='Não foi possível calcular automaticamente: '+e.message}
+ }
  function makeParts(){
   for(const [field,label,required] of fields)if(required&&state.map[field]<0)throw Error('Selecione a coluna '+label+' antes de calcular.');
   const list=[];
@@ -273,7 +284,7 @@
    const {headers,raw,skipped}=extractPartTable(rows);
    if(headers.length<3)throw Error('CSV precisa ter colunas de peça, comprimento e largura.');
    state.file=file.name;state.headers=headers;state.raw=raw;state.parts=[];state.settings={};state.separator=sep;state.error='';state.note=skipped?'Cabeçalho encontrado após '+skipped+' linha(s) introdutória(s) do OpenCutList.':'';
-   mapping();view();
+   mapping();autoReadParts();view();
   });
  }
  function exportText(name,text){
@@ -351,5 +362,5 @@
    }
   }catch(error){alert(error.message||'Não foi possível concluir o cálculo.')}
  });
- window.universalartesSketchUp={parseCSV,detectSep,extractPartTable,makeParts,calculated,state,mapping,view};
+ window.universalartesSketchUp={parseCSV,detectSep,extractPartTable,makeParts,autoReadParts,calculated,state,mapping,view};
 })();
