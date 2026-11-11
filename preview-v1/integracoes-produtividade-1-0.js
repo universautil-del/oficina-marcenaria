@@ -94,7 +94,8 @@
    '<p class="muted small">Materiais só são vinculados automaticamente ao cadastro quando os nomes coincidem exatamente e não há ambiguidade. Nenhum estoque ou valor foi movimentado.</p>'+
    '<div class="actions gap-top"><button type="button" class="btn primary" data-ua-int-action="quote" data-project-id="'+safe(pid)+'">Preparar orçamento deste projeto</button>'+
    '<button type="button" class="btn" data-ua-int-action="sketchup" data-project-id="'+safe(pid)+'">Revisar lista SketchUp</button></div>';
-  openModal('Materiais do SketchUp — conferência',html,()=>false);
+  const dialog=openModal('Materiais do SketchUp — conferência',html,()=>true);
+  const submit=dialog?.querySelector('button[type="submit"]');if(submit)submit.textContent='Fechar';
   return report;
  }
  function newQuote(pid){
@@ -191,6 +192,7 @@
  }
  function enhance(section){
   if(!content||!content.isConnected)return;
+  if(window.UNIVERSA_REQUIRE_AUTH&&!window.oficinaCloud?.active)return;
   if(section==='dashboard'&&!content.querySelector('#uaIntegrationsHub'))content.insertAdjacentHTML('beforeend',quickActions());
   if(section==='produtos'||section==='compras'){
    const actions=content.querySelector('.toolbar .actions');
