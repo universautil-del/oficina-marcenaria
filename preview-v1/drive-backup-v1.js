@@ -65,27 +65,44 @@
  }
  function saveBlob(name,blob){
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=name;a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  const a=document.createElement('a');a.href=url;a.download=name;
+  document.body?.appendChild?.(a);a.click();a.remove?.();
+  setTimeout(()=>URL.revokeObjectURL(url),20000);
  }
  function hasToken(){return token&&Date.now()<tokenExp-60000}
  function authButton(){
-  const id=getClientId();
-  if(!/^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/.test(id))throw Error('Informe um OAuth Client ID do Google Cloud para aplicativo Web.');
+  const id=(document.querySelector('#uaDriveClientId')?.value||getClientId()).trim();
+  if(!/^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/.test(id))
+   throw Error('Para o envio direto é necessário informar um Client ID OAuth do Google Cloud. Use o backup manual sem essa configuração.');
+  try{localStorage.setItem(CFG,id)}catch{throw Error('Não foi possível salvar o Client ID no navegador.')}
+  token='';tokenExp=0;
   if(!window.google?.accounts?.oauth2)throw Error('Google Identity Services não carregado. Reabra a página e confira sua conexão.');
   // Solicitação iniciada diretamente pelo clique, para evitar bloqueio de pop-up.
   const client=window.google.accounts.oauth2.initTokenClient({
    client_id:id,scope:SCOPE,
-   callback:response=>{
-    if(response?.error||!response?.access_token){notice='Conexão não autorizada. Confira as permissões Google.';renderPage();return}
+   callback:async response=>{
+    if(response?.error||!response?.access_token){
+     notice='Google não autorizou a conexão. Confira origens OAuth e usuários de teste.';
+     if(location.hash.slice(1)==='backupdrive')renderPage();return;
+    }
     if(!window.google.accounts.oauth2.hasGrantedAllScopes(response,SCOPE)){
-     notice='A permissão limitada drive.file não foi concedida.';renderPage();return;
+     notice='Permissão drive.file não concedida.';
+     if(location.hash.slice(1)==='backupdrive')renderPage();return;
     }
     token=response.access_token;tokenExp=Date.now()+Math.min(Number(response.expires_in)||3000,3600)*1000;
-    notice='Google Drive conectado temporariamente. Você pode enviar e recuperar os backups criados por este aplicativo.';
-    renderPage();
+    try{
+     await loadList();
+     notice='Google Drive conectado e API verificada. Agora você pode enviar backups criptografados.';
+    }catch(error){
+     token='';tokenExp=0;
+     notice='Acesso autorizado, mas a Drive API falhou: '+String(error.message||error).slice(0,140);
+    }
+    if(location.hash.slice(1)==='backupdrive')renderPage();
    },
-   error_callback:()=>{notice='A janela de autorização foi fechada ou bloqueada.';renderPage()}
+   error_callback:()=>{
+    notice='Janela do Google bloqueada ou fechada. Habilite pop-ups para este site.';
+    if(location.hash.slice(1)==='backupdrive')renderPage()
+   }
   });
   client.requestAccessToken({prompt:'consent'});
  }
@@ -94,7 +111,8 @@
   const response=await fetch(url,{...options,headers:{Authorization:'Bearer '+token,...(options.headers||{})},cache:'no-store'});
   if(!response.ok){
    if(response.status===401){token='';tokenExp=0}
-   throw Error('Google Drive respondeu '+response.status+'. Confira a conexão e as permissões.');
+   const hint=response.status===403?' (Drive API desativada ou permissão insuficiente)':response.status===401?' (reconecte sua conta)':'';
+   throw Error('Google Drive respondeu HTTP '+response.status+hint+'.');
   }
   return response;
  }
@@ -112,12 +130,15 @@
    {method:'POST',headers:{'Content-Type':'multipart/related; boundary='+boundary},body:multipart});
   const saved=await res.json();
   if(!saved?.id)throw Error('O Drive não confirmou o identificador do arquivo. Confira sua pasta antes de tentar novamente.');
-  return saved;
+  // Confirmar a gravação recuperando o arquivo com a mesma autorização.
+  const check=await requestDrive('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(saved.id)+'?alt=media');
+  if(await check.text()!==body)throw Error('O arquivo foi criado no Drive, mas o conteúdo recuperado não confere. Não considere este backup validado.');
+  return {...saved,verified:true};
  }
  async function loadList(){
   // Escopo drive.file: só retorna arquivos criados/selecionados pelo aplicativo.
   const query="name contains '"+PREFIX+"' and trashed = false";
-  const q=new URLSearchParams({q:query,page_size:'30',orderBy:'createdTime desc',fields:'nextPageToken,files(id,name,size,createdTime,mimeType)'});
+  const q=new URLSearchParams({q:query,pageSize:'30',orderBy:'createdTime desc',fields:'nextPageToken,files(id,name,size,createdTime,mimeType)'});
   const res=await requestDrive('https://www.googleapis.com/drive/v3/files?'+q.toString());
   const data=await res.json();
   files=(data.files||[]).filter(f=>/^[A-Za-z0-9_-]{10,}$/.test(f.id)&&f.name.startsWith(PREFIX)&&f.name.endsWith('.uaenc.json'));
@@ -138,9 +159,11 @@
   const count=key=>Array.isArray(recovered[key])?recovered[key].length:0;
   const summary=count('clients')+' clientes, '+count('products')+' produtos, '+count('orders')+' pedidos e '+count('transactions')+' lançamentos.';
   if(!confirm('ATENÇÃO: a restauração substitui dados LOCAIS neste navegador. O backup contém '+summary+' Deseja continuar?'))return false;
-  // Exigir uma cópia local antes de qualquer substituição. Não há garantia de upload para nuvem.
+  // Antes de substituir, gerar cópia cifrada (nunca JSON aberto com dados pessoais).
   const current={app:'oficina',version:3,exportedAt:new Date().toISOString(),data:db};
-  saveBlob('Antes-da-restauracao-UniversaArt.json',new Blob([JSON.stringify(current)],{type:'application/json'}));
+  const safety=await encryptBackup(current,pass);
+  await decryptBackup(safety,pass);
+  saveBlob('Antes-da-restauracao-UniversaArt.uaenc.json',new Blob([JSON.stringify(safety)],{type:'application/json'}));
   const previous=db;
   try{
    db=recovered;
@@ -155,6 +178,8 @@
  }
  function showNotice(message){notice=message;const target=document.querySelector('#uaDriveStatus');if(target)target.textContent=message}
  function renderPage(){
+  // Preserva campo de senha nesta atualização da tela, mas nunca o grava no banco.
+  const typed=document.querySelector('#uaDrivePass')?.value||'';
   const connected=!!hasToken();
   const list=files.map(f=>'<tr><td>'+safe(f.name)+'</td><td>'+safe(new Date(f.createdTime).toLocaleString('pt-BR'))+
     '</td><td><button type="button" class="btn" data-drive-action="download" data-fileid="'+safe(f.id)+'">Baixar</button> '+
@@ -184,6 +209,8 @@
    '<input id="uaDriveImport" type="file" accept=".json,application/json">'+
    '<div class="ua-drive-actions"><button type="button" class="btn" data-drive-action="import">Validar e restaurar backup local</button></div>'+
    '<p class="muted small">Não há backup automático diário nesta versão estática. Uma rotina agendada exige serviço no servidor e autorização segura do Google.</p></section>';
+  const passField=document.querySelector('#uaDrivePass');
+  if(passField)passField.value=typed;
  }
  const prevRender=render;
  if(!sections.some(x=>x[0]==='backupdrive'))sections.push(['backupdrive','☁','Backup Google Drive']);
@@ -205,18 +232,19 @@
   if(action==='save-client'){
    const id=document.querySelector('#uaDriveClientId')?.value.trim();
    if(!/^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/.test(id)){showNotice('ID OAuth inválido. Confira as credenciais do aplicativo Web.');return}
-   try{localStorage.setItem(CFG,id);token='';tokenExp=0;showNotice('Client ID salvo neste navegador. Conecte sua conta Google para continuar.')}catch{showNotice('Não foi possível salvar a configuração.')}
+   try{localStorage.setItem(CFG,id);token='';tokenExp=0;notice='Client ID salvo. Clique em Conectar conta Google.';renderPage()}catch{showNotice('Não foi possível salvar a configuração.')}
    return;
   }
   working=true;b.disabled=true;
   try{
    if(action==='export'){
-    const payload=await buildPayload(passInput()),name=filename();
+    const pass=passInput(),payload=await buildPayload(pass),name=filename();
+    await decryptBackup(payload,pass); // Verificação independente, sem alterar a base.
     saveBlob(name,new Blob([JSON.stringify(payload)],{type:'application/json'}));
-    showNotice('Backup criptografado gerado. Guarde a senha e confira o arquivo baixado.');
+    showNotice('Backup criado e validado em memória. Confira o arquivo baixado e envie-o ao Drive.');
    }else if(action==='upload'){
     const result=await sendDrive(passInput());
-    showNotice('Backup criptografado enviado ao Google Drive: '+result.name+'. Confira em sua conta.');
+    showNotice('Backup enviado e verificado por leitura do Google Drive: '+result.name+'.');
    }else if(action==='list'){
     const listed=await loadList();
     notice=listed.length+' backup(s) encontrado(s) no Google Drive.';renderPage();
@@ -229,12 +257,18 @@
     const data=await loadDriveFile(b.dataset.fileid);
     const restored=await restoreData(data,passInput());
     showNotice(restored?'Backup do Drive restaurado neste navegador. Confira os registros.':'Restauração cancelada.');
-   }else if(action==='import'){
+   }else if(action==='import'||action==='verify'){
     const file=document.querySelector('#uaDriveImport')?.files?.[0];
     if(!file)throw Error('Selecione o arquivo .uaenc.json.');
     if(file.size>MAX_BACKUP)throw Error('Arquivo maior que 5 MB.');
-    const restored=await restoreData(JSON.parse(await file.text()),passInput());
-    showNotice(restored?'Backup restaurado neste navegador. Confira os registros.':'Restauração cancelada.');
+    const payload=JSON.parse(await file.text());
+    if(action==='verify'){
+      const recovered=await decryptBackup(payload,passInput());
+      showNotice('Backup válido! '+(recovered.clients?.length||0)+' cliente(s), '+(recovered.orders?.length||0)+' pedido(s), '+(recovered.products?.length||0)+' produto(s). Nenhum dado foi alterado.');
+    }else{
+      const restored=await restoreData(payload,passInput());
+      showNotice(restored?'Backup restaurado neste navegador. Confira os registros.':'Restauração cancelada.');
+    }
    }
   }catch(err){showNotice('Não foi possível concluir: '+String(err?.message||err).slice(0,220))}
   finally{working=false;b.disabled=false}
