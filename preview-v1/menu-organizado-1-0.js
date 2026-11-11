@@ -5,8 +5,8 @@
 (function(){
  const previousRender=render;
  const groups=[
-  {title:'PAINEL',keys:['dashboard']},
-  {title:'PROJETOS E PEDIDOS',keys:['clientes','projetos','assistente','sketchup','orcamentos','pedidos','producao']},
+  {title:'PAINEL',keys:['dashboard','clientes']},
+  {title:'PROJETOS E PEDIDOS',keys:['projetos','assistente','sketchup','orcamentos','pedidos','producao']},
   {title:'MATERIAIS E COMPRAS',keys:['produtos','compras','fornecedores']},
   {title:'FINANCEIRO E DOCUMENTOS',keys:['financeiro','notas','documentos','anexos','relatorios']},
   {title:'SISTEMA E SEGURANÇA',keys:['empresa','backupdrive','seguranca']}
