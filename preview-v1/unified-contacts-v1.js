@@ -60,7 +60,7 @@
       const role=item.role;
       const action='ua-edit-entry';
       const roleBadge='<span class="ua-person-role ua-person-'+role+'">'+esc(describeRole(role))+'</span>';
-      const buttons=button('Editar',action,role+':'+item.id,'small')+
+      const buttons=(item.client?button('Orçamento','ua-quote-for-client',item.id,'small accent')+button('Pedido','ua-order-for-client',item.id,'small'):'')+button('Editar',action,role+':'+item.id,'small')+
         (role==='ambos'?(activeTab==='clientes'?button('Excluir cliente','delete-client',item.id,'small danger'):activeTab==='fornecedores'?button('Excluir fornecedor','delete-supplier',item.id,'small danger'):''):
          button('Excluir',role==='cliente'?'delete-client':'delete-supplier',item.id,'small danger'));
       return td('<strong>'+esc(c.nome||'—')+'</strong><div class="muted small">'+esc(c.email||'')+'</div>',roleBadge,
@@ -183,6 +183,11 @@
   clientModal=function(clientId=''){return openUnified('cliente',clientId)};
   supplierModal=function(supplierId=''){return openUnified('fornecedor',supplierId)};
   handleAction=function(action,uid){
+    if(action==='ua-quote-for-client'||action==='ua-order-for-client'){
+      const client=(db.clients||[]).find(c=>String(c.id)===String(uid));
+      if(!client)return alert('Selecione um cliente válido antes de criar orçamento ou pedido.');
+      return openSales(action==='ua-quote-for-client'?'quote':'order','','',client.id);
+    }
     if(action==='ua-new-entry')return openUnified(uid||'cliente');
     if(action==='ua-edit-entry'){
       const pos=uid.indexOf(':');if(pos<0)return alert('Cadastro não encontrado.');
