@@ -232,7 +232,7 @@
  function view(){
   title.textContent='Importar lista SketchUp';
   content.innerHTML='<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · SKETCHUP</div>'+
-    '<h2>Lista de peças do SketchUp 2022</h2><p>Importe uma lista de peças exportada do SketchUp e confira materiais, quantitativos e uma estimativa preliminar.</p></div></div>'+
+    '<h2>Lista de peças do SketchUp 2022</h2><p>Importe CSV ou Excel do OpenCutList, confira medidas em milímetros e vincule as peças ao Projeto de móveis.</p></div></div>'+
     '<section class="ua-section"><h3>1. Importar lista OpenCutList (.csv ou .xlsx)</h3>'+
     '<p>No SketchUp 2022, exporte a lista de peças do <strong>OpenCutList</strong> como <strong>Excel (.xlsx)</strong> ou CSV. Configure as dimensões em <strong>mm</strong> e confira material, espessura, quantidade e fita.</p>'+
     '<label class="ua-skp-upload">Importar Excel (.xlsx), CSV ou TXT<input type="file" id="uaSkuFile" accept=".xlsx,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain"></label>'+
@@ -244,6 +244,7 @@
     mappingHTML()+summaryHTML();
   renderTotals();
   window.universalartesSketchUpExcel?.enhance?.();
+  window.universaArtProjectBridge?.panel?.();
  }
  function extractPartTable(rows){
   // Ignorar a primeira linha "Components" e seções-resumo após as peças.
