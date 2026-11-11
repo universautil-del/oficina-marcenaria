@@ -66,3 +66,13 @@ dialog.ua-product-dialog textarea:focus-visible{outline:2px solid #77a888;outlin
  dialog.ua-product-dialog .bom-row.ua-product-component{grid-template-columns:1fr 1fr;}
  dialog.ua-product-dialog .bom-row.ua-product-component button{grid-column:1/-1;}
 }
+/* Cadastro exclusivo de matéria-prima: código sequencial protegido e tela compacta. */
+.ua-code-helper{font-size:12px;color:#526e5b;margin:9px 0 14px;line-height:1.5}
+.ua-code-helper strong{color:#234e37;background:#eef5ee;padding:4px 10px;border-radius:7px;letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.ua-legacy-hint{margin:14px 0 0;padding:9px 13px;color:#7b6033;background:#fff6e7;border:1px solid #eedbbd;border-radius:9px;font-size:12px}
+dialog.ua-product-dialog .ua-product-grid{gap:12px 16px;padding:18px 25px}
+dialog.ua-product-dialog .ua-product-grid input[readonly]{background:#eef5ee;border-color:#bed5c2;color:#28553c;font-weight:800;letter-spacing:1px;cursor:not-allowed}
+dialog.ua-product-dialog .ua-product-grid label:first-child{max-width:250px}
+dialog.ua-product-dialog .ua-product-grid textarea{min-height:65px}
+dialog.ua-product-dialog .ua-product-close:focus-visible{outline:2px solid #47765a}
+@media(max-width:650px){dialog.ua-product-dialog .ua-product-grid{padding:14px 17px;gap:10px}dialog.ua-product-dialog .ua-product-grid label:first-child{max-width:none}}
