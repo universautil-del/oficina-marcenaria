@@ -93,7 +93,8 @@
    '<p class="muted small">Área calculada a partir das medidas das peças, sem perdas nem otimização de chapas. Não é possível determinar quantas chapas ou ferragens comprar sem dimensões das chapas, plano de corte e especificações das ferragens. Revise materiais, bordas, folgas e medidas na obra antes de aprovar.</p>'+
    '<p class="muted small">Materiais só são vinculados automaticamente ao cadastro quando os nomes coincidem exatamente e não há ambiguidade. Nenhum estoque ou valor foi movimentado.</p>'+
    '<div class="actions gap-top"><button type="button" class="btn primary" data-ua-int-action="quote" data-project-id="'+safe(pid)+'">Preparar orçamento deste projeto</button>'+
-   '<button type="button" class="btn" data-ua-int-action="sketchup" data-project-id="'+safe(pid)+'">Revisar lista SketchUp</button></div>';
+   '<button type="button" class="btn" data-ua-int-action="sketchup" data-project-id="'+safe(pid)+'">Revisar lista SketchUp</button>'+
+   '<button type="button" class="btn" data-ua-int-action="assistant" data-project-id="'+safe(pid)+'">Abrir no assistente</button></div>';
   const dialog=openModal('Materiais do SketchUp — conferência',html,()=>true);
   const submit=dialog?.querySelector('button[type="submit"]');if(submit)submit.textContent='Fechar';
   return report;
@@ -207,6 +208,8 @@
     const btn=document.createElement('button');btn.type='button';btn.className='btn small';
     btn.dataset.uaIntAction='materials';btn.dataset.projectId=quote.dataset.id;
     btn.textContent='Conferir materiais';quote.after(btn);
+    const assistant=document.createElement('button');assistant.type='button';assistant.className='btn small';assistant.dataset.uaIntAction='assistant';assistant.dataset.projectId=quote.dataset.id;
+    assistant.textContent='Assistente';btn.after(assistant);
    });
   }
  }
@@ -228,6 +231,10 @@
     button.closest('dialog')?.close();newQuote(button.dataset.projectId);
    }else if(action==='sketchup'){
     button.closest('dialog')?.close();window.universaArtProjectBridge?.openForProject(button.dataset.projectId);
+   }else if(action==='assistant'){
+    const pid=button.dataset.projectId;
+    if(!list('projects').some(p=>p.id===pid))throw Error('Projeto não localizado.');
+    button.closest('dialog')?.close();window.universaArtAssistantProjectId=pid;goto('assistente');
    }else if(action==='purchase-suggest')suggestionsModal();
    else if(action==='orders'||action==='order')goto('pedidos');
    else if(action==='finance')goto('financeiro');
