@@ -27,14 +27,14 @@ vm.runInNewContext(source,ctx,{timeout:2000});
 const api=ctx.window.universaArtBackup;
 assert(api);
 ctx.location.hash='#backupdrive';ctx.render('backupdrive');
-assert(ctx.content.innerHTML.includes('Backup automatico semanal'));
+assert(ctx.content.innerHTML.includes('Backup automático semanal'));
 assert(ctx.content.innerHTML.includes('Copias semanais'));
 assert(!ctx.content.innerHTML.includes('Google Drive'));
 assert(!ctx.content.innerHTML.includes('OAuth Client ID'));
 (async()=>{
  await api.scanWeekly();
  assert(scans>=1);
- assert(ctx.content.innerHTML.includes('2 de 4 copias'));
+ assert(ctx.content.innerHTML.includes('2 de 4 cópias'));
  assert(ctx.content.innerHTML.includes('Agendamento semanal ativo'));
  assert(ctx.content.innerHTML.includes('data-backup-id="22"'));
  const unchanged=JSON.stringify(ctx.db);
