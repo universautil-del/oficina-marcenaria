@@ -206,6 +206,7 @@
     const p=getProject(btn.dataset.id);
     if(!p)throw Error('Projeto não encontrado.');
     if(!(db.clients||[]).length)throw Error('Cadastre um cliente antes de fazer um orçamento.');
+    if(!p.clientId||!(db.clients||[]).some(c=>c.id===p.clientId))throw Error('Abra Editar projeto e vincule o cliente correto antes de gerar o orçamento.');
     openSales('quote','',p.id);
    }else if(action==='ua-cutlist-open')openForProject(btn.dataset.id);
    else if(action==='ua-cutlist-view')projectListModal(btn.dataset.id);
