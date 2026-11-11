@@ -238,11 +238,23 @@
       };
       try{
         const largura=parseMeasure(values.largura,'Largura'),altura=parseMeasure(values.altura,'Altura'),profundidade=parseMeasure(values.profundidade,'Profundidade');
+        const currentProject=projects.find(p=>p.id===values.selectedProject);
+        const customer=(db.clients||[]).find(c=>c.id===values.clientId);
+        const cutlist=currentProject?.cutlist;
+        const briefCode=currentProject?.number||'novo';
+        const cutRows=Array.isArray(cutlist?.parts)?cutlist.parts.slice(0,25).map(p=>
+          [p.nome||p.name||'Peça',p.length||p.comprimento||'',p.width||p.largura||'',p.thickness||p.espessura||'',p.qty||p.quantidade||'',p.material||''].join(' | ')):[];
+        const linkedQuotes=(db.quotes||[]).filter(q=>q.projectId===currentProject?.id);
+        const linkedOrders=(db.orders||[]).filter(o=>o.projectId===currentProject?.id);
+        const matchingMaterials=(db.products||[]).filter(p=>p.tipo==='materia'&&String(values.material||'').trim()&&
+          String(p.nome||'').toLocaleLowerCase('pt-BR').includes(String(values.material||'').trim().toLocaleLowerCase('pt-BR'))).slice(0,8);
         generatedBrief=[
-          'Estou desenvolvendo um móvel sob medida para a marcenaria Universalartes, no Brasil. Seja meu assistente técnico de projetos de marcenaria.',
+          'Estou desenvolvendo um móvel sob medida para a marcenaria UNIVERSA ART, no Brasil. Aja como assistente técnico de projetos, modelagem SketchUp 2022, materiais, orçamento e produção de marcenaria.',
           'Use milímetros (mm) em TODAS as medidas e português brasileiro. Não utilize polegadas.',
           '',
           'INFORMAÇÕES DO PROJETO',
+          'Projeto na OFICINA: '+(currentProject?.nome||'novo briefing')+' (controle '+briefCode+')',
+          'Cliente vinculado: '+(customer?.nome||'não definido'),
           'Ambiente: '+String(values.ambiente||'Não informado').trim(),
           'Móvel: '+String(values.movel||'Não informado').trim(),
           'Largura: '+largura,
@@ -253,14 +265,24 @@
           'Acabamentos: '+String(values.acabamento||'não informado').trim(),
           'Restrições no local: '+String(values.observacoes||'não informado').trim(),
           '',
+          'CONTEXTO DO SISTEMA OFICINA (VERIFICAR ANTES DE USAR)',
+          'Orçamentos vinculados: '+(linkedQuotes.map(q=>q.controlCode||q.number).join(', ')||'nenhum'),
+          'Pedidos vinculados: '+(linkedOrders.map(o=>o.controlCode||o.number).join(', ')||'nenhum'),
+          'Lista SketchUp/OpenCutList: '+(cutlist?.summary?.pecas||0)+' peças registradas'+(cutlist?.reviewStatus==='pendente'?' (pendentes de revisão)':''),
+          ...(cutRows.length?['Amostra de peças da lista atual (nome | comprimento | largura | espessura | quantidade | material):',...cutRows]:[]),
+          ...(matchingMaterials.length?['Materiais correspondentes no estoque (verificar disponibilidade):',...matchingMaterials.map(p=>String(p.codigo||'')+' - '+p.nome+'; saldo '+p.estoque+' '+(p.unidade||''))]:[]),
+          '',
           'QUERO SUA AJUDA PARA:',
           '1. Fazer as perguntas essenciais que faltam ANTES de definir dimensões de corte ou ferragens.',
           '2. Propor um layout funcional do móvel e uma sequência de montagem, explicando opções.',
-          '3. Montar um desenho técnico esquemático e uma lista preliminar de peças em mm, somente quando houver informações suficientes; identifique claramente suposições.',
+          '3. Preparar desenho técnico esquemático com vistas frontal, lateral, superior e perspectiva cotada em mm; listas de peças e cortes apenas preliminares, explicitando medidas ainda não confirmadas.',
           '4. Sugerir materiais, espessuras, fita de borda, ferragens e insumos com quantidades aproximadas.',
           '5. Apontar pontos que precisam de conferência na obra: prumo, esquadro, folgas, portas e gavetas, fundo, recuos, tomadas, água, ventilação, sentido do veio e largura de corte da serra.',
           '6. Preparar uma lista de compras, um checklist de produção e perguntas para o cliente.',
           '7. Se eu enviar fotos ou croquis, use-os como referência visual, mas NÃO invente cotas que não estejam medidas.',
+          '8. Ajudar a modelar este móvel no SketchUp 2022: descrever o passo a passo de modelagem 3D com módulos, grupos, componentes e materiais; se as dimensões estiverem confirmadas, oferecer código Ruby compatível com a API do SketchUp 2022 que crie a geometria organizada, sem afirmar que um arquivo .skp foi criado automaticamente.',
+          '9. Indicar como executar um script Ruby no SketchUp 2022, inspecionar os componentes e salvar manualmente em .skp. Organizar peças para exportar lista CSV/Excel pelo OpenCutList e reimportar na OFICINA pelo menu SketchUp.',
+          '10. Reaproveitar o projeto salvo para orçamento, lista de materiais e etapas de produção, sem duplicar cliente ou pedido. Se houver lista SketchUp vinculada, conferir medidas, espessuras e nomes antes de propor alterações.',
           '',
           'Não apresente qualquer plano de corte como final sem minha aprovação e sem conferir os dados essenciais.'
         ].join('\n');
