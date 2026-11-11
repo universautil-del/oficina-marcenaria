@@ -99,5 +99,34 @@ api.productModal('legado');
 assert(modal.fields.includes('value="MOV-1"'),'Preserva código legado não numérico');
 assert.equal(modal.onSubmit({...values,tipo:'acabado',nome:'Legado editado'},dialog([{materialId:raw.id,quantidade:1}])),true);
 assert.equal(db.products.find(p=>p.id==='legado').codigo,'MOV-1');
+// Ao cadastrar via Entrada, não deve haver escolha por Produto acabado,
+// nem saldo inicial antecipado (a entrada real será confirmada depois).
+const beforeEntryCount=db.products.length, beforeEntryMovement=db.stockMovements.length;
+api.productModal('', 'materia-entrada');
+assert.equal(modal.title,'Cadastrar matéria-prima');
+assert(modal.fields.includes('value="Matéria-prima" readonly'),'Tipo de entrada fica fixo e somente leitura');
+assert(modal.fields.includes('type="hidden" name="tipo" value="materia"'));
+assert(!modal.fields.includes('<option value="acabado"'),'Tipo acabado não pode ser escolhido na Entrada');
+assert(modal.fields.includes('MDF 18 mm')&&modal.fields.includes('MDF 25 mm'));
+assert(modal.fields.includes('Parafusos')&&modal.fields.includes('Dobradiças'));
+assert(modal.fields.includes('name="espessuraMm"'));
+assert(modal.fields.includes('name="chapaComprimentoMm"'));
+assert(modal.fields.includes('name="chapaLarguraMm"'));
+assert(modal.fields.includes('Saldo inicial: 0'),'Não permite contagem dupla do recebimento');
+const newMdf={...values,tipo:'materia',nome:'MDF 25 mm',categoria:'Chapas MDF',unidade:'chapa',
+ estoque:'150',espessuraMm:'25',chapaComprimentoMm:'2750',chapaLarguraMm:'1850'};
+assert.throws(()=>modal.onSubmit({...newMdf,tipo:'acabado'},dialog()),/somente matérias-primas/);
+assert.equal(db.products.length,beforeEntryCount,'Impedir gravação de acabado dentro de Entrada');
+assert.equal(modal.onSubmit(newMdf,dialog()),true);
+const mdf=db.products.at(-1);
+assert.equal(mdf.tipo,'materia');
+assert.equal(mdf.estoque,0,'Sem baixa ou crédito antes do recebimento');
+assert.equal(mdf.espessuraMm,25);
+assert.equal(mdf.chapaComprimentoMm,2750);
+assert.equal(mdf.chapaLarguraMm,1850);
+assert.equal(db.stockMovements.length,beforeEntryMovement,'Não lança estoque antecipado');
+api.productModal('', 'materia-entrada');
+assert.throws(()=>modal.onSubmit({...newMdf,nome:'Chapa inválida',espessuraMm:'-5'},dialog()),/medidas/);
+assert.equal(db.products.length,beforeEntryCount+1);
 assert(!alerts.length);
 console.log('OK OFICINA 1.0: botão Produtos, tipo selecionável, composição, código 01..9999, estoque e pedido sem duplicar, rollback.');
