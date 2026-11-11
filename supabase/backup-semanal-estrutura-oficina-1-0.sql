@@ -85,6 +85,33 @@ REVOKE ALL ON FUNCTION public.ua_backup_semanal_gerar() FROM PUBLIC, anon, authe
 -- A funcao pertence ao proprietario da migracao (postgres no SQL Editor).
 -- Nenhuma credencial service_role e inserida no codigo.
 
+-- Consulta somente leitura do estado do agendador para a conta autenticada.
+-- Evita afirmar que o backup semanal esta ativo apenas por existir uma copia antiga.
+CREATE OR REPLACE FUNCTION public.ua_backup_semanal_status()
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $status$
+DECLARE
+ usuario uuid := auth.uid();
+ ativo boolean := false;
+ qtd integer := 0;
+ ultima timestamptz;
+BEGIN
+ IF usuario IS NULL THEN
+  RAISE EXCEPTION 'Autenticacao obrigatoria para consultar backup.' USING ERRCODE='28000';
+ END IF;
+ IF to_regclass('cron.job') IS NOT NULL THEN
+  EXECUTE 'SELECT EXISTS (SELECT 1 FROM cron.job WHERE jobname=''oficina-1-0-backup-semanal'' AND active)'
+   INTO ativo;
+ END IF;
+ SELECT count(*), max(criado_em) INTO qtd, ultima
+ FROM public.ua_backups_semanais WHERE user_id=usuario;
+ RETURN jsonb_build_object('agendamento_ativo',ativo,'quantidade',qtd,'ultima_copia',ultima,'retencao',4);
+END
+$status$;
+REVOKE ALL ON FUNCTION public.ua_backup_semanal_status() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.ua_backup_semanal_status() TO authenticated;
+
 COMMENT ON TABLE public.ua_backups_semanais IS
  'Copias semanais internas OFICINA 1.0. Quatro ultimas por conta. Nao substitui copia externa criptografada.';
 COMMIT;
