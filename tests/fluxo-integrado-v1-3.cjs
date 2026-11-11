@@ -151,6 +151,14 @@ assert(manual.onSubmit({valor:'35',kind:'pagar',descricao:'Teste',dueDate:'2026-
 const purchaseCode=cut(extra,'function purchaseModal(','function receivePurchase(');
 assert(purchaseCode.includes('previousPurchases')&&purchaseCode.includes('previousTransactions'));
 assert(purchaseCode.includes('db.seq=previousSeq'));
+assert(purchaseCode.includes('data-quick-supplier'),'Cadastro rápido de fornecedor dentro da entrada');
+ctx.supplierOptions=()=> '';
+const suppliersBefore=db.suppliers;
+db.suppliers=[];
+ctx.purchaseModal();
+assert(modals.at(-1).fields.includes('Selecione um fornecedor'),'Não escolher automaticamente fornecedor errado');
+assert(modals.at(-1).fields.includes('+ Novo fornecedor'),'Permitir criar fornecedor sem sair da entrada');
+db.suppliers=suppliersBefore;
 assert.throws(()=>manual.onSubmit({valor:'Infinity',kind:'pagar',descricao:'Inválido',dueDate:'2026-11-12'}),/inválid/);
 const collect=cut(src,'function collectSaleItems(','function calcSale(');
 vm.runInNewContext(collect,ctx,{timeout:1000});
