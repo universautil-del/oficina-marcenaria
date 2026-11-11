@@ -9,7 +9,7 @@ const source=fs.readFileSync(path.join(root,'preview-v1/drive-backup-v1.js'),'ut
 const html=fs.readFileSync(path.join(root,'preview-v1/index.html'),'utf8');
 new vm.Script(source,{filename:'drive-backup-v1.js'});
 assert(html.includes('drive-fix-1-2.css'));
-assert(html.includes('drive-backup-v1.js?v=diagnostico-oauth-20261111'));
+assert(html.includes('drive-backup-v1.js?v='),'A prévia deve carregar o módulo Drive/backup manual');
 const events={},stored={},calls=[];
 let config,requestCalled=0,download,uploaded='',apiListCount=0,dbSaves=0;
 const pass={value:'senha-forte-para-testes-universa-art'};
