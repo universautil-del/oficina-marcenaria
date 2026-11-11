@@ -31,7 +31,7 @@ function purchaseModal(prefillItems=[]){
  if(!Array.isArray(prefillItems))prefillItems=[];
  if(!db.products.some(p=>p.tipo==='materia')){
   const before=new Set((db.products||[]).map(p=>String(p.id)));
-  const materialDialog=productModal('','materia');
+  const materialDialog=productModal('','materia-entrada');
   materialDialog?.querySelector?.('h2')?.insertAdjacentHTML?.('afterend',
    '<p class="form-note">Para continuar com a Entrada de Materiais, cadastre a primeira matéria-prima. Ao salvar, o sistema abrirá a entrada automaticamente; se cancelar, nada será lançado.</p>');
   materialDialog?.addEventListener('close',()=>{
@@ -45,7 +45,7 @@ function purchaseModal(prefillItems=[]){
   dlg.querySelector('[data-action="add-purchase-row"]').onclick=()=>addPurchaseRow(dlg);
   dlg.querySelector('[data-quick-material]').onclick=()=>{
     const before=new Set((db.products||[]).map(p=>String(p.id)));
-    const materialDialog=productModal('','materia');
+    const materialDialog=productModal('','materia-entrada');
     materialDialog?.addEventListener('close',()=>{
       const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
       if(!added||!dlg.isConnected)return;
