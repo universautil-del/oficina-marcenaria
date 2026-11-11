@@ -1,0 +1,11 @@
+Components
+Part#;Quantity;Description;Length(L);Width(W);Thickness(T);Cubic m (per);Cubic m (total);Total Length (m);Material;
+C-001;12; Lateral;500 mm;150 mm;15 mm;0,001125;0,0135;6,0;Not assigned;
+C-002;6; Prateleira;816 mm;190 mm;15 mm;0,002326;0,014;4,896;Not assigned;
+
+Total Component Cubic m
+0,0275;
+
+Component Materials
+Material;Cubic m;
+Not assigned;0,0275;
