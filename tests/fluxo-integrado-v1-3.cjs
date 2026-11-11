@@ -58,6 +58,7 @@ const ctx={
  reservedQuantity:()=>0
 };
 const functions=[
+ cut(src,'function nextControlCode(','function clientOptions('),
  cut(src,'function nextSaleNumber(','function ordersView('),
  cut(src,'function reserveOrder(','function orderDetails('),
  cut(src,'function transactionModal(','function receiptModal('),
@@ -87,6 +88,7 @@ saveOK=true;
 assert.equal(modals[0].onSubmit(entry,dlg),true);
 const quote=db.quotes[0];
 assert.equal(quote.number,19);
+assert.equal(quote.controlCode,'ORC-2026-001');
 assert.equal(quote.projectId,'proj1');
 assert.equal(quote.clientId,'c1');
 assert.equal(quote.items.length,1);
@@ -104,6 +106,7 @@ saveOK=true;
 assert.equal(ctx.createOrder(quoteData,quote.id),true);
 assert.equal(db.orders.length,1);
 assert.equal(db.orders[0].number,quote.number);
+assert.equal(db.orders[0].controlCode,'PED-2026-001');
 assert.equal(db.orders[0].projectId,'proj1');
 assert.equal(db.transactions.length,3);
 assert.equal(db.transactions.reduce((s,t)=>s+t.valor,0),337.5);
@@ -170,6 +173,7 @@ saveOK=true;
 ctx.duplicateQuote(quote.id);
 assert.equal(db.quotes.length,oldQuoteCount+1);
 assert.equal(db.quotes.at(-1).status,'aberto');
+assert.equal(db.quotes.at(-1).controlCode,'ORC-2026-002');
 assert.equal(db.quotes.at(-1).projectId,'proj1');
 assert(db.quotes.at(-1).number!==db.orders[0].number);
 const oldProjectCount=db.projects.length;
