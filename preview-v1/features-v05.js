@@ -46,17 +46,25 @@ function v5ProjectModal(pid=''){
    if(labels.some(l=>l.length>110))throw Error('Resuma as descrições do checklist.');
    const checklist=labels.map(label=>({label,done:!!(old.checklist||[]).find(x=>x.label===label)?.done}));
    const client=db.clients.find(c=>c.id===v.clientId);
-   const data={...old,id:old.id||id(),number:old.number||db.seq.project++,nome:name,clientId:client?.id||'',clientNome:client?.nome||'',ambiente:v.ambiente.trim(),material:v.material.trim(),acabamento:v.acabamento.trim(),status:v.status,prazo:v.prazo,largura:Number(v.largura)||0,altura:Number(v.altura)||0,profundidade:Number(v.profundidade)||0,optionA:v.optionA.trim(),optionB:v.optionB.trim(),priceA:round(v.priceA),priceB:round(v.priceB),observacoes:v.observacoes,checklist};
+   const data={...old,id:old.id||id(),number:old.number||db.seq.project,nome:name,clientId:client?.id||'',clientNome:client?.nome||'',ambiente:v.ambiente.trim(),material:v.material.trim(),acabamento:v.acabamento.trim(),status:v.status,prazo:v.prazo,largura:Number(v.largura)||0,altura:Number(v.altura)||0,profundidade:Number(v.profundidade)||0,optionA:v.optionA.trim(),optionB:v.optionB.trim(),priceA:round(v.priceA),priceB:round(v.priceB),observacoes:v.observacoes,checklist};
    const image=dlg.dataset.v5Image;if(image)data.image=image;
-   if(pid){Object.assign(old,data)}else db.projects.push(data);
-   return save();
+   const beforeProjects=db.projects,beforeSeq={...db.seq},beforeProject=pid?{...old}:null;
+   if(pid)Object.assign(old,data);else{db.projects=[...db.projects,data];db.seq.project=Number(db.seq.project||1)+1;}
+   if(save()===false){db.projects=beforeProjects;db.seq=beforeSeq;if(pid)Object.assign(old,beforeProject);throw Error('Não foi possível salvar o projeto. Nenhum dado foi alterado.');}
+   return true;
  },dlg=>{
    const image=dlg.querySelector('#v5ProjectImage');image.addEventListener('change',async()=>{
     const f=image.files?.[0];if(!f)return;if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>2e6){alert('Use PNG, JPG ou WEBP de até 2 MB.');image.value='';return}
     try{const src=URL.createObjectURL(f),img=new Image();img.onload=()=>{const scale=Math.min(1,640/img.width,480/img.height),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);const data=canvas.toDataURL('image/jpeg',.65);URL.revokeObjectURL(src);if(data.length>145000){alert('Imagem ainda muito grande; use uma foto menor.');return}dlg.dataset.v5Image=data};img.onerror=()=>{URL.revokeObjectURL(src);alert('Imagem inválida.')};img.src=src}catch(e){alert('Não foi possível ler a imagem.')}})
  });
 }
-function v5DeleteProject(pid){if(!confirm('Excluir este projeto e seus dados locais?'))return;db.projects=db.projects.filter(p=>p.id!==pid);save();render('projetos')}
+function v5DeleteProject(pid){
+ if((db.quotes||[]).some(q=>q.projectId===pid)||(db.orders||[]).some(o=>o.projectId===pid))return alert('Projeto vinculado a orçamento ou pedido. Exclusão bloqueada para preservar o histórico.');
+ if(!confirm('Excluir este projeto e seus dados locais?'))return;
+ const oldProjects=db.projects;db.projects=db.projects.filter(p=>p.id!==pid);
+ if(save()===false){db.projects=oldProjects;return alert('Não foi possível excluir o projeto. Dados preservados.');}
+ render('projetos');
+}
 function v5Checklist(pid){const p=v5FindProject(pid);if(!p)return;const checks=(p.checklist||[]);const rows=checks.map((item,i)=>`<label class="v5-check"><input type="checkbox" data-v5-check="${i}" ${item.done?'checked':''}> ${esc(item.label)}</label>`).join('');openModal('Checklist — '+p.nome,`<div class="v5-checklist">${rows||'<p>Nenhuma etapa cadastrada.</p>'}</div>`,(_v,dlg)=>{checks.forEach((item,i)=>item.done=!!dlg.querySelector(`[data-v5-check="${i}"]`)?.checked);return save()});}
 function v5Compare(pid){const p=v5FindProject(pid);if(!p)return;const rows=[['Materiais / acabamento',p.optionA||'Não informado',p.optionB||'Não informado'],['Custo estimado',money(p.priceA||0),money(p.priceB||0)],['Diferença',p.priceA&&p.priceB?money(Math.abs(p.priceA-p.priceB)):'—','']];openModal('Comparar opções — '+p.nome,`<p class="muted">Compare alternativas do mesmo móvel antes de aprovar o projeto.</p>${table(['Critério','Opção A','Opção B'],rows.map(a=>td(...a.map(esc))))}`,()=>true)}
 function v5ExportProjects(){exportCsv(`oficina-projetos-${iso()}.csv`,['Projeto','Cliente','Ambiente','Largura mm','Altura mm','Profundidade mm','Material','Acabamento','Etapa','Prazo','Alternativa A','Valor A','Alternativa B','Valor B','Arquivo SketchUp','Tipos de peça','Total de peças','Área peças m2'],db.projects.map(p=>[p.nome,p.clientNome,p.ambiente,p.largura,p.altura,p.profundidade,p.material,p.acabamento,v5ProjectStatus(p.status),date(p.prazo),p.optionA,p.priceA,p.optionB,p.priceB,p.cutlist?.filename||'',p.cutlist?.summary?.tipos||0,p.cutlist?.summary?.pecas||0,p.cutlist?.summary?.areaM2||0]))}
