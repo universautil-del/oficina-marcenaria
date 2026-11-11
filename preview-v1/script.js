@@ -217,16 +217,37 @@ function addMonths(dateString,n){const d=new Date(dateString+'T12:00:00Z');const
 function buildInstallments(total,payment,order){const pay=payment||{tipo:'avista',parcelas:1,entrada:0,primeiroVencimento:order.date};const first=pay.primeiroVencimento||order.date;const out=[];let balanceValue=total;
  if(pay.tipo==='entrada'){const amount=round(pay.entrada);out.push({label:'Entrada',valor:amount,date:order.date});balanceValue=round(total-amount)}
  const n=pay.tipo==='avista'?1:Math.max(1,Number(pay.parcelas)||1);let amountSoFar=0;for(let i=0;i<n;i++){const amount=i===n-1?round(balanceValue-amountSoFar):round(balanceValue/n);amountSoFar=round(amountSoFar+amount);out.push({label:pay.tipo==='avista'?'Pagamento à vista':`Parcela ${i+1}/${n}`,valor:amount,date:addMonths(first,i)})}return out}
-function requiredMaterials(items){const map=new Map();for(const item of items){const p=getProduct(item.productId);if(!p)continue;if(p.tipo==='materia'){map.set(p.id,round((map.get(p.id)||0)+item.quantidade))}else{for(const component of p.components||[])map.set(component.materialId,round((map.get(component.materialId)||0)+component.quantidade*item.quantidade))}}return [...map].map(([productId,quantidade])=>({productId,quantidade}))}
-function reservedQuantity(pid,exclude=''){return round(db.orders.filter(o=>o.id!==exclude&&o.stockState==='reservado'&&o.status==='confirmado').reduce((sum,o)=>sum+(o.materials||[]).filter(m=>m.productId===pid).reduce((s,m)=>s+Number(m.quantidade),0),0))}
+function qty3(n){return Math.round(Number(n)*1000)/1000}
+function requiredMaterials(items){const map=new Map();for(const item of items){const p=getProduct(item.productId);if(!p)continue;if(p.tipo==='materia'){map.set(p.id,qty3((map.get(p.id)||0)+Number(item.quantidade)))}else{for(const component of p.components||[])map.set(component.materialId,qty3((map.get(component.materialId)||0)+component.quantidade*item.quantidade))}}return [...map].map(([productId,quantidade])=>({productId,quantidade}))}
+function reservedQuantity(pid,exclude=''){return qty3(db.orders.filter(o=>o.id!==exclude&&o.stockState==='reservado'&&o.status==='confirmado').reduce((sum,o)=>sum+(o.materials||[]).filter(m=>m.productId===pid).reduce((s,m)=>s+Number(m.quantidade),0),0))}
 function tryReserve(order){const shortage=(order.materials||[]).filter(m=>{const p=getProduct(m.productId);return !p||p.estoque-reservedQuantity(m.productId,order.id)+0.000001<m.quantidade});if(shortage.length){order.stockState='pendente';return false}order.stockState='reservado';return true}
 function createOrder(data,quoteId=''){
- if(quoteId){const q=getQuote(quoteId);if(!q||q.status==='convertido'||db.orders.some(o=>o.quoteId===quoteId))throw Error('Este orçamento já foi convertido.');}
- const linked=quoteId?getQuote(quoteId):null;const orderNumber=linked?linked.number:nextSaleNumber();if(linked&&db.orders.some(o=>String(o.number)===String(orderNumber)))throw Error('Já existe pedido com esse número. Verifique o histórico antes de converter.');db.seq.order=Math.max(Number(db.seq.order)||1,Number(orderNumber)+1);const order={...data,id:id(),number:orderNumber,status:'confirmado',quoteId,stockState:'pendente',createdAt:iso(),materials:requiredMaterials(data.items)};tryReserve(order);
- const amounts=buildInstallments(orderTotal(order),order.payment,order);db.orders.push(order);
- amounts.forEach((v,i)=>db.transactions.push({id:id(),kind:'receber',orderId:order.id,clientId:order.clientId,descricao:`Pedido #${order.number} · ${v.label}`,valor:v.valor,dueDate:v.date,payments:[]}));
- if(quoteId){const q=getQuote(quoteId);q.status='convertido';q.orderId=order.id}
- return save();
+ const linked=quoteId?getQuote(quoteId):null;
+ if(quoteId&&(!linked||linked.status==='convertido'||db.orders.some(o=>o.quoteId===quoteId)))
+  throw Error('Este orçamento já foi convertido ou não existe.');
+ const before={orders:db.orders,transactions:db.transactions,seq:{...db.seq},quoteStatus:linked?.status,quoteOrderId:linked?.orderId};
+ try{
+  const orderNumber=linked?linked.number:nextSaleNumber();
+  if(linked&&db.orders.some(o=>String(o.number)===String(orderNumber)))
+   throw Error('Já existe pedido com esse número. Verifique o histórico antes de converter.');
+  db.seq.order=Math.max(Number(db.seq.order)||1,Number(orderNumber)+1);
+  const order={...data,id:id(),number:orderNumber,status:'confirmado',quoteId,stockState:'pendente',createdAt:iso(),materials:requiredMaterials(data.items)};
+  tryReserve(order);
+  const amounts=buildInstallments(orderTotal(order),order.payment,order);
+  if(!amounts.length||amounts.some(p=>!Number.isFinite(p.valor)||p.valor<0))throw Error('Parcelas inválidas.');
+  db.orders=[...db.orders,order];
+  db.transactions=[...db.transactions,...amounts.map(v=>({
+   id:id(),kind:'receber',orderId:order.id,clientId:order.clientId,
+   descricao:'Pedido #'+order.number+' · '+v.label,valor:v.valor,dueDate:v.date,payments:[]
+  }))];
+  if(linked){linked.status='convertido';linked.orderId=order.id}
+  if(save()===false)throw Error('Não foi possível salvar o pedido. Nenhum lançamento foi confirmado.');
+  return true;
+ }catch(error){
+  db.orders=before.orders;db.transactions=before.transactions;db.seq=before.seq;
+  if(linked){linked.status=before.quoteStatus;linked.orderId=before.quoteOrderId}
+  throw error;
+ }
 }
 function convertQuote(qid){const q=getQuote(qid);if(!q||q.status==='convertido')return alert('Orçamento já convertido.');if(!confirm(`Converter orçamento #${q.number} em pedido? O financeiro será gerado automaticamente.`))return;try{if(createOrder({clientId:q.clientId,clientNome:q.clientNome,date:iso(),items:q.items.map(i=>({...i})),desconto:q.desconto,frete:q.frete||0,ambientes:q.ambientes||'',entrega:q.entrega,entregaData:q.entregaData||"",observacoes:q.observacoes,projectId:q.projectId||'',projectNome:q.projectNome||'',payment:{...q.payment}},qid)){location.hash='pedidos';render('pedidos')}}catch(e){alert(e.message)}}
 function removeQuote(qid){const q=getQuote(qid);if(!q||q.status!=='aberto')return;if(confirm('Excluir este orçamento?')){db.quotes=db.quotes.filter(q=>q.id!==qid);save();render()}}
