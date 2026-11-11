@@ -121,10 +121,12 @@
   }
   scanState='Consultando copias semanais do Supabase…';renderPage();
   try{
+    const schedule=await cloud.weeklyBackupStatus();
     snapshots=await cloud.listWeeklyBackups();
-    scanState=snapshots.length
-      ?snapshots.length+' de 4 copias semanais disponiveis. Confira o agendamento no painel Cron do Supabase.'
-      :'Ainda nao ha copias no servidor. Ative o agendamento e confira a primeira execucao no Supabase.';
+    scanState=(schedule.agendamento_ativo?'Agendamento semanal ativo. ':'Agendamento semanal ainda NAO ativo. ')+
+      snapshots.length+' de 4 copias no servidor. '+
+      (snapshots.length?'Ultima: '+new Date(snapshots[0].criado_em).toLocaleString('pt-BR')+'.':'Aguardando primeira copia.')+
+      (schedule.agendamento_ativo?' Confira os registros de execucao do Cron.':' Execute os scripts de instalacao para habilitar os backups.');
   }catch(error){
     snapshots=[];
     scanState='Nao foi possivel listar os backups automaticos: '+String(error.message||error).slice(0,150)+'. Verifique se executou os scripts de instalacao.';
