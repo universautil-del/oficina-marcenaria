@@ -39,7 +39,7 @@ assert(context.content.innerHTML.includes('não é um backup salvo'));
  await handle({target:{closest(){return {dataset:{launchAction:'check-cloud'},set disabled(v){disabled=v},get disabled(){return disabled}}}}});
  assert(context.content.innerHTML.includes('4 de 4 etapas conferidas'));
  assert(context.content.innerHTML.includes('verificados às'));
- assert(context.content.innerHTML.includes('não confirma que um arquivo foi restaurado'));
+ assert(context.content.innerHTML.includes('Não confirma que um arquivo foi restaurado'));
  await handle({target:{closest(){return {dataset:{launchAction:'open-encrypted-backup'},disabled:false}}}});
  assert.equal(context.location.hash,'backupdrive');
  assert(previousRenders>=1,'Abre o módulo de backup existente sem exportar JSON aberto');
