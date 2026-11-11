@@ -145,6 +145,7 @@
     '<div class="ua-drive-actions"><button class="btn primary" type="button" data-ua-backup-action="refresh">Verificar backups no Supabase</button></div>'+
     (rows?'<div class="ua-table-wrap"><table class="ua-table"><thead><tr><th>Data</th><th>Documento</th><th>Acao</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'')+
     '<p class="muted small">Ativacao unica: abra o <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/supabase/INSTALAR-backup-automatico-OFICINA-1-0.sql" target="_blank" rel="noopener noreferrer">SQL de instalacao do backup semanal</a>, copie todo o codigo (Raw) e execute no Editor SQL do seu projeto Supabase. Esta tela nao ativa o cron sozinha; confira em Integrations → Cron → Jobs.</p>'+
+    '<p class="muted small">Atencao: o plano Gratis do Supabase pode pausar projetos por baixa atividade. Um projeto pausado nao executara o backup agendado. Confira periodicamente o status do Cron e mantenha uma copia fora do Supabase.</p>'+
     '<p class="muted small">As copias estao dentro do MESMO projeto Supabase e nao utilizam uma senha particular. Uma falha ou exclusao do projeto pode afetar todas. Mantenha uma copia criptografada fora do Supabase.</p></section>'+
    '<section class="ua-section ua-drive-panel gap-top"><h3>2. Copia manual criptografada</h3>'+
     '<p class="muted">Baixe uma copia AES-256-GCM sempre que quiser. A senha nao e salva no Oficina: guarde-a em local seguro.</p>'+
