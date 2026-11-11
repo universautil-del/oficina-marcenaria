@@ -379,10 +379,76 @@ function paymentModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t)ret
 function receiptModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t||t.kind!=='receber')return;const rows=(t.payments||[]).slice().reverse().map(p=>td(date(p.date),money(p.valor),esc(p.method||'—'),button('Imprimir recibo','print-receipt',`${t.id}:${p.id}`,'small')));openModal('Recibos — '+t.descricao,table(['Data','Valor','Forma','Ação'],rows,'Nenhum recebimento.'),()=>true)}
 const defaultContract=`CONTRATO DE FORNECIMENTO DE MÓVEIS / SERVIÇOS\n\nCONTRATADA: {{empresa}}\nCONTRATANTE: {{cliente}}\nPEDIDO Nº {{pedido}} — DATA: {{data}}\n\nOBJETO DO CONTRATO:\n{{itens}}\n\nVALOR TOTAL: {{total}}\nCONDIÇÃO DE PAGAMENTO: {{pagamento}}\nPRAZO OU PREVISÃO DE ENTREGA: {{entrega}}\n\nOUTRAS CONDIÇÕES / OBSERVAÇÕES:\n{{observacoes}}\n\nAs condições de instalação, garantia, alterações de projeto e responsabilidades devem ser definidas e revisadas pelas partes antes da assinatura.\n\n{{assinaturas}}`;
 function companyView(){const c=db.company||{};
- content.innerHTML=`${intro('Minha Empresa','Dados para documentos e backup completo.')}<div class="settings-grid"><section class="panel"><h3>Dados da marcenaria</h3><div class="form-grid gap-top"><label class="full">Nome / Razão social<input id="coNome" value="${esc(c.nome||'Universa Art')}"></label><label>CPF / CNPJ<input id="coCnpj" value="${esc(c.cnpj)}"></label><label>Telefone<input id="coTel" value="${esc(c.telefone)}"></label><label class="full">E-mail<input id="coEmail" type="email" value="${esc(c.email)}"></label><label class="full">Endereço<input id="coEndereco" value="${esc(c.endereco)}"></label><label class="full">Pix / Dados bancários<input id="coPix" value="${esc(c.pix)}"></label></div><div class="actions gap-top">${button('Salvar dados','save-company','','primary')}${button('Adicionar logotipo','upload-logo')}</div>${c.logo?`<div class="gap-top"><img src="${esc(c.logo)}" alt="Logotipo" style="max-height:85px;max-width:220px;object-fit:contain"></div>`:''}</section><section class="panel"><h3>Modelo de contrato</h3><p class="muted">Personalize o texto. Use os campos entre chaves para preenchimento automático.</p><textarea id="contractTemplate" rows="20" style="width:100%;margin-top:15px;padding:13px;border:1px solid #cdd6d0;border-radius:9px;font:inherit">${esc(c.contrato||defaultContract)}</textarea><div class="actions gap-top">${button('Salvar modelo','save-contract','','primary')}</div></section></div><section class="panel gap-top"><div class="panel-head"><h3>Backup e restauração</h3></div><p class="muted">Exporta clientes, produtos, pedidos, movimentações, financeiro, empresa e contratos para um arquivo JSON. Guarde o backup em local seguro.</p><div class="actions gap-top">${button('Exportar backup completo','backup','','primary')}${button('Importar backup','import')}</div><div class="notice">Este site no GitHub Pages é público e não tem login. Os dados ficam apenas no navegador deste aparelho. Não use informações comerciais sensíveis até configurar banco de dados e autenticação seguros.</div></section>`;
+ content.innerHTML=`${intro('Minha Empresa','Dados para documentos e backup completo.')}<div class="settings-grid"><section class="panel"><h3>Dados da marcenaria</h3><div class="form-grid gap-top"><label class="full">Nome / Razão social<input id="coNome" value="${esc(c.nome||'Universa Art')}"></label><label>CPF / CNPJ<input id="coCnpj" value="${esc(c.cnpj)}"></label><label>Telefone<input id="coTel" value="${esc(c.telefone)}"></label><label class="full">E-mail<input id="coEmail" type="email" value="${esc(c.email)}"></label><label class="full">Endereço<input id="coEndereco" value="${esc(c.endereco)}"></label><label class="full">Pix / Dados bancários<input id="coPix" value="${esc(c.pix)}"></label></div><div class="actions gap-top">${button('Salvar dados','save-company','','primary')}${button('Adicionar logotipo','upload-logo')}</div><input type="file" id="uaCompanyLogoInput" hidden accept="image/png,image/jpeg,image/webp" aria-label="Selecionar logotipo PNG JPG ou WebP"><p id="uaCompanyLogoStatus" class="muted small" role="status" aria-live="polite">PNG, JPG ou WebP (até 4 MB). A imagem será ajustada para os documentos.</p><div id="uaCompanyLogoPreview">${c.logo?`<div class="gap-top"><img src="${esc(c.logo)}" alt="Logotipo atual da empresa" style="max-height:85px;max-width:220px;object-fit:contain"></div>`:''}</div></section><section class="panel"><h3>Modelo de contrato</h3><p class="muted">Personalize o texto. Use os campos entre chaves para preenchimento automático.</p><textarea id="contractTemplate" rows="20" style="width:100%;margin-top:15px;padding:13px;border:1px solid #cdd6d0;border-radius:9px;font:inherit">${esc(c.contrato||defaultContract)}</textarea><div class="actions gap-top">${button('Salvar modelo','save-contract','','primary')}</div></section></div><section class="panel gap-top"><div class="panel-head"><h3>Backup e restauração</h3></div><p class="muted">Exporta clientes, produtos, pedidos, movimentações, financeiro, empresa e contratos para um arquivo JSON. Guarde o backup em local seguro.</p><div class="actions gap-top">${button('Exportar backup completo','backup','','primary')}${button('Importar backup','import')}</div><div class="notice">Este site no GitHub Pages é público e não tem login. Os dados ficam apenas no navegador deste aparelho. Não use informações comerciais sensíveis até configurar banco de dados e autenticação seguros.</div></section>`;
 }
 function companySave(){const c=db.company;c.nome=content.querySelector('#coNome').value.trim();c.cnpj=content.querySelector('#coCnpj').value.trim();c.telefone=content.querySelector('#coTel').value.trim();c.email=content.querySelector('#coEmail').value.trim();c.endereco=content.querySelector('#coEndereco').value.trim();c.pix=content.querySelector('#coPix').value.trim();if(save())alert('Dados da empresa salvos.')}
-function uploadLogo(){const file=document.createElement('input');file.type='file';file.accept='image/*';file.onchange=()=>{const f=file.files?.[0];if(!f)return;if(f.size>4e6)return alert('Imagem muito grande (máximo 4 MB).');const img=new Image();img.onload=()=>{const width=Math.min(img.width,350),height=Math.round(img.height*width/img.width);const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;canvas.getContext('2d').drawImage(img,0,0,width,height);db.company.logo=canvas.toDataURL('image/png');if(save())render('empresa');URL.revokeObjectURL(img.src)};img.onerror=()=>alert('Imagem inválida.');img.src=URL.createObjectURL(f)};file.click()}
+function uploadLogo(){
+ const file=content.querySelector('#uaCompanyLogoInput');
+ if(!file)return alert('Abra Minha Empresa para adicionar o logotipo.');
+ file.value='';
+ file.click(); // Campo presente na página: funciona também nos navegadores móveis.
+}
+async function processCompanyLogo(file){
+ if(!file)return false;
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type))throw Error('Escolha uma imagem PNG, JPG ou WebP.');
+ if(!file.size||file.size>4_000_000)throw Error('A imagem precisa ter até 4 MB.');
+ const url=URL.createObjectURL(file);
+ let img;
+ try{
+  img=await new Promise((resolve,reject)=>{
+   const image=new Image();
+   image.onload=()=>resolve(image);
+   image.onerror=()=>reject(Error('Não foi possível abrir esta imagem.'));
+   image.src=url;
+  });
+ }finally{URL.revokeObjectURL(url)}
+ if(!img.naturalWidth||!img.naturalHeight||img.naturalWidth>10000||img.naturalHeight>10000)throw Error('Dimensões da imagem inválidas.');
+ let scale=Math.min(1,420/Math.max(img.naturalWidth,img.naturalHeight)),data='';
+ for(let attempt=0;attempt<12;attempt++){
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));
+  canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+  const ctx=canvas.getContext('2d');
+  if(!ctx)throw Error('O navegador não conseguiu preparar a imagem.');
+  ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  data=canvas.toDataURL('image/webp',0.82);
+  // Safari/navegadores antigos podem devolver PNG em vez de WebP.
+  if(!/^data:image\/(webp|png);base64,[A-Za-z0-9+/=]+$/.test(data))throw Error('O navegador não conseguiu converter a imagem.');
+  if(data.length<=170000)break;
+  scale*=0.78;
+ }
+ if(data.length>170000)throw Error('A imagem ficou grande para o banco. Escolha um arquivo mais simples.');
+ if(!db.company)throw Error('Dados da empresa não disponíveis. Entre na sua conta novamente.');
+ const previous=db.company.logo;
+ db.company.logo=data;
+ try{
+  if(new Blob([JSON.stringify(db)]).size>1_950_000)throw Error('O cadastro está próximo do limite de armazenamento. Faça um backup antes de adicionar a imagem.');
+  if(save()===false)throw Error('Não foi possível guardar o logotipo. Confira a conexão e a sincronização.');
+ }catch(error){db.company.logo=previous;throw error}
+ const preview=content.querySelector('#uaCompanyLogoPreview');
+ if(preview)preview.innerHTML='<div class="gap-top"><img src="'+esc(data)+'" alt="Logotipo atual da empresa" style="max-height:85px;max-width:220px;object-fit:contain"></div>';
+ return true;
+}
+document.addEventListener('change',async event=>{
+ if(event.target?.id!=='uaCompanyLogoInput')return;
+ const input=event.target,file=input.files?.[0];
+ if(!file)return;
+ const status=content.querySelector('#uaCompanyLogoStatus');
+ const trigger=content.querySelector('[data-action="upload-logo"]');
+ if(trigger)trigger.disabled=true;
+ if(status)status.textContent='Preparando e salvando logotipo…';
+ try{
+  await processCompanyLogo(file);
+  if(status)status.textContent=window.UNIVERSA_REQUIRE_AUTH?
+   'Logotipo salvo neste aparelho. Aguarde aparecer “Sincronizado” antes de abrir no celular.':
+   'Logotipo salvo. Ele aparecerá nos documentos da empresa.';
+ }catch(error){
+  if(status)status.textContent='Não foi possível salvar: '+String(error.message||error);
+ }finally{
+  input.value='';
+  if(trigger)trigger.disabled=false;
+ }
+});
 function documentsView(){const printable=db.orders.filter(o=>o.status!=='cancelado').slice().reverse();const payments=db.transactions.filter(t=>t.kind==='receber'&&(t.payments||[]).length).flatMap(t=>t.payments.map(p=>({t,p}))).reverse();
  content.innerHTML=`${intro('Documentos','Orçamentos, pedidos, contratos e recibos para imprimir ou salvar em PDF.')}${notice()}<section class="panel"><h3>Contratos e pedidos</h3><p class="muted small">Contratos utilizam o modelo configurável em Minha Empresa.</p>${table(['Pedido','Cliente','Total','Documentos'],printable.map(o=>td(esc(o.controlCode||'#'+o.number),esc(o.clientNome),money(orderTotal(o)),`<div class="row-actions">${button('Pedido/PDF','print-order',o.id,'small')}${button('Contrato/PDF','print-contract',o.id,'small')}</div>`)))}</section><section class="panel gap-top"><h3>Recibos de pagamentos</h3>${table(['Pedido / Lançamento','Recebido em','Valor','Ação'],payments.map(({t,p})=>td(esc(t.descricao),date(p.date),money(p.valor),button('Recibo/PDF','print-receipt',`${t.id}:${p.id}`,'small'))))}</section><p class="footer-note">PDF: na janela de impressão do navegador, escolha “Salvar como PDF”.</p>`;
 }
