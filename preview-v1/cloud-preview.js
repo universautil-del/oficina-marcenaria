@@ -1,9 +1,11 @@
 'use strict';
 /* OFICINA v0.6 — login + sincronização opcional no Supabase (não armazena senhas). */
 (function () {
- const CFG='universalartes-v1-cloud-config', SES='universalartes-v1-cloud-session';
  const SECURE=!!window.UNIVERSA_REQUIRE_AUTH;
- const CACHE='universalartes-v1-cloud-cache', META='universalartes-v1-cloud-meta';
+ const CFG='universalartes-v1-cloud-config';
+ const SES=SECURE?'universalartes-secure-session-v1':'universalartes-v1-cloud-session';
+ const CACHE=SECURE?'universalartes-secure-cache-v1':'universalartes-v1-cloud-cache';
+ const META=SECURE?'universalartes-secure-meta-v1':'universalartes-v1-cloud-meta';
  const state={cfg:null,session:null,remote:null,rev:null,active:false,paused:false,busy:false,
    lastSynced:'',status:'Local — somente neste navegador',timer:null,userId:null};
  const safeParse=(s)=>{try{return JSON.parse(s)}catch{return null}};
@@ -283,6 +285,7 @@
   state.signIn=(email,password)=>login(email,password,false);
   state.signUp=(email,password)=>login(email,password,true);
   state.signOut=logout;
+  state.commit=flush;
   state.secure=true;
  }
  window.oficinaCloud=state;
