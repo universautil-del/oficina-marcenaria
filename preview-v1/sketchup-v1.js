@@ -1,5 +1,5 @@
 'use strict';
-/* UNIVERSALARTES 1.0 — Importador SketchUp / OpenCutList, cálculo preliminar no navegador.
+/* UNIVERSA ART 1.0 — Importador SketchUp / OpenCutList, cálculo preliminar no navegador.
    CSV de peças, não interpreta .skp. Não grava em estoque, financeiro ou pedidos. */
 (function(){
  const state={file:'',headers:[],raw:[],map:{},parts:[],settings:{},efficiency:80,edgePrice:0,hardware:0,labor:0,install:0,delivery:0,margin:25,error:'',note:'',separator:';'};
@@ -231,7 +231,7 @@
  }
  function view(){
   title.textContent='Importar lista SketchUp';
-  content.innerHTML='<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSALARTES · SKETCHUP</div>'+
+  content.innerHTML='<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · SKETCHUP</div>'+
     '<h2>Lista de peças do SketchUp 2022</h2><p>Importe uma lista de peças exportada do SketchUp e confira materiais, quantitativos e uma estimativa preliminar.</p></div></div>'+
     '<section class="ua-section"><h3>1. Importar lista OpenCutList (.csv ou .xlsx)</h3>'+
     '<p>No SketchUp 2022, exporte a lista de peças do <strong>OpenCutList</strong> como <strong>Excel (.xlsx)</strong> ou CSV. Configure as dimensões em <strong>mm</strong> e confira material, espessura, quantidade e fita.</p>'+
@@ -304,7 +304,7 @@
  }
  function brief(){
   const r=calculated();const lines=[
-   'UNIVERSALARTES — Projeto SketchUp / Lista de peças',
+   'UNIVERSA ART — Projeto SketchUp / Lista de peças',
    'Arquivo: '+state.file,
    'Todas as dimensões de peças estão em milímetros (mm).',
    'Total de peças: '+state.parts.reduce((s,p)=>s+p.qty,0),
