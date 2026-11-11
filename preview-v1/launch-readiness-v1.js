@@ -1,5 +1,5 @@
 'use strict';
-/* UNIVERSALARTES 1.0 — central de verificação para lançamento.
+/* UNIVERSA ART 1.0 — central de verificação para lançamento.
    Apenas leitura dos dados. Não ativa produção, não altera registros comerciais,
    não afirma RLS ou backup de servidor sem testes reais. */
 (function(){
@@ -85,7 +85,7 @@
     const metric=(label,n)=>'<div><small>'+escape(label)+'</small><strong>'+escape(n)+'</strong></div>';
     const currentState=cloud.paused?'Sincronização interrompida':cloud.active?'Nuvem ativada':cloud.session?'Conta conectada, sem sincronização':'Modo local / sem login';
     content.innerHTML=
-      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSALARTES · PREPARAR LANÇAMENTO</div><h2>Segurança e confiabilidade</h2>'+
+      '<div class="ua-welcome"><div><div class="ua-eyebrow">UNIVERSA ART · PREPARAR LANÇAMENTO</div><h2>Segurança e confiabilidade</h2>'+
       '<p>Confira seus registros, a conexão com a nuvem e os backups antes de começar a usar o sistema na oficina.</p></div></div>'+
       '<section class="ua-section ua-launch"><div class="ua-launch-header"><div><h3>Diagnóstico do sistema</h3><p class="muted">Verificação local somente leitura. Não altera pedidos, estoque ou finanças.</p></div>'+
       '<div class="ua-launch-score">'+finished+' de '+steps.length+' verificações locais</div></div>'+
@@ -110,7 +110,7 @@
       '<div><strong>3. Garantir transações de estoque e financeiro</strong><p>O sistema ainda usa um documento JSON por usuário; alterações simultâneas e operações críticas precisam de validação e proteção no servidor.</p></div>'+
       '<div><strong>4. Proteger anexos e dados pessoais</strong><p>Validar storage privado, política de acesso e isolamento do ambiente de produção antes de cadastrar informações reais.</p></div></div>'+
       '<p class="muted small"><strong>Este diagnóstico não libera automaticamente o uso comercial.</strong> A prévia continua em modo de testes até concluirmos a validação externa.</p>'+
-      '<p><a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/docs/FINALIZACAO-UNIVERSALARTES-V1.md" target="_blank" rel="noopener noreferrer">Abrir roteiro completo de conclusão</a></p></section>';
+      '<p><a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/docs/FINALIZACAO-UNIVERSA ART-V1.md" target="_blank" rel="noopener noreferrer">Abrir roteiro completo de conclusão</a></p></section>';
   }
   async function runCloud(){
     status.remote=null;status.error='';status.message='Consultando login e tabela no Supabase…';renderHealth();
