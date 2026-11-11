@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - 'supabase/secure-document-v1.sql'
+      - 'supabase/backup-semanal-estrutura-oficina-1-0.sql'
+      - 'supabase/backup-semanal-ativar-oficina-1-0.sql'
       - 'supabase/migrate-material-codes-9999.sql'
       - 'supabase/verificar-oficina-1-0.sql'
       - 'supabase/conferir-dados-sincronizados-oficina-1-0.sql'
@@ -43,6 +45,8 @@ jobs:
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f tests/sql/supabase-stub.sql
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/secure-document-v1.sql
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/migrate-material-codes-9999.sql
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/backup-semanal-estrutura-oficina-1-0.sql
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f tests/sql/secure-document-check.sql
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f tests/sql/backup-semanal-check.sql
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/verificar-oficina-1-0.sql
           psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f supabase/conferir-dados-sincronizados-oficina-1-0.sql
