@@ -1,6 +1,6 @@
 'use strict';
 /* OFICINA v0.3 — versão local, sem servidor, autenticação ou sincronização. */
-const sections=[['dashboard','▦','Dashboard'],['clientes','♙','Clientes'],['produtos','▤','Produtos'],['fornecedores','♧','Fornecedores'],['compras','▥','Compras'],['orcamentos','▧','Orçamentos'],['pedidos','▣','Pedidos'],['producao','▣','Produção'],['financeiro','＄','Financeiro'],['relatorios','▤','Relatórios'],['documentos','▤','Documentos'],['empresa','⚙','Minha Empresa']];
+const sections=[['dashboard','▦','Dashboard'],['clientes','♙','Clientes'],['produtos','▤','Produtos'],['fornecedores','♧','Fornecedores'],['compras','▥','Entrada de Materiais'],['orcamentos','▧','Orçamentos'],['pedidos','▣','Pedidos'],['producao','▣','Produção'],['financeiro','＄','Financeiro'],['relatorios','▤','Relatórios'],['documentos','▤','Documentos'],['empresa','⚙','Minha Empresa']];
 const nav=document.querySelector('#nav'),content=document.querySelector('#content'),title=document.querySelector('#pageTitle'),sidebar=document.querySelector('.sidebar');
 const DB_KEY='universalartes-preview-v1-dados',OLD_CLIENTS='universalartes-preview-v1-clientes-antigos';
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
