@@ -200,12 +200,11 @@ function openSales(mode='quote',quoteId='',projectId=''){
  const payment={tipo:v.payTipo,forma:(v.payForma||'').trim(),entrada:round(v.payEntrada),parcelas:Math.max(1,Math.min(36,Math.floor(Number(v.payParcelas)||1))),primeiroVencimento:v.payData||v.date};if(payment.tipo==='entrada'&&!(payment.entrada>0&&payment.entrada<total))throw Error('A entrada deve ser maior que zero e menor que o valor do pedido.');
  const client=getClient(v.clientId);if(!client)throw Error('Selecione um cliente cadastrado.');const data={clientId:client.id,clientNome:client.nome,date:v.date,items,desconto,frete,ambientes:(v.ambientes||'').trim(),entrega:v.entrega,entregaData:v.entregaData||"",observacoes:v.observacoes,payment,projectId:old.projectId||'',projectNome:old.projectNome||''};
  if(mode==='quote'){
-  const beforeQuotes=db.quotes,beforeSeq={...db.seq},oldQuote=q?{...q}:null;
-  if(q)Object.assign(q,data);
+  const beforeQuotes=db.quotes,beforeSeq={...db.seq};
+  if(q)db.quotes=db.quotes.map(row=>row.id===q.id?{...row,...data}:row);
   else db.quotes=[...db.quotes,{...data,id:id(),number:nextSaleNumber(),status:'aberto'}];
   if(save()===false){
    db.quotes=beforeQuotes;db.seq=beforeSeq;
-   if(q)Object.assign(q,oldQuote);
    throw Error('Não foi possível salvar o orçamento; os dados anteriores foram preservados.');
   }
   return true;
