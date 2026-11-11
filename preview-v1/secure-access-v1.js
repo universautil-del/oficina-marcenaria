@@ -18,25 +18,26 @@
   }
   locked();
   const cfg=state?.cfg||{},configured=!!(cfg.url&&cfg.key);
-  const error=state?.status||'Aguardando autenticação';
+  const error=(!configured&&(!state?.status||state.status.startsWith('Local')))?'Conexão na nuvem ainda não configurada':state?.status||'Pronto para entrar';
   gate.innerHTML='<section class="ua-secure-box" aria-labelledby="ua-secure-title">'+
    '<div class="ua-secure-brand"><img src="assets/universa-art-logo.webp" alt="" width="64" height="64"><div><strong>UNIVERSA ART</strong><small>OFICINA · acesso autenticado</small></div></div>'+
-   '<h1 id="ua-secure-title">Entrar na OFICINA</h1>'+
-   '<p>Seus dados serão carregados somente após autenticação na sua conta Supabase. Nenhuma informação da versão local anterior é importada automaticamente.</p>'+
+   '<h1 id="ua-secure-title">OFICINA 1.2 · Acesso pessoal</h1>'+
+   '<p>Uma única conta para você trabalhar no computador e no celular. Entre sempre com o mesmo e-mail e senha para acessar os mesmos dados. Seus registros só são carregados após autenticação.</p>'+
    '<div class="ua-secure-status" role="status">'+escHtml(status||error)+'</div>'+
-   '<details class="ua-secure-details" '+(!configured?'open':'')+'><summary>1. Configurar o banco Supabase</summary>'+
+   '<details class="ua-secure-details" '+(!configured?'open':'')+'><summary>'+(configured?'Configuração da nuvem (avançado)':'Primeiro acesso · Conectar o banco uma vez neste aparelho')+'</summary>'+
+   '<p class="ua-secure-foot">A conexão é feita com a URL e a chave pública do seu projeto. Não é necessário criar um banco diferente para o celular.</p>'+
    '<form id="uaSecureConfig"><label>URL do projeto Supabase<input name="url" type="url" autocomplete="off" placeholder="https://seu-projeto.supabase.co" value="'+escHtml(cfg.url||'')+'" required></label>'+
    '<label>Chave pública publishable / anon<input name="key" type="text" autocomplete="off" value="'+escHtml(cfg.key||'')+'" required></label>'+
    '<button class="ua-secure-button secondary" type="submit">Salvar conexão</button></form>'+
    '<p class="ua-secure-foot">Execute primeiro o script <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/supabase/secure-document-v1.sql" target="_blank" rel="noopener noreferrer">SQL autenticado</a> em seu próprio Supabase. Nunca informe senha, chave secreta ou service_role aqui.</p></details>'+
-   '<form id="uaSecureLogin" class="ua-secure-form"><h2>2. Sua conta</h2>'+
+   (configured?'<form id="uaSecureLogin" class="ua-secure-form"><h2>Entrar com sua conta</h2>':'<div class="ua-secure-foot">Configure a nuvem acima para liberar o login. Se ainda não tem Supabase, crie um projeto em <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer">supabase.com</a>. Os dados não são compartilhados entre aparelhos sem um banco online.</div><form id="uaSecureLogin" class="ua-secure-form" style="display:none"><h2>Entrar com sua conta</h2>')+
    '<label>E-mail<input name="email" autocomplete="username" type="email" required></label>'+
    '<label>Senha<input name="password" autocomplete="current-password" type="password" minlength="8" required></label>'+
    '<div class="ua-secure-actions"><button class="ua-secure-button" type="submit" name="action" value="login" '+(configured?'':'disabled')+'>Entrar</button>'+
    '<button class="ua-secure-button secondary" type="submit" name="action" value="signup" '+(configured?'':'disabled')+'>Criar conta</button></div>'+
    '</form>'+
-   '<p class="ua-secure-foot">Ao criar uma conta, talvez seja necessário confirmar seu e-mail antes de entrar. Se a conexão não funcionar, verifique URL, chave pública, SQL e RLS no Supabase.</p>'+
-   '<p class="ua-secure-foot">Este acesso está em homologação técnica até os testes com duas contas e restauração real do backup serem concluídos.</p>'+
+   '<p class="ua-secure-foot">Crie apenas uma conta e use-a nos dois aparelhos. Após criar o acesso, desative novos cadastros públicos no Supabase (Authentication → Providers → Email). Talvez seja necessário confirmar seu e-mail antes de entrar.</p>'+
+   '<p class="ua-secure-foot">Antes de trocar de aparelho, confira o status Sincronizado. Se estiver offline ou houver conflito, não continue lançando dados no outro aparelho. A sincronização e a restauração ainda precisam ser validadas com dados de teste.</p>'+
    '</section>';
  }
  gate.addEventListener('submit',async event=>{
