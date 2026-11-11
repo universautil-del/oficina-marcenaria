@@ -31,6 +31,8 @@ function fakeDialog(){
 }
 const ctx={
  db,Number,String,Math,Date,Map,Set,Error,
+ Option:class Option{constructor(label,value){this.label=label;this.value=value}},
+ Event:class Event{constructor(type,init){this.type=type;this.bubbles=init?.bubbles}},
  alert:s=>alerts.push(String(s)),
  productModal:(pid,type)=>{const dialog=fakeDialog();productDialogs.push({pid,type,dialog});return dialog},
  setTimeout:fn=>fn(),
