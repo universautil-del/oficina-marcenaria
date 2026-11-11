@@ -5,14 +5,14 @@
 (function(){
  const previousRender=render;
  const groups=[
-  {title:'PAINEL',keys:['dashboard','clientes']},
+  {title:'PAINEL',keys:['dashboard','cadastros','clientes']},
   {title:'PROJETOS E PEDIDOS',keys:['projetos','assistente','sketchup','orcamentos','pedidos','producao']},
   {title:'MATERIAIS E COMPRAS',keys:['produtos','compras','fornecedores']},
   {title:'FINANCEIRO E DOCUMENTOS',keys:['financeiro','notas','documentos','anexos','relatorios']},
   {title:'SISTEMA E SEGURANÇA',keys:['empresa','backupdrive','seguranca']}
  ];
  const labelOverrides={
-  clientes:'Clientes e fornecedores',projetos:'Projetos de móveis',assistente:'Assistente de projetos',sketchup:'Importar SketchUp',
+  cadastros:'Clientes e Fornecedores',clientes:'Clientes e Fornecedores',projetos:'Projetos de móveis',assistente:'Assistente de projetos',sketchup:'Importar SketchUp',
   compras:'Entrada de Materiais',anexos:'Contratos anexados',backupdrive:'Backup e recuperação'
  };
  function availableGroups(){
