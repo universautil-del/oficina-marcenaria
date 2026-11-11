@@ -136,11 +136,12 @@ function v5PaidReceipt(orderId){const o=getOrder(orderId);if(!o||o.status==='can
 // Acopla os novos módulos sem recriar o aplicativo nem alterar a chave dos backups.
 v5InitData();
 sections.splice(sections.findIndex(x=>x[0]==='produtos'),0,['projetos','▥','Projetos de móveis']);
-sections.splice(sections.findIndex(x=>x[0]==='documentos'),0,['conversor','⇄','Conversor métrico'],['notas','▤','Notas fiscais']);
+sections.splice(sections.findIndex(x=>x[0]==='documentos'),0,['notas','▤','Notas fiscais']);
 sections.splice(sections.findIndex(x=>x[0]==='empresa'),0,['anexos','▧','Contratos anexados']);
 const v5OriginalRender=render;
 render=function(section=location.hash.slice(1)||'dashboard'){
- const views={projetos:v5ProjectsView,conversor:v5ConverterView,notas:v5InvoiceView,anexos:v5AttachmentsView};
+ if(section==='conversor'){location.hash='assistente';return render('assistente')}
+ const views={projetos:v5ProjectsView,notas:v5InvoiceView,anexos:v5AttachmentsView};
  if(!Object.prototype.hasOwnProperty.call(views,section))return v5OriginalRender(section);
  const selected=sections.find(x=>x[0]===section);title.textContent=selected[2];
  nav.innerHTML=sections.map(([key,icon,label])=>`<button class="nav-btn ${key===section?'active':''}" data-section="${key}"><span aria-hidden="true">${icon}</span>${label}</button>`).join('');
@@ -148,7 +149,7 @@ render=function(section=location.hash.slice(1)||'dashboard'){
  views[section]();
 };
 const v5OldDashboard=dashboardUpgrade;
-dashboardUpgrade=function(){v5OldDashboard();const region=document.createElement('section');region.className='panel gap-top';region.innerHTML=`<div class="panel-head"><h3>Projetos e documentos</h3><div class="actions">${button('Ver projetos','v5-go-projects','','small')}${button('Converter medidas','v5-go-converter','','small')}</div></div><div class="v5-summary"><span>Projetos cadastrados: <strong>${db.projects.length}</strong></span><span>Projetos em andamento: <strong>${db.projects.filter(p=>p.status!=='concluido').length}</strong></span><span>Notas registradas: <strong>${db.invoices.length}</strong></span></div>`;content.append(region)};
+dashboardUpgrade=function(){v5OldDashboard();const region=document.createElement('section');region.className='panel gap-top';region.innerHTML=`<div class="panel-head"><h3>Projetos e documentos</h3><div class="actions">${button('Ver projetos','v5-go-projects','','small')}${button('Medidas e assistente','v5-go-converter','','small')}</div></div><div class="v5-summary"><span>Projetos cadastrados: <strong>${db.projects.length}</strong></span><span>Projetos em andamento: <strong>${db.projects.filter(p=>p.status!=='concluido').length}</strong></span><span>Notas registradas: <strong>${db.invoices.length}</strong></span></div>`;content.append(region)};
 document.addEventListener('click',e=>{
  const btn=e.target.closest('[data-action^="v5-"]');if(!btn)return;const a=btn.dataset.action, ref=btn.dataset.id||'';
  switch(a){
@@ -158,7 +159,7 @@ document.addEventListener('click',e=>{
   case 'v5-invoice-new':return v5InvoiceModal();case 'v5-invoice-xml':return v5InvoiceXml();case 'v5-invoice-delete':return v5InvoiceDelete(ref);
   case 'v5-attachment-new':return v5Attach();case 'v5-attachment-download':return v5AttachmentDownload(ref);case 'v5-attachment-delete':return v5AttachmentDelete(ref);
   case 'v5-paid-receipt':return v5PaidReceipt(ref);case 'v5-go-attachments':location.hash='anexos';return render('anexos');
-  case 'v5-go-projects':location.hash='projetos';return render('projetos');case 'v5-go-converter':location.hash='conversor';return render('conversor');
+  case 'v5-go-projects':location.hash='projetos';return render('projetos');case 'v5-go-converter':location.hash='assistente';return render('assistente');
  }
 });
 // Após o registro dos novos menus, atualiza a navegação.
