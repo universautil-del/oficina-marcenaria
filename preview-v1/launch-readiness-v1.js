@@ -9,7 +9,7 @@
     const idx=sections.findIndex(x=>x[0]==='empresa');
     sections.splice(idx<0?sections.length:idx,0,['seguranca','✓','Segurança e lançamento']);
   }
-  const status={remote:null,error:'',testedAt:'',backupChecked:false,message:''};
+  const status={remote:null,error:'',testedAt:'',backupChecked:false,message:'',backupRemote:null,backupRemoteError:'',backupRemoteLoading:false,backupRemoteAttempted:false};
   const isSecure=!!window.UNIVERSA_REQUIRE_AUTH;
   function inspect(data){
     const messages=[],metrics={};
@@ -118,7 +118,14 @@
       {title:'Estrutura e consistência dos registros',ok:audit.passed,description:audit.passed?'Nenhuma inconsistência crítica detectada na checagem local.':'Corrija os erros antes de usar cadastros reais.'},
       {title:'Conta autenticada e nuvem ativa',ok:!!connection,description:connection?'A nuvem está ativada. Execute também o teste da conexão.':'Necessário entrar no Supabase e ativar a sincronização.'},
       {title:'Leitura autenticada do banco',ok:status.remote?.auth&&status.remote?.table,description:status.remote?.auth?'Leitura da tabela com sua conta verificada nesta sessão.':'Clique em Verificar conexão após entrar na nuvem.'},
-      {title:'Estrutura do backup verificada (simulação)',ok:status.backupChecked,description:status.backupChecked?'Estrutura JSON conferida apenas na memória. Ainda é necessário baixar, abrir e testar a recuperação real do arquivo criptografado.':'Execute a verificação da estrutura. Depois faça um backup criptografado e teste a recuperação do arquivo.'}
+      {title:'Cópia semanal no Supabase',ok:!!status.backupRemote?.count,description:status.backupRemoteLoading?
+       'Consultando as cópias disponíveis na sua conta Supabase…':
+       status.backupRemote?.count?
+         status.backupRemote.count+' cópia(s) encontrada(s). Última: '+(status.backupRemote.last||'data não informada')+
+         '. Agendamento '+(status.backupRemote.active?'ativo':'não confirmado')+'. Cópia no mesmo projeto não substitui backup externo.':
+       status.backupRemoteError?
+         'Não foi possível consultar o backup do servidor: '+status.backupRemoteError+'. Confira em Backup e recuperação.':
+         'Ainda não consultado nesta sessão. Abra esta tela com a nuvem ativa ou clique em Consultar backups no Supabase.'}
     ];
     const finished=steps.filter(x=>x.ok).length;
     const metric=(label,n)=>'<div><small>'+escape(label)+'</small><strong>'+escape(n)+'</strong></div>';
@@ -136,20 +143,21 @@
       '<div class="ua-launch-actions">'+
        '<button class="btn primary" type="button" data-launch-action="run">Atualizar diagnóstico</button>'+
        '<button class="btn" type="button" data-launch-action="check-cloud">Verificar conexão Supabase</button>'+
-       '<button class="btn" type="button" data-launch-action="check-backup">Verificar estrutura dos dados</button>'+
+       '<button class="btn" type="button" data-launch-action="check-weekly-backups">Consultar backups no Supabase</button>'+
+       '<button class="btn" type="button" data-launch-action="check-backup">Verificar estrutura local (opcional)</button>'+
        '<button class="btn" type="button" data-launch-action="open-encrypted-backup">Fazer backup criptografado</button>'+
        '</div>'+
-      '<p class="muted small" id="uaLaunchStatus" role="status" aria-live="polite">'+escape(status.message||status.error||'A leitura autenticada e a verificação da estrutura ainda não foram executadas nesta sessão.')+'</p>'+
+      '<p class="muted small" id="uaLaunchStatus" role="status" aria-live="polite">'+escape(status.message||status.error||'O diagnóstico local não substitui a confirmação da cópia no Supabase ou um teste de restauração.')+'</p>'+
       (audit.messages.length?'<div class="ua-launch-findings"><h4>Itens para revisar</h4><ul>'+audit.messages.map(m=>'<li><strong>'+escape(m.severity==='erro'?'Erro':'Atenção')+':</strong> '+escape(m.message)+'</li>').join('')+'</ul></div>':
        '<p class="muted small">Sem erros conhecidos no diagnóstico local. Os indicadores acima não comprovam, sozinhos, recuperação de backup, isolamento entre contas ou sincronização no celular.</p>')+
       '</section>'+
       (isSecure?
-      '<section class="ua-section gap-top ua-launch"><h3>Como concluir os testes da OFICINA 1.0</h3>'+
-      '<div class="ua-launch-remaining"><div><strong>1. Teste a conexão</strong><p>Clique em Verificar conexão Supabase e confira a leitura autenticada. O resultado não comprova sozinho isolamento de usuários.</p></div>'+
-      '<div><strong>2. Teste a sincronização</strong><p>Crie um cliente fictício no PC, espere Sincronizado e confirme no celular. Repita no sentido inverso.</p></div>'+
-      '<div><strong>3. Faça um backup recuperável</strong><p>Use Backup e recuperação → Baixar backup criptografado. Guarde a senha e teste a recuperação em ambiente separado, sem substituir sua base.</p></div>'+
-      '<div><strong>4. Confira segurança e estoque</strong><p>Teste as permissões RLS de duas contas em ambiente separado e o fluxo orçamento → pedido → estoque → financeiro, sem lançamento duplicado.</p></div></div>'+
-      '<p class="muted small">As quatro etapas do quadro acima são checagens de diagnóstico, não uma certificação de segurança. A restauração completa e o uso no celular exigem testes reais.</p>'+
+      '<section class="ua-section gap-top ua-launch"><h3>Conferências complementares</h3>'+
+      '<div class="ua-launch-remaining"><div><strong>Conexão com o Supabase</strong><p>A leitura autenticada pode ser repetida quando necessário. O resultado não comprova sozinho isolamento de usuários.</p></div>'+
+      '<div><strong>Sincronização entre aparelhos</strong><p>Se já testou no computador e celular, não precisa repetir a cada visita. Repita após mudanças relevantes no sistema.</p></div>'+
+      '<div><strong>Cópias e recuperação</strong><p>O quadro acima consulta cópias semanais reais do Supabase. Não confirma que um arquivo foi restaurado: mantenha também um backup criptografado externo, caso já tenha conferido a recuperação.</p></div>'+
+      '<div><strong>Segurança e estoque</strong><p>Após mudanças grandes, confira permissões RLS em ambiente isolado e o fluxo orçamento → pedido → estoque → financeiro, sem lançamento duplicado.</p></div></div>'+
+      '<p class="muted small">A existência de uma cópia confirma apenas seu registro no Supabase, não sua capacidade de restauração. Confira a situação real dos backups no painel de recuperação.</p>'+
       '<p class="muted small">Se ainda não atualizou o Supabase para códigos 01–9999, execute a <a href="https://github.com/universautil-del/oficina-marcenaria/blob/main/supabase/migrate-material-codes-9999.sql" target="_blank" rel="noopener noreferrer">migração SQL preparada</a> após guardar backup. Não execute novamente o SQL inicial.</p></section>':
       '<section class="ua-section gap-top ua-launch"><h3>Prévia de testes 1.2</h3><p>Esta página permite dados locais de teste e não deve ser usada com informações reais. Para trabalhar com uma conta Supabase, abra o ambiente autenticado.</p><p><a class="btn primary" href="../oficina.html">Abrir OFICINA 1.0 com login</a></p></section>');
   }
@@ -171,9 +179,44 @@
       const snap=JSON.parse(JSON.stringify({app:'oficina',version:3,exportedAt:new Date().toISOString(),data:db}));
       const test=validateBackup(snap);
       if(test.kind!==3||test.data.clients.length!==db.clients.length||test.data.orders.length!==db.orders.length)throw Error('Dados divergentes ao validar o backup.');
-      status.backupChecked=true;status.message='Estrutura conferida em memória (não é um backup salvo). Abra Backup Google Drive, baixe o arquivo criptografado e teste sua recuperação em outro ambiente.';
+      status.backupChecked=true;status.message='Estrutura conferida em memória (não é um backup salvo). A consulta das cópias automáticas está separada e pode ser feita pelo botão Consultar backups no Supabase.';
     }catch(err){status.backupChecked=false;status.message='Falha no teste do backup: '+String(err?.message||err).slice(0,200)}
     renderHealth();
+  }
+  async function refreshBackupStatus(){
+    if(status.backupRemoteLoading)return;
+    const cloud=window.oficinaCloud;
+    if(!cloud?.active||cloud.paused||!cloud.session){
+      status.backupRemote=null;
+      status.backupRemoteError='Faça login e aguarde a sincronização';
+      status.backupRemoteAttempted=false;
+      renderHealth();
+      return;
+    }
+    if(typeof cloud.weeklyBackupStatus!=='function'||typeof cloud.listWeeklyBackups!=='function'){
+      status.backupRemote=null;
+      status.backupRemoteError='Consulta não disponível nesta versão';
+      status.backupRemoteAttempted=true;
+      renderHealth();
+      return;
+    }
+    status.backupRemoteLoading=true;status.backupRemoteError='';status.backupRemoteAttempted=true;
+    renderHealth();
+    try{
+      const schedule=await cloud.weeklyBackupStatus();
+      const backups=await cloud.listWeeklyBackups();
+      if(!Array.isArray(backups))throw Error('Lista de cópias inválida');
+      const count=backups.length;
+      const newest=backups[0]?.criado_em;
+      const rawDate=newest?new Date(newest):null;
+      const last=rawDate&&Number.isFinite(rawDate.getTime())?rawDate.toLocaleString('pt-BR'):'';
+      status.backupRemote={count,last,active:schedule?.agendamento_ativo===true};
+      status.message=count?'Consulta concluída: '+count+' cópia(s) semanais no Supabase.':'Consulta concluída: não há cópias semanais acessíveis.';
+    }catch(error){
+      status.backupRemote=null;
+      status.backupRemoteError=String(error?.message||error).slice(0,150);
+      status.message='Não foi possível confirmar as cópias no Supabase. Consulte Backup e recuperação.';
+    }finally{status.backupRemoteLoading=false;renderHealth()}
   }
   const handle=async e=>{
     const btn=e.target.closest('[data-launch-action]');if(!btn)return;
@@ -183,6 +226,7 @@
       if(action==='run'){status.message='Diagnóstico local atualizado.';renderHealth()}
       else if(action==='check-cloud')await runCloud();
       else if(action==='check-backup')checkBackup();
+      else if(action==='check-weekly-backups')await refreshBackupStatus();
       else if(action==='open-encrypted-backup'){location.hash='backupdrive';render('backupdrive')}
     }finally{btn.disabled=false}
   };
@@ -198,7 +242,10 @@
       if(location.hash.slice(1)===section)render(next);
     }));
     renderHealth();
+    // Consulta real, não a simulação local. Uma vez por visita à tela,
+    // podendo ser repetida pelo botão sempre que desejar.
+    if(!status.backupRemoteAttempted&&window.oficinaCloud?.active)void refreshBackupStatus();
   };
-  window.universalartesLaunch={inspect,renderHealth,checkBackup};
+  window.universalartesLaunch={inspect,renderHealth,checkBackup,refreshBackupStatus};
   render(location.hash.slice(1)||'dashboard');
 })();
