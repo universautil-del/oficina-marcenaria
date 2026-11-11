@@ -70,7 +70,8 @@ begin
  ) then raise exception 'Estoque de matéria-prima inválido' using errcode='22023';end if;
  if exists (
    select 1 from jsonb_array_elements(p_documento->'products') as x(value)
-   where x.value->>'codigo' ~ '^[0-9]{1,4}
+   where x.value->>'codigo' ~ '^[0-9]{1,4}$'
+   and (x.value->>'codigo')::integer between 1 and 9999
    group by (x.value->>'codigo')::integer having count(*)>1
  ) then raise exception 'Código de material duplicado' using errcode='22023';end if;
  for item in select x.value from jsonb_array_elements(p_documento->'transactions') as x(value) loop
