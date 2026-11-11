@@ -16,6 +16,8 @@
  let token='',tokenExp=0,files=[],notice='',working=false;
  const safe=v=>esc(String(v??''));
  const getClientId=()=>{try{return localStorage.getItem(CFG)||''}catch{return ''}};
+ const validClientId=id=>/^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/.test(String(id||'').trim());
+ const origin='https://universautil-del.github.io';
  const b64=bytes=>{
    let s='';for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode(...bytes.subarray(i,i+8192));
    return btoa(s);
@@ -73,7 +75,7 @@
  function hasToken(){return token&&Date.now()<tokenExp-60000}
  function authButton(){
   const id=(document.querySelector('#uaDriveClientId')?.value||getClientId()).trim();
-  if(!/^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/.test(id))
+  if(!validClientId(id))
    throw Error('Para o envio direto é necessário informar um Client ID OAuth do Google Cloud. Use o backup manual sem essa configuração.');
   try{localStorage.setItem(CFG,id)}catch{throw Error('Não foi possível salvar o Client ID no navegador.')}
   token='';tokenExp=0;
@@ -83,7 +85,8 @@
    client_id:id,scope:SCOPE,
    callback:async response=>{
     if(response?.error||!response?.access_token){
-     notice='Google não autorizou a conexão. Confira origens OAuth e usuários de teste.';
+     const code=String(response?.error||'').slice(0,70);
+     notice='Google não autorizou a conexão'+(code?' ('+code+')':'')+'. Confira a origem JavaScript autorizada, a Drive API e os usuários de teste.';
      if(location.hash.slice(1)==='backupdrive')renderPage();return;
     }
     if(!window.google.accounts.oauth2.hasGrantedAllScopes(response,SCOPE)){
@@ -100,8 +103,9 @@
     }
     if(location.hash.slice(1)==='backupdrive')renderPage();
    },
-   error_callback:()=>{
-    notice='Janela do Google bloqueada ou fechada. Habilite pop-ups para este site.';
+   error_callback:error=>{
+    const code=String(error?.type||'').slice(0,70);
+    notice='Janela do Google bloqueada ou encerrada'+(code?' ('+code+')':'')+'. Confira pop-ups, Client ID e origem autorizada.';
     if(location.hash.slice(1)==='backupdrive')renderPage()
    }
   });
@@ -183,6 +187,8 @@
   const typed=document.querySelector('#uaDrivePass')?.value||'';
   const advancedOpen=!!document.querySelector('#uaDriveAdvanced')?.open;
   const connected=!!hasToken();
+  const idConfigured=validClientId(getClientId());
+  const googleLoaded=!!window.google?.accounts?.oauth2;
   const list=files.map(f=>'<tr><td>'+safe(f.name)+'</td><td>'+safe(new Date(f.createdTime).toLocaleString('pt-BR'))+
     '</td><td><button type="button" class="btn" data-drive-action="download" data-fileid="'+safe(f.id)+'">Baixar</button> '+
     '<button type="button" class="btn" data-drive-action="restore" data-fileid="'+safe(f.id)+'">Restaurar</button></td></tr>').join('');
@@ -197,13 +203,14 @@
    '<p class="muted small">Funciona agora, sem Client ID: baixe o arquivo .uaenc.json, abra o Google Drive e use Novo → Upload de arquivo. Guarde sua senha separadamente. O navegador não consegue enviar automaticamente arquivos locais sem uma autorização Google.</p></section>'+
    '<details id="uaDriveAdvanced" class="ua-section ua-drive-panel gap-top" '+(connected||advancedOpen?'open':'')+'><summary><strong>Opcional — conectar Google Drive e enviar direto</strong> <small>Requer Client ID OAuth no Google Cloud</small></summary><div class="ua-drive-advanced"><h3>2. Conexão direta com o Google</h3>'+
    '<p class="muted">Opcional. Requer configurar uma vez um OAuth Client ID do Google Cloud para este site. A autorização usa somente o escopo <code>drive.file</code>, sem acesso a todos os seus arquivos.</p>'+
-   '<label for="uaDriveClientId">Google OAuth Client ID (público, nunca segredo)</label><input id="uaDriveClientId" autocomplete="off" value="'+safe(getClientId())+'" placeholder="123456789-xxxx.apps.googleusercontent.com">'+
+   '<p class="ua-drive-diagnostic"><strong>Diagnóstico:</strong> '+(connected?'Google conectado e API verificada.':!idConfigured?'Aguardando Client ID real do Google Cloud.':!googleLoaded?'Client ID salvo; carregamento do Google bloqueado.':'Client ID informado; clique em Conectar conta Google para autorizar.')+'</p>'+
+   '<label for="uaDriveClientId">Google OAuth Client ID (público, nunca segredo)</label><input id="uaDriveClientId" autocomplete="off" value="'+safe(getClientId())+'" placeholder="Cole o Client ID real terminado em .apps.googleusercontent.com">'+
    '<div class="ua-drive-actions"><button class="btn" type="button" data-drive-action="save-client">Salvar Client ID</button>'+
    '<button class="btn" type="button" data-drive-action="connect">Conectar conta Google</button>'+
    '<button class="btn primary" type="button" data-drive-action="upload" '+(connected?'':'disabled')+'>Salvar backup no Drive</button>'+
    '<button class="btn" type="button" data-drive-action="list" '+(connected?'':'disabled')+'>Listar backups</button></div>'+
    '<p id="uaDriveStatus" class="ua-drive-status" role="status" aria-live="polite">'+safe(notice||'Nenhum arquivo foi enviado ainda.')+'</p>'+
-   '<div class="ua-drive-box"><strong>Como ativar:</strong> <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">abrir Google Cloud</a>; ativar <strong>Google Drive API</strong>, criar <strong>OAuth Client ID → Aplicativo Web</strong> e configurar a origem JavaScript <code>https://universautil-del.github.io</code> (sem caminho). Configure o consentimento e o usuário de teste. Cole <strong>somente o Client ID</strong> e clique em Conectar. Caso não queira configurar isso, use o backup manual acima.</div>'+
+   '<div class="ua-drive-box"><strong>Como ativar:</strong> <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">abrir Google Cloud</a>; ativar <strong>Google Drive API</strong>, criar <strong>OAuth Client ID → Aplicativo Web</strong> e configurar a origem JavaScript <code>'+safe(origin)+'</code> (sem caminho). <button class="btn" type="button" data-drive-action="copy-origin">Copiar origem</button> Configure o consentimento e o usuário de teste. Cole <strong>somente o Client ID</strong> e clique em Conectar. Caso não queira configurar isso, use o backup manual acima.</div>'+
    (list?'<div class="ua-table-wrap"><table class="ua-table"><thead><tr><th>Arquivo</th><th>Data</th><th>Ações</th></tr></thead><tbody>'+list+'</tbody></table></div>':'')+
    '</div></details>'+
    '<section class="ua-section ua-drive-panel gap-top"><h3>3. Verificar ou restaurar um backup</h3>'+
@@ -227,13 +234,18 @@
   const b=e.target?.closest?.('[data-drive-action]');if(!b||working)return;
   const action=b.dataset.driveAction;
   if(action==='open-drive'){window.open('https://drive.google.com/drive/u/0/my-drive','_blank','noopener,noreferrer');return}
+  if(action==='copy-origin'){
+   try{await navigator.clipboard.writeText(origin);showNotice('Origem copiada: '+origin+'. Cadastre em Origens JavaScript autorizadas no Google Cloud.');}
+   catch{showNotice('Copie manualmente esta origem no Google Cloud: '+origin)}
+   return;
+  }
   if(action==='connect'){
    try{authButton()}catch(err){showNotice(err.message)}
    return;
   }
   if(action==='save-client'){
    const id=document.querySelector('#uaDriveClientId')?.value.trim();
-   if(!/^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/.test(id)){showNotice('ID OAuth inválido. Confira as credenciais do aplicativo Web.');return}
+   if(!validClientId(id)){showNotice('Cole um Client ID real da seção Aplicativo Web do Google Cloud. O exemplo da tela não é válido.');return}
    try{localStorage.setItem(CFG,id);token='';tokenExp=0;notice='Client ID salvo. Clique em Conectar conta Google.';renderPage()}catch{showNotice('Não foi possível salvar a configuração.')}
    return;
   }
@@ -275,6 +287,6 @@
   }catch(err){showNotice('Não foi possível concluir: '+String(err?.message||err).slice(0,220))}
   finally{working=false;b.disabled=false}
  });
- window.universaArtDriveBackup={encryptBackup,decryptBackup,buildPayload,filename,loadList,sendDrive,restoreData};
+ window.universaArtDriveBackup={encryptBackup,decryptBackup,buildPayload,filename,loadList,sendDrive,restoreData,validClientId,diagnostics:()=>({origin,clientIdConfigured:validClientId(getClientId()),googleScriptLoaded:!!window.google?.accounts?.oauth2,connected:!!hasToken()})};
  render(location.hash.slice(1)||'dashboard');
 })();
