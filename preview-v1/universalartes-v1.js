@@ -137,7 +137,7 @@
       '<label>Preencher<select id="uaMetricTarget"><option value="largura">Largura</option><option value="altura">Altura</option><option value="profundidade">Profundidade</option></select></label>'+
       '</div><button type="button" class="btn" id="uaMetricApply">Converter e preencher</button> <output id="uaMetricResult" aria-live="polite"></output></fieldset>'+
       '<label>Material e espessura<input name="material" maxlength="180" placeholder="Ex.: MDF branco TX de 15 mm"></label>'+
-      '<div class="ua-leo-launch"><button type="button" class="btn small" data-ua-leo-open>Consultar materiais na Léo Madeiras</button><small>Exemplos de chapas, parafusos, buchas e fitas.</small></div>'+
+      '<div class="ua-mat-launch"><button type="button" class="btn small" data-ua-material-open>Consultar Catálogo UNIVERSA ART</button><small>MDF, chapas, parafusos, buchas, fitas e ferragens do catálogo próprio.</small></div>'+
       '<label>Portas, gavetas, nichos e ferragens<textarea name="componentes" maxlength="1800" rows="3" placeholder="Ex.: 4 portas, 2 gavetas, dobradiças com amortecedor"></textarea></label>'+
       '<label>Acabamentos e detalhes<textarea name="acabamento" maxlength="1800" rows="2" placeholder="Ex.: Fitamento de bordas, acabamento amadeirado"></textarea></label>'+
       '<label>Restrições e observações<textarea name="observacoes" maxlength="2400" rows="3" placeholder="Ex.: Pia existente, tomada, parede irregular, espaço do rodapé"></textarea></label>'+
