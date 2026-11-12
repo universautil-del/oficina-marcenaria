@@ -204,7 +204,7 @@
  }
  function excelDate(value){return isDate(value)?new Date(value+'T12:00:00Z'):null}
  function styleSheet(ws,columns,currencyColumns=[],dateColumns=[]){
-  if(!ws.columns.length)ws.columns=columns.map(([header,key,width])=>({header,key,width}));
+  if(!ws.columns||!ws.columns.length)ws.columns=columns.map(([header,key,width])=>({header,key,width}));
   ws.views=[{state:'frozen',ySplit:1}];
   ws.autoFilter={from:{row:1,column:1},to:{row:1,column:columns.length}};
   ws.getRow(1).height=26;
