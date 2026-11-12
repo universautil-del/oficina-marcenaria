@@ -53,28 +53,93 @@
   if(current.open)current.close();
   current.remove();
  }
- function selectOptions(id,values,caption){
+ let filterNotice='';
+ function chosen(){
+  return {
+   category:dialog?.querySelector('#uaLeoCategory')?.value||'',
+   brand:dialog?.querySelector('#uaLeoBrand')?.value||'',
+   size:dialog?.querySelector('#uaLeoSize')?.value||'',
+   color:dialog?.querySelector('#uaLeoColor')?.value||''
+  };
+ }
+ function compatible(selection){
+  return items().some(item=>
+   (!selection.category||item.category===selection.category)&&
+   (!selection.brand||item.brand===selection.brand)&&
+   (!selection.size||item.size===selection.size)&&
+   (!selection.color||item.color===selection.color));
+ }
+ function resolveSelection(changed){
+  const values=chosen();
+  const dropped=[];
+  if(changed==='category'){
+   for(const key of ['brand','size','color']){
+    if(values[key])dropped.push(key);
+    values[key]='';
+   }
+  }else if(!compatible(values)){
+   const priorities={
+    brand:['color','size'],
+    size:['color','brand'],
+    color:['size','brand']
+   };
+   for(const key of priorities[changed]||['color','size','brand']){
+    if(compatible(values))break;
+    if(values[key]){dropped.push(key);values[key]=''}
+   }
+  }
+  const labels={brand:'marca',size:'medida / espessura',color:'cor / padrão'};
+  filterNotice=dropped.length&&changed!=='category'?
+   'Filtro de '+dropped.map(k=>labels[k]).join(' e ')+' ajustado: a combinação anterior não existe nas '+items().length+' referências cadastradas. Confira as opções disponíveis abaixo.':'';
+  for(const key of ['brand','size','color']){
+   const el=dialog?.querySelector('#uaLeo'+key[0].toUpperCase()+key.slice(1));
+   if(el)el.value=values[key];
+  }
+  return values;
+ }
+ function selectOptions(id,key,caption,values){
   const el=dialog?.querySelector('#'+id);
   if(!el)return;
   const previous=el.value;
+  // Cada filtro mostra apenas opções compatíveis com os outros já selecionados.
+  // Não contamos produtos a partir de buscas de texto que possam estar incompletas.
+  const remaining=items().filter(item=>
+   (!values.category||item.category===values.category)&&
+   (key==='brand'||!values.brand||item.brand===values.brand)&&
+   (key==='size'||!values.size||item.size===values.size)&&
+   (key==='color'||!values.color||item.color===values.color)
+  );
+  const counts=new Map();
+  for(const item of remaining){
+   const value=item[key];
+   if(value)counts.set(value,(counts.get(value)||0)+1);
+  }
+  const choices=[...counts.keys()].sort((a,b)=>key==='size'?
+   (parseFloat(a.replace(',','.'))||0)-(parseFloat(b.replace(',','.'))||0)||a.localeCompare(b,'pt-BR'):
+   a.localeCompare(b,'pt-BR'));
   el.innerHTML='<option value="">'+escape(caption)+'</option>'+
-   values.map(value=>'<option value="'+escape(value)+'">'+escape(value)+'</option>').join('');
-  el.value=values.includes(previous)?previous:'';
+   choices.map(value=>'<option value="'+escape(value)+'">'+escape(value)+' ('+counts.get(value)+')</option>').join('');
+  el.value=choices.includes(previous)?previous:'';
  }
- function rebuildFilters(){
-  const category=dialog?.querySelector('#uaLeoCategory')?.value||'';
-  const group=items().filter(p=>!category||p.category===category);
-  const brands=[...new Set(group.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  const sizes=[...new Set(group.map(p=>p.size).filter(Boolean))]
-   .sort((a,b)=>(parseFloat(a.replace(',','.'))||0)-(parseFloat(b.replace(',','.'))||0)||a.localeCompare(b,'pt-BR'));
-  const colors=[...new Set(group.map(p=>p.color).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  selectOptions('uaLeoBrand',brands,'Todas as marcas');
-  selectOptions('uaLeoSize',sizes,category==='mdf'?'Todas as espessuras':category==='parafusos'?'Todas as medidas':'Todos os tamanhos');
-  selectOptions('uaLeoColor',colors,'Todas as cores / padrões');
-  const colorEl=dialog?.querySelector('#uaLeoColor');
-  if(colorEl)colorEl.closest('label').hidden=category!==''&&category!=='mdf';
+ function rebuildFilters(changed='category'){
+  if(!dialog)return;
+  const values=resolveSelection(changed);
+  selectOptions('uaLeoBrand','brand','Todas as marcas',values);
+  selectOptions('uaLeoSize','size',values.category==='mdf'?'Todas as espessuras':values.category==='parafusos'?'Todas as medidas':'Todos os tamanhos',values);
+  selectOptions('uaLeoColor','color','Todas as cores / padrões',values);
+  const colorEl=dialog.querySelector('#uaLeoColor');
+  if(colorEl)colorEl.closest('label').hidden=values.category!==''&&values.category!=='mdf';
   shown=PAGE_SIZE;
   renderList();
+ }
+ function clearFilters(){
+  if(!dialog)return;
+  for(const id of ['uaLeoCategory','uaLeoQuery','uaLeoBrand','uaLeoSize','uaLeoColor']){
+   const el=dialog.querySelector('#'+id);
+   if(el)el.value='';
+  }
+  filterNotice='';
+  rebuildFilters('category');
  }
  function renderList(){
   if(!dialog)return;
@@ -89,7 +154,9 @@
   const table=dialog.querySelector('#uaLeoResults');
   const link=dialog.querySelector('#uaLeoCategoryLink');
   const count=dialog.querySelector('#uaLeoCount');
+  const note=dialog.querySelector('#uaLeoFilterNotice');
   const more=dialog.querySelector('#uaLeoMore');
+  if(note){note.textContent=filterNotice;note.hidden=!filterNotice;}
   if(count)count.textContent=visible.length+' referência(s) encontrada(s), de '+items().length+' cadastradas nesta consulta.';
   if(link)link.href=categories[category]?.url||'https://checkout.leomadeiras.com.br/mdf';
   if(table)table.innerHTML=visible.length?visible.slice(0,shown).map((item,index)=>{
@@ -104,7 +171,7 @@
      '<div class="ua-leo-item-actions"><button type="button" class="btn small" data-ua-leo-use="'+index+'">Selecionar</button>'+
      '<a href="'+escape(href)+'" target="_blank" rel="noopener noreferrer" class="btn small">'+(exact?'Ver produto na Léo':'Pesquisar na Léo')+'</a></div>'+
     '</div>';
-  }).join(''):'<p class="ua-leo-empty">Nenhuma referência nesta combinação. Consulte a categoria oficial para encontrar outras opções.</p>';
+  }).join(''):'<p class="ua-leo-empty">Nenhuma referência com esses filtros nesta lista parcial. Experimente Limpar filtros ou consulte a categoria oficial da Léo.</p>';
   if(more)more.hidden=visible.length<=shown;
  }
  function apply(item){
@@ -157,23 +224,25 @@
     '<label>Marca<select id="uaLeoBrand"></select></label>'+
     '<label>Medida / Espessura (mm)<select id="uaLeoSize"></select></label>'+
     '<label>Cor / Padrão<select id="uaLeoColor"></select></label></div>'+
-    '<p class="ua-leo-count" id="uaLeoCount" role="status"></p>'+
+    '<div class="ua-leo-filter-tools"><p class="ua-leo-count" id="uaLeoCount" role="status"></p><button type="button" id="uaLeoClear" class="btn small">Limpar filtros</button></div>'+
+    '<p class="ua-leo-filter-notice" id="uaLeoFilterNotice" role="status" hidden></p>'+
     '<div id="uaLeoResults" class="ua-leo-results"></div>'+
     '<div class="ua-leo-paging"><button type="button" id="uaLeoMore" class="btn" hidden>Mostrar mais referências</button></div>'+
     (editingProduct?'<label class="ua-leo-opt"><input id="uaLeoFillCost" type="checkbox"> Preencher custo com preço histórico quando disponível (confira antes de salvar)</label>':'')+
     '<p class="ua-leo-foot"><a class="btn" id="uaLeoCategoryLink" target="_blank" rel="noopener noreferrer" href="https://checkout.leomadeiras.com.br/mdf">Abrir categoria oficial</a> Nosso catálogo é parcial. A seleção não cadastra, compra, reserva nem movimenta estoque automaticamente.</p>';
    document.body.append(el);dialog=el;
    el.querySelector('#uaLeoClose').addEventListener('click',close);
-   el.querySelector('#uaLeoCategory').addEventListener('change',rebuildFilters);
-   for(const sel of ['#uaLeoBrand','#uaLeoSize','#uaLeoColor'])el.querySelector(sel).addEventListener('change',()=>{shown=PAGE_SIZE;renderList()});
-   el.querySelector('#uaLeoQuery').addEventListener('input',()=>{shown=PAGE_SIZE;renderList()});
+   el.querySelector('#uaLeoCategory').addEventListener('change',()=>rebuildFilters('category'));
+   for(const key of ['Brand','Size','Color'])el.querySelector('#uaLeo'+key).addEventListener('change',()=>rebuildFilters(key.toLowerCase()));
+   el.querySelector('#uaLeoQuery').addEventListener('input',()=>{filterNotice='';shown=PAGE_SIZE;renderList()});
+   el.querySelector('#uaLeoClear').addEventListener('click',clearFilters);
    el.querySelector('#uaLeoMore').addEventListener('click',()=>{shown+=PAGE_SIZE;renderList()});
    el.addEventListener('click',event=>{
     const pick=event.target.closest('[data-ua-leo-use]');
     if(pick){const item=visible[Number(pick.dataset.uaLeoUse)];if(item)apply(item)}
    });
    el.addEventListener('close',()=>{if(dialog===el)close()},{once:true});
-   el.showModal();rebuildFilters();el.querySelector('#uaLeoQuery').focus();
+   el.showModal();filterNotice='';rebuildFilters();el.querySelector('#uaLeoQuery').focus();
    return true;
   }catch(error){
    alert('O catálogo de referências não pôde ser carregado: '+(error.message||error));

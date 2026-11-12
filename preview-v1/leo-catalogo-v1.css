@@ -34,3 +34,10 @@ dialog.ua-leo-dialog{width:min(900px,96vw);max-height:90dvh;overflow:auto;paddin
 @media(max-width:720px){dialog.ua-leo-dialog{width:calc(100vw - 14px);padding:13px;max-height:94dvh}.ua-leo-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.ua-leo-item{grid-template-columns:1fr auto}.ua-leo-item-actions{grid-column:1/-1;justify-content:flex-start}.ua-leo-price b{font-size:13px}.ua-leo-header h2{font-size:20px}}
 @media(max-width:480px){.ua-leo-filters{grid-template-columns:1fr}}
 @media(max-width:420px){.ua-leo-item{grid-template-columns:1fr}.ua-leo-price{text-align:left}.ua-leo-item-actions{grid-column:1}}
+
+/* Filtros dependentes: aviso de combinação ajustada e ação rápida de limpeza. */
+.ua-leo-filter-tools{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:7px 0 10px}
+.ua-leo-filter-tools .ua-leo-count{margin:0;flex:1}
+.ua-leo-filter-tools .btn{font-size:12px;color:#193d30;border-color:#c99763}
+.ua-leo-filter-notice{font-size:12px;color:#705116;background:#fff8e9;border:1px solid #ebd2a2;border-radius:9px;padding:10px 12px;line-height:1.55;margin:7px 0 12px}
+.ua-leo-filter-notice[hidden]{display:none}
