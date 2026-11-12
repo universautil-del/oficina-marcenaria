@@ -35,6 +35,7 @@ async function run(){
   assert.equal(sheet.getCell('H2').value,basis==='vencimento'?1500:null);
   assert.equal(sheet.getCell('C3').value,"'=SUM(1,1)",'Protege texto contra fórmula');
   assert.equal(parsed.getWorksheet('Evolução mensal').getCell('D2').value,basis==='vencimento'?1250:-250);
+  console.log('DEBUG RESUMO:', parsed.getWorksheet('Resumo').getRows(1,8).map(r=>[r.number,r.values]));
   assert.equal(parsed.getWorksheet('Resumo').getCell('B2').value,'01/11/2026');
   assert.equal(sheet.getColumn(6).numFmt||sheet.getCell('F2').numFmt,'"R$" #,##0.00;[Red]("R$" #,##0.00)');
  }
