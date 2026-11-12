@@ -1,0 +1,123 @@
+/* UNIVERSA ART — edição organizada e responsiva dos projetos de móveis. */
+dialog.ua-project-dialog{
+ width:min(900px,96vw);
+ max-height:90dvh;
+ padding:0;
+ overflow:hidden;
+ border-radius:16px;
+}
+dialog.ua-project-dialog > form{
+ display:flex;
+ flex-direction:column;
+ max-height:90dvh;
+ min-height:0;
+ margin:0;
+}
+dialog.ua-project-dialog h2{
+ flex:none;
+ margin:0;
+ padding:20px 26px 16px;
+ background:#fff;
+ border-bottom:1px solid #e2e8e2;
+ font-size:23px;
+}
+dialog.ua-project-dialog .ua-project-form{
+ min-height:0;
+ overflow-y:auto;
+ overscroll-behavior:contain;
+ padding:20px 26px 24px;
+ background:#fafcf9;
+}
+.ua-project-help{
+ margin:0 0 16px;
+ color:#526a5b;
+ font-size:13px;
+ line-height:1.55;
+}
+.ua-project-section{
+ background:#fff;
+ border:1px solid #dce7dc;
+ border-radius:12px;
+ padding:17px 19px 19px;
+ margin:0 0 14px;
+ min-width:0;
+}
+.ua-project-section h3{
+ margin:0 0 14px;
+ font-size:16px;
+ color:#244b36;
+}
+.ua-project-section .form-grid{
+ gap:14px 16px;
+}
+.ua-project-section .form-grid > label,
+.ua-project-client,
+.ua-project-client label{min-width:0}
+.ua-project-client{
+ display:flex;
+ align-items:flex-end;
+ gap:8px;
+}
+.ua-project-client label{flex:1}
+.ua-project-client button{
+ flex:none;
+ margin-bottom:0;
+ padding:11px 12px;
+ white-space:nowrap;
+}
+.ua-project-fields label{font-weight:650}
+.ua-project-fields input,
+.ua-project-fields select,
+.ua-project-fields textarea{font-weight:400;min-width:0}
+.ua-project-measures{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ua-project-materials{margin-top:15px}
+.ua-project-optional{padding-top:0;padding-bottom:0}
+.ua-project-optional summary{
+ cursor:pointer;
+ font-weight:750;
+ font-size:15px;
+ color:#244b36;
+ padding:16px 0;
+}
+.ua-project-optional[open]{padding-bottom:18px}
+.ua-project-optional[open] summary{margin-bottom:8px;border-bottom:1px solid #edf1eb}
+.ua-project-optional summary::marker{color:#37835d}
+.ua-project-image-note{
+ grid-column:1/-1;
+ margin:0;
+ font-size:12px;
+ color:#526a5b;
+}
+dialog.ua-project-dialog .dialog-actions{
+ flex:none;
+ margin:0;
+ padding:15px 26px;
+ border-top:1px solid #e2e8e2;
+ background:#fff;
+ box-shadow:0 -6px 15px #132c160b;
+}
+dialog.ua-project-dialog .dialog-actions .btn{
+ min-width:112px;
+ font-weight:650;
+}
+dialog.ua-project-dialog .dialog-actions .btn.primary{
+ background:#224c37;
+ border-color:#224c37;
+}
+@media(max-width:700px){
+ dialog.ua-project-dialog{width:calc(100vw - 14px);max-height:95dvh}
+ dialog.ua-project-dialog > form{max-height:95dvh}
+ dialog.ua-project-dialog h2{font-size:19px;padding:15px 16px}
+ dialog.ua-project-dialog .ua-project-form{padding:14px 13px 20px}
+ .ua-project-section{padding:14px 12px;margin-bottom:10px}
+ .ua-project-section .form-grid,
+ .ua-project-measures{grid-template-columns:1fr}
+ .ua-project-client{flex-direction:column;align-items:stretch}
+ .ua-project-client label{width:100%}
+ .ua-project-client button{align-self:flex-start}
+ dialog.ua-project-dialog .dialog-actions{
+  padding:12px 14px;
+  gap:8px;
+ }
+ dialog.ua-project-dialog .dialog-actions .btn{flex:1;min-width:0}
+}
