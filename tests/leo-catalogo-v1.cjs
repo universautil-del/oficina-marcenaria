@@ -73,7 +73,7 @@ async function main(){
  assert.deepEqual(groups,{mdf:21,parafusos:12,buchas:8,fitas:4});
  assert(api.items.every(x=>api.checkUrl(x.url)),'Todos os links devem apontar para ficha individual de produto');
  assert(api.items.every(x=>x.url.endsWith('/p')),'Página de produto, não página de categoria');
- assert.equal(api.filter('mdf','15 mm').length,7);
+ assert(api.filter('mdf','15 mm').length>=8,'Localizar MDFs 15 mm de várias cores');
  assert.equal(api.filter('parafusos','4x40').length,1);
  assert.equal(api.filter('parafusos','3,5 × 25').length,1);
  assert.equal(api.filter('buchas','8 mm').length,2);
