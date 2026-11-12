@@ -296,7 +296,6 @@
    .map(([k,v])=>'<div><span>'+safe(k)+'</span><strong>'+safe(v)+'</strong></div>').join('')+'</div>'+
    '<p class="ua-skp-footnote">A contagem de chapas é uma <strong>aproximação por área e aproveitamento informado</strong>, não um plano de corte otimizado. Não considera automaticamente sentido do veio, espessura do corte da serra, fita, usinagem, falhas e sobra. Informe fita de borda e ferragens juntos no campo Fitas/Ferragens e acessórios. O custo utiliza os preços fornecidos. A margem refere-se ao preço de venda, não a impostos.</p>'+
    (r.bad.length?'<div class="ua-skp-warnings">'+r.bad.map(x=>'<p>⚠ '+safe(x)+'</p>').join('')+'</div>':'')+
-   (state.map.edge<0?'<div class="ua-skp-warnings">⚠ O CSV não possui coluna de metros de fita. O custo da fita está em zero até informar a metragem em uma exportação revisada.</div>':'')+
    (!r.matcost?'<div class="ua-skp-warnings">⚠ Nenhum preço de chapa informado. O valor sugerido não deve ser usado como orçamento final.</div>':'');
  }
  function view(){
