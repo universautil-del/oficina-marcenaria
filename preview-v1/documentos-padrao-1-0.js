@@ -34,9 +34,9 @@
  }
  function logoSrc(company){
   const saved=String(company.logo||'');
-  if(/^data:image\/(webp|png|jpeg);base64,[a-zA-Z0-9+/=]+$/.test(saved))return saved;
+  if(company.logoPersonalizado===true&&/^data:image\/(webp|png|jpeg);base64,[a-zA-Z0-9+/=]+$/.test(saved))return saved;
   // Usa sempre o arquivo institucional publicado na OFICINA como alternativa.
-  return new URL('assets/universa-art-logo.webp',location.href).href;
+  return new URL('assets/universa-art-logo-novo.webp',location.href).href;
  }
  function htmlForSale(order,type){
   const isQuote=/orçamento/i.test(String(type));
@@ -45,6 +45,7 @@
   const name=String(company.nome||'Universa Art');
   const control=String(order.controlCode||('#'+order.number));
   const logo=logoSrc(company);
+  const signature=isOrder?(window.universaArtAssinatura?.image?.('ua-doc-sig-img')||''):'';
   const env=String(order.ambientes||'Não informado');
   const price=moneySafe(orderTotal(order));
   const items=Array.isArray(order.items)?order.items:[];
@@ -127,7 +128,7 @@
     '<section class="ua-doc-extra ua-doc-payment"><h2>'+(isQuote?'PROPOSTAS DE PAGAMENTO':'CONDIÇÕES DE PAGAMENTO')+
      '</h2><ol>'+terms+'</ol></section>'+
     '<section class="ua-doc-sign"><p class="ua-doc-city-date">'+dateFooter+'</p>'+
-     '<div class="ua-doc-signature"><div class="ua-doc-sign-line"></div><strong>'+text(name)+'</strong>'+
+     '<div class="ua-doc-signature">'+signature+'<div class="ua-doc-sign-line"></div><strong>'+text(name)+'</strong>'+
      (companyDoc?'<div>CPF / CNPJ: '+text(companyDoc)+'</div>':'')+'</div></section>'+
    '</main></body></html>';
  }
@@ -165,6 +166,7 @@
    '.ua-doc-signature{width:60%;max-width:102mm;margin:24mm auto 0;text-align:center;font-size:9.6pt}'+
    '.ua-doc-sign-line{border-top:1px solid #777;margin-bottom:5px}'+
    '.ua-doc-signature strong{display:block}.ua-doc-signature div:last-child{font-size:8.8pt}'+
+   '.ua-doc-sig-img{display:block;max-width:70mm;max-height:19mm;object-fit:contain;margin:0 auto -2mm;}'+
    '@media print{html{background:#fff}body{margin:0}.ua-doc-controls{display:none!important}'+
      '.ua-doc-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
      '.ua-doc-items,.ua-doc-client-grid,.ua-doc-header{break-inside:avoid}}'+
