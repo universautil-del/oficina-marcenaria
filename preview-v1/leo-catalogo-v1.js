@@ -12,7 +12,7 @@
   buchas:{label:'Buchas',url:'https://checkout.leomadeiras.com.br/ferragens/ferragens-tecnicas/buchas'},
   fitas:{label:'Fitas de borda',url:'https://checkout.leomadeiras.com.br/fitas-e-tapa-furos'}
  };
- let pending=null,dialog=null,target=null,visible=[],shown=PAGE_SIZE,opening=false;
+ let pending=null,dialog=null,target=null,visible=[],shown=PAGE_SIZE,opening=false,quoteItem=null;
  const items=()=>Array.isArray(window.universaArtLeoDados)?window.universaArtLeoDados:[];
  const currency=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  const escape=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -45,11 +45,11 @@
   });
  }
  function priceNotice(){
-  return 'Referências verificadas no catálogo público em '+checkedOn+'. Preços, quando mostrados, são históricos e não uma cotação atual. O estoque da filial e os valores finais devem ser confirmados na Léo Madeiras.';
+  return 'Este catálogo mostra referências independentemente do estoque da sua marcenaria e da disponibilidade na loja. Preços consultados em '+checkedOn+' são históricos, não cotação atual. Confirme valor, frete e disponibilidade com a Léo Madeiras antes de comprar.';
  }
  function close(){
   if(!dialog)return;
-  const current=dialog;dialog=null;target=null;visible=[];shown=PAGE_SIZE;
+  const current=dialog;dialog=null;target=null;visible=[];shown=PAGE_SIZE;quoteItem=null;
   if(current.open)current.close();
   current.remove();
  }
@@ -141,6 +141,74 @@
   filterNotice='';
   rebuildFilters('category');
  }
+ function simulate(item){
+  if(!dialog)return;
+  quoteItem=item;
+  const panel=dialog.querySelector('#uaLeoSimulator');
+  const title=dialog.querySelector('#uaLeoQuoteName');
+  const quantity=dialog.querySelector('#uaLeoQuoteQuantity');
+  const price=dialog.querySelector('#uaLeoQuotePrice');
+  if(!panel||!title||!quantity||!price)return;
+  panel.hidden=false;
+  title.textContent=item.name+' · por '+item.unit;
+  quantity.value='1';
+  price.value=Number.isFinite(item.price)?item.price.toFixed(2):'';
+  const mode=dialog.querySelector('#uaLeoQuoteMode');
+  if(mode)mode.textContent=Number.isFinite(item.price)?
+   'Preço histórico do catálogo; pode ter mudado. Não representa oferta atual.':
+   'Sem preço registrado: digite um valor informado pela loja apenas para esta simulação.';
+  updateSimulation();
+  panel.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+ }
+ function estimate(item,quantity,unitPrice){
+  const qty=Number(quantity),price=Number(unitPrice);
+  if(!item||!Number.isInteger(qty)||qty<1||qty>9999||
+   !Number.isFinite(price)||price<=0||price>1000000)return null;
+  // Inteiros em centavos evitam imprecisões monetárias repetidas.
+  return Math.round(price*100)*qty/100;
+ }
+ function updateSimulation(){
+  if(!dialog||!quoteItem)return;
+  const quantity=dialog.querySelector('#uaLeoQuoteQuantity')?.value||'';
+  const price=dialog.querySelector('#uaLeoQuotePrice')?.value||'';
+  const total=estimate(quoteItem,quantity,price);
+  const output=dialog.querySelector('#uaLeoQuoteTotal');
+  const hint=dialog.querySelector('#uaLeoQuoteHint');
+  if(output)output.textContent=total===null?'Informe quantidade e preço válidos.':currency(total);
+  if(hint)hint.textContent=total===null?'Nenhum valor calculado.':
+   'Simulação de compra, não é preço garantido. Frete, descontos, impostos e disponibilidade não incluídos.';
+  return total;
+ }
+ function simulationText(){
+  if(!quoteItem||!dialog)return '';
+  const quantity=dialog.querySelector('#uaLeoQuoteQuantity')?.value||'';
+  const price=dialog.querySelector('#uaLeoQuotePrice')?.value||'';
+  const total=estimate(quoteItem,quantity,price);
+  if(total===null)return '';
+  const source=Number.isFinite(quoteItem.price)&&Number(price)===quoteItem.price?'preço histórico de referência':'preço informado manualmente';
+  return 'Simulação de compra de material — Léo Madeiras\nProduto: '+quoteItem.name+
+   '\nQuantidade: '+quantity+' '+quoteItem.unit+'(s)'+
+   '\nPreço por '+quoteItem.unit+': '+currency(Number(price))+
+   '\nTotal estimado: '+currency(total)+
+   '\nBase: '+source+'. Não confirma estoque, preço atual, frete nem disponibilidade.';
+ }
+ async function copySimulation(){
+  const message=simulationText();
+  if(!message){alert('Informe um preço e uma quantidade válidos para simular.');return false}
+  if(!navigator?.clipboard?.writeText){
+   alert('A cópia automática não está disponível neste navegador. Consulte os valores na tela.');
+   return false;
+  }
+  try{
+   await navigator.clipboard.writeText(message);
+   const status=dialog?.querySelector('#uaLeoQuoteCopyStatus');
+   if(status)status.textContent='Estimativa copiada para compartilhar com o cliente.';
+   return true;
+  }catch(error){
+   alert('O navegador não permitiu copiar. Consulte os valores na tela.');
+   return false;
+  }
+ }
  function renderList(){
   if(!dialog)return;
   const category=dialog.querySelector('#uaLeoCategory')?.value||'';
@@ -157,18 +225,19 @@
   const note=dialog.querySelector('#uaLeoFilterNotice');
   const more=dialog.querySelector('#uaLeoMore');
   if(note){note.textContent=filterNotice;note.hidden=!filterNotice;}
-  if(count)count.textContent=visible.length+' referência(s) encontrada(s), de '+items().length+' cadastradas nesta consulta.';
+  if(count)count.textContent=visible.length+' referência(s) para consultar, mesmo sem estoque próprio ou disponibilidade confirmada · '+items().length+' na base.';
   if(link)link.href=categories[category]?.url||'https://checkout.leomadeiras.com.br/mdf';
   if(table)table.innerHTML=visible.length?visible.slice(0,shown).map((item,index)=>{
    const href=checkUrl(item.url)?item.url:categories[item.category].url;
    const exact=checkUrl(item.url);
    const amount=Number.isFinite(item.price)?currency(item.price):'Preço não cadastrado';
-   const note=Number.isFinite(item.price)?'Referência antiga; confirme na loja':'Informe o custo manualmente, se necessário';
+   const note=Number.isFinite(item.price)?'Preço histórico, não oferta atual':'Sem preço; simule com valor informado';
    return '<div class="ua-leo-item">'+
      '<div><strong>'+escape(item.name)+'</strong>'+
      '<small>'+escape(item.brand||'')+' · '+escape(item.size||'')+' · '+escape(item.unit)+'</small></div>'+
      '<div class="ua-leo-price"><b>'+escape(amount)+'</b><small>'+escape(note)+'</small></div>'+
      '<div class="ua-leo-item-actions"><button type="button" class="btn small" data-ua-leo-use="'+index+'">Selecionar</button>'+
+     '<button type="button" class="btn small ua-leo-simulate-trigger" data-ua-leo-simulate="'+index+'">Simular compra</button>'+
      '<a href="'+escape(href)+'" target="_blank" rel="noopener noreferrer" class="btn small">'+(exact?'Ver produto na Léo':'Pesquisar na Léo')+'</a></div>'+
     '</div>';
   }).join(''):'<p class="ua-leo-empty">Nenhuma referência com esses filtros nesta lista parcial. Experimente Limpar filtros ou consulte a categoria oficial da Léo.</p>';
@@ -214,7 +283,7 @@
    el.setAttribute('aria-label','Consultar materiais da Léo Madeiras');
    const editingProduct=input.name==='nome';
    el.innerHTML='<div class="ua-leo-header"><div><h2>Materiais da Léo Madeiras</h2>'+
-    '<p>Referências de MDF, parafusos, buchas e fitas. Sem fotos, nem consulta de estoque em tempo real.</p></div>'+
+    '<p>Referências de MDF, parafusos, buchas e fitas, inclusive materiais fora do seu estoque.</p></div>'+
     '<button class="btn small" type="button" id="uaLeoClose">Fechar</button></div>'+
     '<p class="ua-leo-warning" role="status">'+escape(priceNotice())+'</p>'+
     '<div class="ua-leo-filters">'+
@@ -228,6 +297,17 @@
     '<p class="ua-leo-filter-notice" id="uaLeoFilterNotice" role="status" hidden></p>'+
     '<div id="uaLeoResults" class="ua-leo-results"></div>'+
     '<div class="ua-leo-paging"><button type="button" id="uaLeoMore" class="btn" hidden>Mostrar mais referências</button></div>'+
+    '<section class="ua-leo-simulator" id="uaLeoSimulator" hidden>'+
+    '<h3>Simular custo para o cliente</h3><p class="ua-leo-sim-product" id="uaLeoQuoteName"></p>'+
+    '<p class="ua-leo-sim-mode" id="uaLeoQuoteMode"></p>'+
+    '<div class="ua-leo-sim-grid">'+
+    '<label>Quantidade (embalagens / chapas)<input id="uaLeoQuoteQuantity" type="number" min="1" max="9999" step="1" value="1"></label>'+
+    '<label>Preço por embalagem / chapa (R$)<input id="uaLeoQuotePrice" type="number" min="0.01" max="1000000" step="0.01" placeholder="Informar preço"></label></div>'+
+    '<p class="ua-leo-sim-total">Total estimado: <strong id="uaLeoQuoteTotal"></strong></p>'+
+    '<p class="ua-leo-sim-hint" id="uaLeoQuoteHint"></p>'+
+    '<button type="button" id="uaLeoQuoteCopy" class="btn small">Copiar estimativa</button>'+
+    '<span id="uaLeoQuoteCopyStatus" class="ua-leo-sim-copy" aria-live="polite"></span>'+
+    '</section>'+
     (editingProduct?'<label class="ua-leo-opt"><input id="uaLeoFillCost" type="checkbox"> Preencher custo com preço histórico quando disponível (confira antes de salvar)</label>':'')+
     '<p class="ua-leo-foot"><a class="btn" id="uaLeoCategoryLink" target="_blank" rel="noopener noreferrer" href="https://checkout.leomadeiras.com.br/mdf">Abrir categoria oficial</a> Nosso catálogo é parcial. A seleção não cadastra, compra, reserva nem movimenta estoque automaticamente.</p>';
    document.body.append(el);dialog=el;
@@ -237,9 +317,14 @@
    el.querySelector('#uaLeoQuery').addEventListener('input',()=>{filterNotice='';shown=PAGE_SIZE;renderList()});
    el.querySelector('#uaLeoClear').addEventListener('click',clearFilters);
    el.querySelector('#uaLeoMore').addEventListener('click',()=>{shown+=PAGE_SIZE;renderList()});
+   el.querySelector('#uaLeoQuoteQuantity').addEventListener('input',updateSimulation);
+   el.querySelector('#uaLeoQuotePrice').addEventListener('input',updateSimulation);
+   el.querySelector('#uaLeoQuoteCopy').addEventListener('click',copySimulation);
    el.addEventListener('click',event=>{
     const pick=event.target.closest('[data-ua-leo-use]');
     if(pick){const item=visible[Number(pick.dataset.uaLeoUse)];if(item)apply(item)}
+    const calc=event.target.closest('[data-ua-leo-simulate]');
+    if(calc){const item=visible[Number(calc.dataset.uaLeoSimulate)];if(item)simulate(item)}
    });
    el.addEventListener('close',()=>{if(dialog===el)close()},{once:true});
    el.showModal();filterNotice='';rebuildFilters();el.querySelector('#uaLeoQuery').focus();
@@ -256,6 +341,6 @@
   open(button);
  });
  window.universaArtLeoCatalogo={
-  get items(){return items()},categories,filter,priceNotice,open,close,ensureData,PAGE_SIZE,checkUrl
+  get items(){return items()},categories,filter,priceNotice,open,close,ensureData,PAGE_SIZE,checkUrl,estimate,simulationText
  };
 })();

@@ -8,9 +8,9 @@ const dataSrc=read('preview-v1/leo-dados-v2.js');
 const css=read('preview-v1/leo-catalogo-v1.css');
 new vm.Script(src,{filename:'leo-catalogo-v1.js'});
 new vm.Script(dataSrc,{filename:'leo-dados-v2.js'});
-assert(src.length<17000,'Controlador deve permanecer leve (< 17 KB)');
+assert(src.length<22000,'Controlador deve permanecer leve (< 22 KB)');
 assert(dataSrc.length<18000,'Dados consultivos devem permanecer compactos (< 18 KB)');
-assert(css.length<4500,'Estilos compactos');
+assert(css.length<6000,'Estilos compactos');
 assert(!src.includes('<img'),'Sem fotos');
 assert(!src.includes('fetch('),'Pesquisa local sem requisições enquanto digita');
 assert(!src.includes('save('),'Consultar não pode salvar no banco');
@@ -33,10 +33,11 @@ const document={
   if(tag==='script')return n;
   assert.equal(tag,'dialog');
   const controls={};
-  for(const id of ['uaLeoClose','uaLeoCategory','uaLeoQuery','uaLeoBrand','uaLeoSize','uaLeoColor','uaLeoResults','uaLeoCategoryLink','uaLeoCount','uaLeoFilterNotice','uaLeoClear','uaLeoMore','uaLeoFillCost'])controls[id]=node(id);
+  for(const id of ['uaLeoClose','uaLeoCategory','uaLeoQuery','uaLeoBrand','uaLeoSize','uaLeoColor','uaLeoResults','uaLeoCategoryLink','uaLeoCount','uaLeoFilterNotice','uaLeoClear','uaLeoMore','uaLeoFillCost','uaLeoSimulator','uaLeoQuoteName','uaLeoQuoteQuantity','uaLeoQuotePrice','uaLeoQuoteMode','uaLeoQuoteTotal','uaLeoQuoteHint','uaLeoQuoteCopy','uaLeoQuoteCopyStatus'])controls[id]=node(id);
   controls.uaLeoBrand.parentLabel={hidden:false};
   controls.uaLeoSize.parentLabel={hidden:false};
   controls.uaLeoColor.parentLabel={hidden:false};
+  controls.uaLeoSimulator.hidden=true;
   n.controls=controls;
   n.querySelector=sel=>controls[sel.slice(1)]||null;
   allDialogs.push(n);
@@ -51,8 +52,8 @@ const document={
  }}
 };
 const window={};
-const fakeAlert=[];
-ctx={window,document,alert:s=>fakeAlert.push(s),Event:class Event{constructor(type){this.type=type}},Intl,Array,Object,Math,Date,Number,String,Error,Promise,Set};
+const fakeAlert=[],copiedMessages=[];
+ctx={window,document,navigator:{clipboard:{writeText:async value=>{copiedMessages.push(value)}}},alert:s=>fakeAlert.push(s),Event:class Event{constructor(type){this.type=type}},Intl,Array,Object,Math,Date,Number,String,Error,Promise,Set};
 vm.runInNewContext(src,ctx,{timeout:1200});
 const api=window.universaArtLeoCatalogo;
 assert(api);
@@ -80,7 +81,8 @@ async function main(){
  assert.equal(api.filter('fitas','35 mm').length,1);
  assert.equal(api.filter('mdf','amendola', {brand:'Duratex',size:'15 mm'}).length,1,'Pesquisa ignora acento e filtra marca/espessura');
  assert.equal(api.filter('mdf','',{color:'Amêndola Rústica'}).length,4,'Filtro de padrões/cor');
- assert(api.priceNotice().includes('não uma cotação atual'));
+ assert(api.priceNotice().includes('independentemente do estoque'));
+ assert(api.priceNotice().includes('históricos'));
  assert(api.items.some(item=>item.price===null),'Produtos sem preço devem continuar na lista');
  let dlg=allDialogs.at(-1);
  assert(dlg.open,'Dialog deve abrir');
@@ -94,6 +96,27 @@ async function main(){
  dlg.controls.uaLeoMore.events.click();
  assert.equal((dlg.controls.uaLeoResults.innerHTML.match(/class="ua-leo-item"/g)||[]).length,45);
  assert.equal(dlg.controls.uaLeoMore.hidden,true);
+ // O catálogo não exige cadastro no estoque local nem confirma saldo na Léo.
+ assert(dlg.innerHTML.includes('inclusive materiais fora do seu estoque'));
+ assert(dlg.controls.uaLeoCount.textContent.includes('mesmo sem estoque próprio'));
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('Simular compra'));
+ assert.equal(api.estimate(api.items[0],3,410.90),1232.7);
+ assert.equal(api.estimate(api.items[0],0,410.90),null,'Quantidade inválida');
+ assert.equal(api.estimate(api.items[0],2,''),null,'Preço vazio não vira zero');
+ dlg.events.click({target:{closest:sel=>sel==='[data-ua-leo-simulate]'?{dataset:{uaLeoSimulate:'0'}}:null}});
+ assert.equal(dlg.controls.uaLeoSimulator.hidden,false);
+ assert.equal(dlg.controls.uaLeoQuotePrice.value,'410.90');
+ assert(dlg.controls.uaLeoQuoteTotal.textContent.includes('410,90'));
+ dlg.controls.uaLeoQuoteQuantity.value='3';
+ dlg.controls.uaLeoQuoteQuantity.events.input();
+ assert(dlg.controls.uaLeoQuoteTotal.textContent.includes('1.232,70'));
+ assert(api.simulationText().includes('Não confirma estoque'));
+ await dlg.controls.uaLeoQuoteCopy.events.click();
+ assert.equal(copiedMessages.length,1);
+ assert(copiedMessages[0].includes('3 chapa(s)'));
+ dlg.controls.uaLeoQuoteQuantity.value='-3';dlg.controls.uaLeoQuoteQuantity.events.input();
+ assert(dlg.controls.uaLeoQuoteTotal.textContent.includes('Informe quantidade'));
+ dlg.controls.uaLeoQuoteQuantity.value='1';dlg.controls.uaLeoQuoteQuantity.events.input();
  dlg.controls.uaLeoQuery.value='4x40';
  dlg.controls.uaLeoQuery.events.input();
  assert.equal((dlg.controls.uaLeoResults.innerHTML.match(/class="ua-leo-item"/g)||[]).length,1,'Busca deve filtrar resultados');
@@ -163,6 +186,16 @@ async function main(){
  dlg.controls.uaLeoCategory.value='mdf';dlg.controls.uaLeoCategory.events.change();
  dlg.controls.uaLeoSize.value='25 mm';dlg.controls.uaLeoSize.events.change();
  assert(dlg.controls.uaLeoResults.innerHTML.includes('Preço não cadastrado'),'Preço ausente é exibido corretamente');
+ dlg.events.click({target:{closest:sel=>sel==='[data-ua-leo-simulate]'?{dataset:{uaLeoSimulate:'0'}}:null}});
+ assert.equal(dlg.controls.uaLeoQuotePrice.value,'','Sem preço deve exigir valor digitado');
+ assert(dlg.controls.uaLeoQuoteTotal.textContent.includes('Informe'));
+ dlg.controls.uaLeoQuotePrice.value='550';
+ dlg.controls.uaLeoQuotePrice.events.input();
+ dlg.controls.uaLeoQuoteQuantity.value='2';
+ dlg.controls.uaLeoQuoteQuantity.events.input();
+ assert(dlg.controls.uaLeoQuoteTotal.textContent.includes('1.100,00'));
+ assert(api.simulationText().includes('preço informado manualmente'));
+ assert.equal(JSON.stringify(db),before,'Simulação manual não modifica o estoque ou financeiro');
  dlg.controls.uaLeoFillCost.checked=true;
  pick(0);
  assert.equal(fields['[name="custo"]'].value,'0','Sem preço não preencher custo zero/fictício');
@@ -183,8 +216,8 @@ async function main(){
 
  for(const page of ['preview-v1/index.html','preview-v1/seguro.html']){
   const html=read(page);
-  assert(html.includes('leo-catalogo-v1.js?v=filtros-dependentes-20261112'));
-  assert(html.includes('leo-catalogo-v1.css?v=combos-validos-20261112'));
+  assert(html.includes('leo-catalogo-v1.js?v=catalogo-sem-estoque-simulador-20261112'));
+  assert(html.includes('leo-catalogo-v1.css?v=simulador-preco-cliente-20261112'));
   assert(!html.includes('src="leo-dados-v2.js"'),'Não carregar dados antes de abrir o catálogo');
  }
  assert(read('preview-v1/features-v05.js').includes('data-ua-leo-open'));
