@@ -23,56 +23,199 @@ function supplierModal(sid=''){const old=getSupplier(sid)||{};openModal(sid?'Edi
  const s={...old,...v,id:old.id||id(),nome:v.nome.trim()};if(!s.nome)throw Error('Informe o nome do fornecedor.');if(sid){db.suppliers=db.suppliers.map(x=>x.id===sid?s:x);db.purchases.forEach(p=>{if(p.supplierId===sid)p.supplierNome=s.nome})}else db.suppliers.push(s);return save();});}
 function deleteSupplier(sid){if(db.purchases.some(p=>p.supplierId===sid))return alert('Fornecedor vinculado a compras. Exclusão bloqueada.');if(confirm('Excluir este fornecedor?')){db.suppliers=db.suppliers.filter(s=>s.id!==sid);save();render()}}
 function purchasesView(){const q=search.compras.toLowerCase();const list=(db.purchases||[]).slice().reverse().filter(p=>[p.number,p.supplierNome,p.status].some(v=>String(v||'').toLowerCase().includes(q)));const open=db.purchases.filter(p=>p.status==='aberta'),rec=db.purchases.filter(p=>p.status==='recebida');
- content.innerHTML=`${intro('Entrada de Materiais','Registre os materiais recebidos e os que ainda aguardam conferência. O estoque só é atualizado após confirmar a entrada.',`${db.purchases.length} registro(s)`)}<div class="cards cards-three"><div class="card"><div class="label">A receber em estoque</div><div class="value">${open.length}</div><div class="note">Entradas aguardando conferência</div></div><div class="card"><div class="label">Entradas confirmadas</div><div class="value">${rec.length}</div><div class="note">Entradas concluídas</div></div><div class="card"><div class="label">Valor das entradas pendentes</div><div class="value">${money(open.reduce((s,p)=>s+purchaseTotal(p),0))}</div><div class="note">Valor contratado</div></div></div><section class="panel gap-top"><div class="toolbar">${inputSearch('compras')}<div class="actions">${button('+ Nova entrada de materiais','new-purchase','','primary')}</div></div>${table(['Entrada / Data','Fornecedor','Total','Entrega / Situação','Ações'],list.map(p=>td(`<strong>#${p.number}</strong><div class="muted small">${date(p.date)}</div>`,esc(p.supplierNome),money(purchaseTotal(p)),`${purchaseStatus(p)}${p.receivedAt?`<div class="muted small">${date(p.receivedAt)}</div>`:''}`,`<div class="row-actions">${p.status==='aberta'?button('Confirmar entrada','receive-purchase',p.id,'small accent'):''}${p.status==='aberta'?button('Cancelar','cancel-purchase',p.id,'small danger'):''}${button('Detalhes','view-purchase',p.id,'small')}</div>`)),'Nenhuma entrada de materiais registrada.')}</section><p class="footer-note">Ao salvar uma entrada de materiais, uma conta a pagar é registrada. O estoque só aumenta após clicar em “Confirmar entrada”.</p>`;
+ content.innerHTML=`${intro('Entrada de Materiais','Registre os materiais recebidos e os que ainda aguardam conferência. O estoque só é atualizado após confirmar a entrada.',`${db.purchases.length} registro(s)`)}<div class="cards cards-three"><div class="card"><div class="label">A receber em estoque</div><div class="value">${open.length}</div><div class="note">Entradas aguardando conferência</div></div><div class="card"><div class="label">Entradas confirmadas</div><div class="value">${rec.length}</div><div class="note">Entradas concluídas</div></div><div class="card"><div class="label">Valor das entradas pendentes</div><div class="value">${money(open.reduce((s,p)=>s+purchaseTotal(p),0))}</div><div class="note">Valor contratado</div></div></div><section class="panel gap-top"><div class="toolbar">${inputSearch('compras')}<div class="actions">${button('+ Nova entrada de materiais','new-purchase','','primary')}</div></div>${table(['Entrada / Data','Fornecedor','Total','Entrega / Situação','Ações'],list.map(p=>td(`<strong>#${p.number}</strong><div class="muted small">${date(p.date)}</div>`,esc(p.supplierNome),money(purchaseTotal(p)),`${purchaseStatus(p)}${p.receivedAt?`<div class="muted small">${date(p.receivedAt)}</div>`:''}`,`<div class="row-actions">${p.status==='aberta'?button('Confirmar entrada','receive-purchase',p.id,'small accent'):''}${p.status==='aberta'?button('Editar','edit-purchase',p.id,'small'):''}${p.status==='aberta'?button('Cancelar','cancel-purchase',p.id,'small danger'):''}${button('Detalhes','view-purchase',p.id,'small')}</div>`)),'Nenhuma entrada de materiais registrada.')}</section><p class="footer-note">Ao salvar uma entrada de materiais, uma conta a pagar é registrada. O estoque só aumenta após clicar em “Confirmar entrada”.</p>`;
 }
-function addPurchaseRow(dlg,item={}){const wrap=dlg.querySelector('#purchaseRows');const options=`<option value="">Selecione a matéria-prima</option>`+db.products.filter(p=>p.tipo==='materia').map(p=>`<option value="${esc(p.id)}">${esc(p.nome)} (${esc(p.unidade||'un')})</option>`).join('');const el=document.createElement('div');el.className='purchase-row';el.innerHTML=`<label>Matéria-prima<select data-pur-product required>${options}</select></label><label>Quantidade *<input type="number" min="0.001" step="0.001" data-pur-qty required value="${item.quantidade||1}"></label><label>Custo unitário (R$) *<input type="number" min="0.01" step="0.01" data-pur-cost required value="${item.custo||0}"></label><button type="button" class="btn danger" data-del-purchase>Remover</button>`;wrap.append(el);const sel=el.querySelector('select');if(item.productId)sel.value=item.productId;const refreshCost=()=>{const p=getProduct(sel.value);el.querySelector('[data-pur-cost]').value=Number(p?.custo||0);calcPurchase(dlg)};sel.addEventListener('change',refreshCost);el.querySelectorAll('input').forEach(a=>a.addEventListener('input',()=>calcPurchase(dlg)));el.querySelector('[data-del-purchase]').onclick=()=>{el.remove();calcPurchase(dlg)};if(!item.productId)refreshCost();}
+function addPurchaseRow(dlg,item={}){const wrap=dlg.querySelector('#purchaseRows');const options=`<option value="">Selecione a matéria-prima</option>`+db.products.filter(p=>p.tipo==='materia').map(p=>`<option value="${esc(p.id)}">${esc(p.nome)} (${esc(p.unidade||'un')})</option>`).join('');const el=document.createElement('div');el.className='purchase-row';el.innerHTML=`<label>Matéria-prima<select data-pur-product required>${options}</select></label><label>Quantidade *<input type="number" min="0.001" step="0.001" data-pur-qty required value="${item.quantidade||1}"></label><label>Custo unitário (R$) *<input type="number" min="0.01" step="0.01" data-pur-cost required value="${item.custo||0}"></label><button type="button" class="btn danger" data-del-purchase>Remover</button>`;wrap.append(el);const sel=el.querySelector('select');if(item.productId)sel.value=item.productId;
+ if(item.nfDescricao){
+  el.dataset.nfDescricao=String(item.nfDescricao).slice(0,180);
+  const label=document.createElement('p');label.className='muted small';
+  label.textContent='Item da nota: '+el.dataset.nfDescricao;
+  el.prepend(label);
+ }
+ const refreshCost=()=>{
+  const p=getProduct(sel.value);
+  const cost=el.querySelector('[data-pur-cost]');
+  if(!item.nfDescricao||!(Number(cost.value)>0))cost.value=Number(p?.custo||0);
+  calcPurchase(dlg)
+ };sel.addEventListener('change',refreshCost);el.querySelectorAll('input').forEach(a=>a.addEventListener('input',()=>calcPurchase(dlg)));el.querySelector('[data-del-purchase]').onclick=()=>{el.remove();calcPurchase(dlg)};if(!item.productId&&!item.nfDescricao&&!Number(item.custo))refreshCost();}
 function calcPurchase(dlg){const val=[...dlg.querySelectorAll('.purchase-row')].reduce((s,r)=>s+(Number(r.querySelector('[data-pur-qty]').value)||0)*(Number(r.querySelector('[data-pur-cost]').value)||0),0);const e=dlg.querySelector('#purchaseTotal');if(e)e.textContent=money(val)}
-function purchaseModal(prefillItems=[]){
+function purchaseModal(prefillItems=[],context={}){
  if(!Array.isArray(prefillItems))prefillItems=[];
+ context=context&&typeof context==='object'?context:{};
+ const editing=context.editId?(db.purchases||[]).find(p=>p.id===context.editId):null;
+ if(context.editId&&(!editing||editing.status!=='aberta'))
+  throw Error('Somente entradas abertas podem ser editadas antes do recebimento.');
+ const invoice=context.invoiceId?(db.invoices||[]).find(n=>n.id===context.invoiceId):
+  (editing?.invoiceId?(db.invoices||[]).find(n=>n.id===editing.invoiceId):null);
+ if(context.invoiceId&&(!invoice||invoice.tipo!=='entrada'))
+  throw Error('Selecione uma nota fiscal de entrada válida.');
+ if(context.invoiceId&&!editing&&invoice.purchaseId)
+  throw Error('Esta NF já está vinculada à entrada #'+
+   ((db.purchases||[]).find(p=>p.id===invoice.purchaseId)?.number||'?')+'.');
  if(!db.products.some(p=>p.tipo==='materia')){
   const before=new Set((db.products||[]).map(p=>String(p.id)));
   const materialDialog=productModal('','materia-entrada');
   materialDialog?.querySelector?.('h2')?.insertAdjacentHTML?.('afterend',
-   '<p class="form-note">Para continuar com a Entrada de Materiais, cadastre a primeira matéria-prima. Ao salvar, o sistema abrirá a entrada automaticamente; se cancelar, nada será lançado.</p>');
+   '<p class="form-note">Para continuar com a entrada, cadastre uma matéria-prima. O estoque só será atualizado quando confirmar o recebimento.</p>');
   materialDialog?.addEventListener('close',()=>{
    const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
-   if(added)setTimeout(()=>purchaseModal([...prefillItems,{productId:added.id,quantidade:1,custo:Math.max(0,Number(added.custo)||0)}]),0);
+   if(added)setTimeout(()=>purchaseModal([...prefillItems,{productId:added.id,quantidade:1,custo:Math.max(0,Number(added.custo)||0)}],context),0);
   },{once:true});
   return materialDialog;
  }
- const fields=`<div class="form-grid"><label>Fornecedor *<select name="supplierId" required><option value="">Selecione um fornecedor</option>${supplierOptions()}</select><button type="button" class="btn small" data-quick-supplier style="margin-top:8px">+ Novo fornecedor</button></label><label>Data do registro<input type="date" name="date" value="${iso()}" required></label><label>Vencimento do pagamento<input type="date" name="dueDate" value="${iso()}" required></label><label>Referência / Nota fiscal<input name="referencia" placeholder="Número da NF ou pedido"></label></div><h3 class="form-section">Materiais da entrada</h3><div id="purchaseRows"></div><p>${button('+ Adicionar material','add-purchase-row','','small')}<button type="button" class="btn small" data-quick-material style="margin-left:8px">+ Cadastrar matéria-prima</button></p><div class="purchase-total">Total da entrada: <strong id="purchaseTotal">${money(0)}</strong></div><p class="form-note">O sistema cria uma despesa pendente. A entrada física no estoque só acontece ao confirmar o recebimento.</p>`;
- openModal('Nova entrada de materiais',fields,(v,dlg)=>{const items=[...dlg.querySelectorAll('.purchase-row')].map(r=>({productId:r.querySelector('[data-pur-product]').value,quantidade:Number(r.querySelector('[data-pur-qty]').value),custo:round(r.querySelector('[data-pur-cost]').value)}));if(!items.length||items.some(i=>!getProduct(i.productId)||!(i.quantidade>0)||!(i.custo>0)))throw Error('Informe matérias-primas, quantidades e custos positivos.');if(new Set(items.map(i=>i.productId)).size!==items.length)throw Error('Adicione cada material apenas uma vez por compra.');const sup=getSupplier(v.supplierId);if(!sup)throw Error('Fornecedor não encontrado.');const purchaseNumber=Number(db.seq.purchase||1);const pur={id:id(),number:purchaseNumber,supplierId:sup.id,supplierNome:sup.nome,date:v.date,dueDate:v.dueDate,referencia:String(v.referencia||'').trim(),items,status:'aberta',receivedAt:'',accountId:''};if(!(purchaseTotal(pur)>0))throw Error('Valor total inválido.');const account={id:id(),kind:'pagar',purchaseId:pur.id,orderId:'',descricao:`Entrada de Materiais #${pur.number} · ${sup.nome}`,dueDate:pur.dueDate,valor:purchaseTotal(pur),payments:[]};pur.accountId=account.id;const previousPurchases=db.purchases,previousTransactions=db.transactions,previousSeq={...db.seq};db.purchases=[...db.purchases,pur];db.transactions=[...db.transactions,account];db.seq.purchase=purchaseNumber+1;if(save()===false){db.purchases=previousPurchases;db.transactions=previousTransactions;db.seq=previousSeq;throw Error('Não foi possível gravar a entrada. Nenhum lançamento foi confirmado.');}return true;},dlg=>{
+ const normalize=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
+ const invoiceItems=invoice&&!editing?(invoice.items||[]):[];
+ const fromInvoice=invoiceItems.slice(0,200).map(line=>{
+  const matches=db.products.filter(p=>p.tipo==='materia'&&normalize(p.nome)===normalize(line.nome));
+  return {productId:matches.length===1?matches[0].id:'',quantidade:Number(line.quantidade)||1,
+   custo:Number(line.custo)||0,nfDescricao:String(line.nome||'Item sem descrição')};
+ });
+ if(invoiceItems.length>200)throw Error('NF-e com mais de 200 itens. Divida e confira antes de registrar.');
+ const editingItems=editing?(editing.items||[]).map(row=>({...row})):[];
+ const proposed=editing?editingItems:fromInvoice.length?fromInvoice:prefillItems;
+ const supplierGuess=invoice&&!editing?(db.suppliers||[]).filter(p=>normalize(p.nome)===normalize(invoice.emitente)):[];
+ const supplierId=editing?.supplierId||(supplierGuess.length===1?supplierGuess[0].id:'');
+ const shownDate=editing?.date||invoice?.data||iso();
+ const dueDate=editing?.dueDate||invoice?.vencimento||invoice?.data||iso();
+ const reference=editing?.referencia||invoice?.numero||'';
+ const fields='<div class="form-grid">'+
+  '<label>Fornecedor *<select name="supplierId" required><option value="">Selecione um fornecedor</option>'+supplierOptions()+
+  '</select><button type="button" class="btn small" data-quick-supplier style="margin-top:8px">+ Novo fornecedor</button></label>'+
+  '<label>Data do registro<input type="date" name="date" value="'+esc(shownDate)+'" required></label>'+
+  '<label>Vencimento do pagamento<input type="date" name="dueDate" value="'+esc(dueDate)+'" required></label>'+
+  '<label>Referência / Nota fiscal<input name="referencia" maxlength="120" value="'+esc(reference)+'" placeholder="Número da NF ou pedido"></label></div>'+
+  (invoice?'<p class="form-note"><strong>Nota fiscal '+esc(invoice.numero||'')+'</strong> · '+money(invoice.valor)+
+   '. Confira todos os itens antes de salvar. A NF não adiciona estoque automaticamente. A despesa será registrada uma só vez.</p>':'')+
+  '<h3 class="form-section">Materiais da entrada</h3><div id="purchaseRows"></div><p>'+
+   button('+ Adicionar material','add-purchase-row','','small')+
+   '<button type="button" class="btn small" data-quick-material style="margin-left:8px">+ Cadastrar matéria-prima</button></p>'+
+  '<div class="purchase-total">Total da entrada: <strong id="purchaseTotal">'+money(0)+'</strong></div>'+
+  '<p class="form-note">Os itens, quantidades e custos são editáveis. A conta a pagar é criada/atualizada ao salvar; o estoque só aumenta após confirmar o recebimento.</p>';
+ const title=editing?'Editar entrada de materiais #'+editing.number:
+  invoice?'Conferir entrada da NF '+invoice.numero:'Nova entrada de materiais';
+ return openModal(title,fields,(v,dlg)=>{
+  const items=[...dlg.querySelectorAll('.purchase-row')].map(row=>({
+   productId:row.querySelector('[data-pur-product]')?.value||'',
+   quantidade:Number(row.querySelector('[data-pur-qty]')?.value),
+   custo:round(row.querySelector('[data-pur-cost]')?.value),
+   ...(row.dataset.nfDescricao?{nfDescricao:row.dataset.nfDescricao}:{})
+  }));
+  if(!items.length||items.some(i=>!getProduct(i.productId)||getProduct(i.productId)?.tipo!=='materia'||
+   !Number.isFinite(i.quantidade)||!(i.quantidade>0)||!Number.isFinite(i.custo)||!(i.custo>=0)))
+   throw Error('Vincule cada item da NF a uma matéria-prima e confira quantidades e custos não negativos.');
+  if(new Set(items.map(i=>i.productId)).size!==items.length)
+   throw Error('O mesmo material aparece mais de uma vez. Agrupe a quantidade antes de salvar a entrada.');
+  const sup=getSupplier(v.supplierId);
+  if(!sup)throw Error('Fornecedor não encontrado.');
+  const form={supplierId:sup.id,supplierNome:sup.nome,date:String(v.date),dueDate:String(v.dueDate),
+   referencia:String(v.referencia||'').trim(),items};
+  const total=purchaseTotal(form);
+  if(!(total>0))throw Error('Informe um valor total maior que zero.');
+  if(editing){
+   if(editing.status!=='aberta')throw Error('Esta entrada já foi confirmada e não pode ser alterada.');
+   const account=db.transactions.find(t=>t.id===editing.accountId||t.purchaseId===editing.id);
+   if(!account)throw Error('Conta a pagar da entrada não encontrada. Confira o Financeiro antes de editar.');
+   if(cashReceived(account)>total+.005)
+    throw Error('Valor inferior ao já pago. Desfaça/corrija os pagamentos antes de reduzir o total.');
+   const backup={...editing,items:editing.items.map(i=>({...i}))};
+   const backupAccount={...account};
+   Object.assign(editing,form);
+   account.descricao='Entrada de Materiais #'+editing.number+' · '+sup.nome;
+   account.dueDate=form.dueDate;account.valor=total;
+   if(save()===false){
+    Object.assign(editing,backup);Object.assign(account,backupAccount);
+    throw Error('Falha ao salvar a edição. Entrada e financeiro foram preservados.');
+   }
+   return true;
+  }
+  if(invoice?.purchaseId)throw Error('Esta NF foi vinculada a outra entrada. Atualize a tela.');
+  const number=Number(db.seq.purchase||1);
+  const pur={id:id(),number,...form,status:'aberta',receivedAt:'',accountId:'',
+   ...(invoice?{invoiceId:invoice.id}:{})};
+  const account={id:id(),kind:'pagar',purchaseId:pur.id,orderId:'',
+   descricao:'Entrada de Materiais #'+number+' · '+sup.nome,dueDate:pur.dueDate,
+   valor:total,payments:[]};
+  pur.accountId=account.id;
+  const previousPurchases=db.purchases,previousTransactions=db.transactions,previousSeq={...db.seq};
+  const priorInvoicePurchase=invoice?.purchaseId;
+  db.purchases=[...db.purchases,pur];
+  db.transactions=[...db.transactions,account];
+  db.seq.purchase=number+1;
+  if(invoice)invoice.purchaseId=pur.id;
+  if(save()===false){
+   db.purchases=previousPurchases;db.transactions=previousTransactions;db.seq=previousSeq;
+   if(invoice)invoice.purchaseId=priorInvoicePurchase;
+   throw Error('Não foi possível gravar a entrada. Nenhum lançamento foi confirmado.');
+  }
+  return true;
+ },dlg=>{
+  const select=dlg.querySelector('[name="supplierId"]');
+  if(select)select.value=supplierId;
   dlg.querySelector('[data-action="add-purchase-row"]').onclick=()=>addPurchaseRow(dlg);
   dlg.querySelector('[data-quick-material]').onclick=()=>{
-    const before=new Set((db.products||[]).map(p=>String(p.id)));
-    const materialDialog=productModal('','materia-entrada');
-    materialDialog?.addEventListener('close',()=>{
-      const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
-      if(!added||!dlg.isConnected)return;
-      dlg.querySelectorAll('[data-pur-product]').forEach(select=>{
-        if(![...select.options].some(option=>option.value===String(added.id)))
-          select.add(new Option(added.nome,added.id));
-      });
-      addPurchaseRow(dlg,{productId:added.id,quantidade:1,custo:Number(added.custo)||0});
-      calcPurchase(dlg);
-    },{once:true});
+   const before=new Set((db.products||[]).map(p=>String(p.id)));
+   const materialDialog=productModal('','materia-entrada');
+   materialDialog?.addEventListener('close',()=>{
+    const added=(db.products||[]).find(p=>p.tipo==='materia'&&!before.has(String(p.id)));
+    if(!added||!dlg.isConnected)return;
+    dlg.querySelectorAll('[data-pur-product]').forEach(select=>{
+     if(![...select.options].some(option=>option.value===String(added.id)))
+      select.add(new Option(added.nome,added.id));
+    });
+    addPurchaseRow(dlg,{productId:added.id,quantidade:1,custo:Number(added.custo)||0});
+    calcPurchase(dlg);
+   },{once:true});
   };
   dlg.querySelector('[data-quick-supplier]').onclick=()=>{
-    const existing=new Set((db.suppliers||[]).map(p=>String(p.id)));
-    const supplierDialog=supplierModal();
-    supplierDialog?.addEventListener('close',()=>{
-      const added=(db.suppliers||[]).find(p=>!existing.has(String(p.id)));
-      if(!added)return;
-      const select=dlg.querySelector('[name="supplierId"]');
-      if(!select)return;
-      if(![...select.options].some(opt=>opt.value===String(added.id)))select.add(new Option(added.nome,added.id));
-      select.value=added.id;
-    },{once:true});
+   const before=new Set((db.suppliers||[]).map(p=>String(p.id)));
+   const supplierDialog=supplierModal();
+   supplierDialog?.addEventListener('close',()=>{
+    const added=(db.suppliers||[]).find(p=>!before.has(String(p.id)));
+    if(!added)return;
+    const select=dlg.querySelector('[name="supplierId"]');
+    if(select){
+     if(![...select.options].some(opt=>opt.value===String(added.id)))select.add(new Option(added.nome,added.id));
+     select.value=added.id;
+    }
+   },{once:true});
   };
-  const validated=prefillItems.filter(row=>db.products.some(p=>p.id===row.productId&&p.tipo==='materia')&&Number(row.quantidade)>0&&Number.isFinite(Number(row.custo))&&Number(row.custo)>=0);
+  const validated=(proposed||[]).filter(row=>
+   (!row.productId||db.products.some(p=>p.id===row.productId&&p.tipo==='materia'))&&
+   Number(row.quantidade)>0&&Number.isFinite(Number(row.custo))&&Number(row.custo)>=0);
   if(validated.length)validated.forEach(row=>addPurchaseRow(dlg,row));
   else addPurchaseRow(dlg);
+  calcPurchase(dlg);
  });
+}
+function editPurchase(pid){return purchaseModal([],{editId:pid})}
+function prepareInvoicePurchase(invoiceId){return purchaseModal([],{invoiceId})}
+function linkInvoicePurchase(invoiceId){
+ const invoice=(db.invoices||[]).find(n=>n.id===invoiceId);
+ if(!invoice||invoice.tipo!=='entrada')throw Error('Nota fiscal de entrada não encontrada.');
+ if(invoice.purchaseId)throw Error('A nota já está vinculada a uma entrada.');
+ const available=(db.purchases||[]).filter(p=>p.status!=='cancelada'&&!p.invoiceId);
+ if(!available.length)return alert('Não há entradas disponíveis. Use Preparar entrada para cadastrar a partir da NF.');
+ const options=available.map(p=>'<option value="'+esc(p.id)+'">#'+p.number+' · '+esc(p.supplierNome)+
+  ' · '+money(purchaseTotal(p))+' · '+esc(p.status)+'</option>').join('');
+ return openModal('Vincular NF a uma entrada existente',
+  '<p class="form-note">Use esta opção quando a compra já foi lançada. Não cria nova despesa e não altera o estoque.</p>'+
+  '<label>Entrada existente<select name="purchaseId" required><option value="">Selecione uma entrada</option>'+options+'</select></label>'+
+  '<p class="form-note">Por segurança, os totais devem coincidir. Caso contrário, corrija a entrada antes de vinculá-la.</p>',
+  v=>{
+   const pur=db.purchases.find(p=>p.id===v.purchaseId&&!p.invoiceId&&p.status!=='cancelada');
+   if(!pur)throw Error('Entrada já vinculada, cancelada ou não encontrada.');
+   if(Math.abs(purchaseTotal(pur)-Number(invoice.valor))>.01)
+    throw Error('Total da NF '+money(invoice.valor)+' é diferente da entrada '+money(purchaseTotal(pur))+
+     '. Revise custos e quantidades antes de vincular.');
+   const before=pur.invoiceId,oldLink=invoice.purchaseId;
+   pur.invoiceId=invoice.id;invoice.purchaseId=pur.id;
+   if(save()===false){
+    if(before===undefined)delete pur.invoiceId;else pur.invoiceId=before;
+    if(oldLink===undefined)delete invoice.purchaseId;else invoice.purchaseId=oldLink;
+    throw Error('Não foi possível salvar vínculo; os registros foram preservados.');
+   }
+   return true;
+  });
 }
 function receivePurchase(pid){
  const p=db.purchases.find(x=>x.id===pid);
