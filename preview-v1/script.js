@@ -544,8 +544,54 @@ function financeView(){const q=search.financeiro.toLowerCase();const list=uaSort
  content.innerHTML=`${intro('Financeiro','Receitas, despesas, parcelas e pagamentos parciais.')}<div class="cards"><div class="card"><div class="label">A receber</div><div class="value">${money(due)}</div></div><div class="card"><div class="label">A pagar</div><div class="value">${money(owing)}</div></div><div class="card"><div class="label">Recebido</div><div class="value">${money(earned)}</div></div><div class="card"><div class="label">Saldo de caixa</div><div class="value">${money(earned-spent)}</div></div></div>
  <section class="panel gap-top"><div class="toolbar">${inputSearch('financeiro')}${uaListingSortControl('financeiro')}<div class="actions">${button('Exportar CSV','export-finance')}${button('+ Receita / Despesa','new-transaction','','primary')}</div></div>${table(['Lançamento','Vencimento','Valor','Saldo','Situação','Ações'],list.map(t=>{const paid=cashReceived(t);return td(`<strong>${esc(t.descricao)}</strong><div class="small muted">${esc(kindText[t.kind])}${t.orderId?' · Pedido #'+(getOrder(t.orderId)?.number||'—'):''}</div>${t.kind==='receber'&&financeClientName(t)?`<div class="small"><strong>Cliente:</strong> ${esc(financeClientName(t))}</div>`:''}${(t.paymentMethod||(!t.purchaseId&&t.orderId?getOrder(t.orderId)?.payment?.forma:''))?`<div class="small muted">Forma prevista: ${esc(t.paymentMethod||getOrder(t.orderId)?.payment?.forma||'')}</div>`:''}`,date(t.dueDate),money(t.valor),money(balance(t)),pill(balance(t)<0.005?'Pago':paid>0?'Parcial':'Pendente',balance(t)<0.005?'success':paid>0?'warn':''),`<div class="row-actions">${button('Editar','edit-transaction',t.id,'small')}${balance(t)>0?button('Registrar pagamento','pay-transaction',t.id,'small'):''}${t.kind==='receber'&&paid>0?button('Recibos','show-receipts',t.id,'small'):''}${paid>0?button('Desfazer pagamento','list-payments',t.id,'small danger'):''}${!t.orderId&&paid===0?button('Excluir','delete-transaction',t.id,'small danger'):''}</div>`)}))}</section>`;
 }
-function transactionModal(){openModal('Nova receita ou despesa',`<div class="form-grid"><label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label><label>Vencimento<input type="date" name="dueDate" value="${iso()}" required></label><label class="full">Descrição *<input name="descricao" required></label><label>Valor (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label><label class="full">Forma de pagamento prevista<input name="paymentMethod" maxlength="100" placeholder="Pix, boleto, cartão, dinheiro..."></label><label class="full">Observações<textarea name="observacoes" maxlength="900" rows="2"></textarea></label></div>`,v=>{if(!Number.isFinite(Number(v.valor))||Number(v.valor)<=0||!['receber','pagar'].includes(v.kind)||!String(v.descricao||'').trim())throw Error('Valor, tipo ou descrição inválidos.');const before=db.transactions;db.transactions=[...db.transactions,{id:id(),kind:v.kind,descricao:v.descricao.trim(),dueDate:v.dueDate,valor:round(v.valor),paymentMethod:String(v.paymentMethod||'').trim().slice(0,100),observacoes:String(v.observacoes||'').trim().slice(0,900),payments:[],orderId:''}];if(save()===false){db.transactions=before;throw Error('Não foi possível salvar o lançamento.');}return true})}
-
+function transactionModal(){
+ return openModal('Nova receita ou despesa',
+  '<div class="form-grid">'+
+  '<label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label>'+
+  '<label>Primeiro vencimento *<input type="date" name="dueDate" value="'+iso()+'" required></label>'+
+  '<label class="full">Descrição *<input name="descricao" maxlength="240" placeholder="Ex.: Aluguel da oficina" required></label>'+
+  '<label>Valor de cada parcela (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label>'+
+  '<label>Quantidade de parcelas *<input name="parcelas" type="number" min="1" max="60" step="1" value="1" required></label>'+
+  '<p class="form-note full ua-finance-installment-note">Para despesas recorrentes, informe o valor mensal e a quantidade de meses. Ex.: aluguel de R$ 1.500,00 por 12 meses criará 12 lançamentos de R$ 1.500,00, com vencimentos mensais. Com 1 parcela, será criado apenas um lançamento.</p>'+
+  '<label class="full">Forma de pagamento prevista<input name="paymentMethod" maxlength="100" placeholder="Pix, boleto, cartão, dinheiro..."></label>'+
+  '<label class="full">Observações<textarea name="observacoes" maxlength="900" rows="2"></textarea></label>'+
+  '</div>',v=>{
+   const amount=Number(v.valor);
+   const qty=v.parcelas===undefined?1:Number(v.parcelas);
+   const kind=String(v.kind||'');
+   const description=String(v.descricao||'').trim();
+   const startDate=String(v.dueDate||'').trim();
+   const paymentMethod=String(v.paymentMethod||'').trim();
+   const observacoes=String(v.observacoes||'').trim();
+   if(!Number.isFinite(amount)||amount<=0||round(amount)<=0||
+      !Number.isFinite(round(amount*qty))||!['receber','pagar'].includes(kind)||
+      !description||description.length>240)
+    throw Error('Informe um tipo, descrição e valor mensal válidos.');
+   if(!Number.isInteger(qty)||qty<1||qty>60)
+    throw Error('Informe uma quantidade de parcelas entre 1 e 60 meses.');
+   if(!financeValidDate(startDate))throw Error('Informe uma data válida para o primeiro vencimento.');
+   if(paymentMethod.length>100||observacoes.length>900)
+    throw Error('Resuma a forma de pagamento ou as observações.');
+   // Cada lançamento mensal é independente. Os já quitados não são replicados.
+   const recurrenceId=qty>1?id():'';
+   const entries=Array.from({length:qty},(_,i)=>({
+    id:id(),kind,
+    descricao:qty===1?description:description+' · Parcela '+(i+1)+'/'+qty,
+    dueDate:i===0?startDate:addMonths(startDate,i),
+    valor:round(amount),
+    paymentMethod,observacoes,payments:[],orderId:'',
+    ...(qty>1?{recurrenceId,numeroParcela:i+1,totalParcelas:qty,
+       periodicidade:'mensal',descricaoBase:description}: {})
+   }));
+   // Uma única gravação para evitar criar uma série incompleta.
+   const before=db.transactions;
+   db.transactions=[...before,...entries];
+   try{
+    if(save()===false)throw Error('Não foi possível salvar os lançamentos. Nenhuma parcela foi criada.');
+   }catch(error){db.transactions=before;throw error}
+   return true;
+  });
+}
 function financeValidDate(value){
  const dateText=String(value||'');
  if(!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(dateText))return false;
