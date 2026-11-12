@@ -16,9 +16,10 @@ const db={
 };
 const original=JSON.stringify(db),windowHandlers={},documentHandlers={};
 let headerButton,dialog,opened=0,actions=[],rendered=[],projectInput;
+const cloudStatus={id:'cloudStatus'};
 const header={
- querySelector:selector=>selector==='#uaOpenQuickSearch'?headerButton:null,
- insertBefore:node=>{headerButton=node}
+ querySelector:selector=>selector==='#uaOpenQuickSearch'?headerButton:selector==='#cloudStatus'?cloudStatus:null,
+ insertBefore:(node,before)=>{assert.equal(before,cloudStatus,'Buscar em tudo deve ficar imediatamente antes de Sincronizado');headerButton=node}
 };
 const mockNode=()=>{
  const listeners={};
@@ -115,5 +116,10 @@ const secure=read('preview-v1/seguro.html'),preview=read('preview-v1/index.html'
 for(const html of [secure,preview]){
  assert(html.includes('busca-geral-v1.js')&&html.includes('busca-geral-v1.css'));
 }
-assert(read('preview-v1/busca-geral-v1.css').includes('ua-quick-dialog'));
+const style=read('preview-v1/busca-geral-v1.css');
+assert(style.includes('ua-quick-dialog'));
+assert(style.includes('--ua-quick-forest:#193d30'),'Usar verde-floresta da identidade visual');
+assert(style.includes('--ua-quick-wood:#c99763'),'Usar dourado amadeirado da identidade visual');
+assert(style.includes('margin-left:auto')&&style.includes('header.top #cloudStatus'),'Busca posicionada no lado direito junto da nuvem');
+assert(style.includes('@media(max-width:760px)')&&style.includes('header.top .ua-header-logo{display:none}'),'Layout adaptado ao celular');
 console.log('OK busca geral: login exigido, pesquisa unificada, atalho, XSS escapado, navegação e dados preservados.');
