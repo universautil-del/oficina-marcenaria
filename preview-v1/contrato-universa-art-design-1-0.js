@@ -172,7 +172,7 @@
    notes?'<section class="ua-contract-notes">'+H('OBSERVAÇÕES DO PEDIDO')+para(safe(notes))+'</section>':'',
    para('Por estarem assim justos e contratados, firmam o presente instrumento em duas vias de igual teor, juntamente com duas testemunhas.'),
    '<div class="ua-contract-date">'+safe(signDate)+'</div>',
-   '<section class="ua-contract-sign"><div>'+signature+'<span class="ua-contract-line"></span>'+
+   '<section class="ua-contract-sign'+(signature?' ua-contract-sign-signed':'')+'"><div>'+signature+'<span class="ua-contract-line"></span>'+
      '<strong>'+safe(company.nome)+'</strong><span>CNPJ: '+safe(company.cnpj)+'</span><span>CONTRATADA</span></div>'+
      '<div><span class="ua-contract-line"></span><strong>'+safe(name)+'</strong><span>CPF/CNPJ: '+safe(clientDoc)+'</span><span>CONTRATANTE</span></div></section>',
    '<div class="ua-contract-witness"><div><span class="ua-contract-line"></span><span>Testemunha 1</span><span>Nome: _______________________________</span><span>CPF: ________________________________</span></div>'+
@@ -221,8 +221,10 @@
   '.ua-contract-sign>div,.ua-contract-witness>div{text-align:center;min-width:0;}',
   '.ua-contract-sign span,.ua-contract-witness span{display:block;font-size:8.5pt;overflow-wrap:anywhere;}',
   '.ua-contract-sign strong{display:block;font-size:9.5pt;margin-top:5px;}',
-  '.ua-contract-sig-img{display:block;width:auto;max-width:75mm;max-height:18mm;object-fit:contain;margin:0 auto -3mm;}',
-  '.ua-contract-line{display:block;border-top:1px solid #222;margin:5mm 0 5px;}',
+  '.ua-contract-sig-img{display:block;position:relative;z-index:2;width:auto;max-width:88mm;height:26mm;max-height:26mm;object-fit:contain;mix-blend-mode:multiply;margin:0 auto -11mm;}',
+  '.ua-contract-line{display:block;position:relative;z-index:1;border-top:1px solid #222;margin:5mm 0 5px;}'+
+  '.ua-contract-sign-signed>div:first-child .ua-contract-line{margin-top:0;}'+
+  '.ua-contract-sign-signed>div:nth-child(2) .ua-contract-line{margin-top:15mm;}',
   '.ua-contract-witness{margin-top:12mm;}',
   '.ua-contract-footer{margin-top:12mm;border-top:1px solid #d6e2d7;padding-top:5px;font-size:8pt;color:#56665d;}',
   '.ua-contract-pending{background:#fff0de;border:1px solid #dbb468;border-radius:7px;padding:9px 12px;margin-bottom:10mm;font-size:9pt;color:#764c19;}',
