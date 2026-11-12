@@ -232,8 +232,8 @@
    sheets+=count;matcost+=cost;area+=g.area;band+=g.edge;
    return {...g,sheetArea,count,cost,oversize:oversize.length,cfg};
   });
-  const edgeCost=band*state.edgePrice;
-  const cost=matcost+edgeCost+state.hardware+state.labor+state.install+state.delivery;
+  const edgeCost=0; // Fitas de borda entram no campo único Fitas/Ferragens e acessórios.
+  const cost=matcost+state.hardware+state.labor+state.install+state.delivery;
   const price=cost/(1-state.margin/100);
   return {result,sheets,area,band,matcost,edgeCost,cost,price,profit:price-cost,bad};
  }
@@ -262,7 +262,7 @@
    '<label class="ua-skp-general-label">Aproveitamento estimado da chapa (%) <input id="uaSkuYield" type="number" min="1" max="100" value="'+state.efficiency+'"></label>'+
    groupHtml+
    '<div class="ua-skp-settings ua-skp-extras">'+
-   [['edgePrice','Fita de borda (R$/m)'],['hardware','Ferragens e acessórios (R$)'],['labor','Mão de obra (R$)'],['install','Instalação (R$)'],['delivery','Entrega / frete (R$)'],['margin','Margem desejada sobre a venda (%)']].map(([field,label])=>'<label>'+label+'<input type="number" min="0" '+(field==='margin'?'max="95" ':'')+'step="0.01" data-ua-extra="'+field+'" value="'+state[field]+'"></label>').join('')+'</div>'+
+   [['hardware','Fitas/Ferragens e acessórios (R$)'],['labor','Mão de obra (R$)'],['install','Instalação (R$)'],['delivery','Entrega / frete (R$)'],['margin','Margem desejada sobre a venda (%)']].map(([field,label])=>'<label>'+label+'<input type="number" min="0" '+(field==='margin'?'max="95" ':'')+'step="0.01" data-ua-extra="'+field+'" value="'+state[field]+'"></label>').join('')+'</div>'+
    '<div class="actions gap-top"><button class="btn primary" type="button" data-ua-skp="recalculate">Atualizar orçamento</button><button class="btn" type="button" data-ua-skp="export">Baixar lista de peças CSV</button><button class="btn" type="button" data-ua-skp="brief">Gerar resumo para ChatGPT</button></div>'+
    '<div id="uaSkuTotal"></div></section>'+
    '<section class="ua-section gap-top"><h3>4. Peças extraídas</h3><div class="ua-table-wrap"><table class="ua-table"><thead><tr><th>Peça</th><th>Material</th><th>Dimensões (mm)</th><th>Qtde</th></tr></thead><tbody>'+partRows+'</tbody></table></div><p class="muted">'+(state.parts.length>80?'Exibindo as primeiras 80 peças; o cálculo considera todas.':'')+'</p></section>'+
@@ -282,7 +282,7 @@
   });
   document.querySelectorAll('[data-ua-extra]').forEach(i=>{
    const field=i.getAttribute('data-ua-extra');
-   if(!['edgePrice','hardware','labor','install','delivery','margin'].includes(field))throw Error('Campo desconhecido.');
+   if(!['hardware','labor','install','delivery','margin'].includes(field))throw Error('Campo desconhecido.');
    state[field]=positive(i.value,field,true);
   });
   if(state.margin>95)throw Error('Margem precisa estar entre 0 e 95%.');
@@ -292,9 +292,9 @@
   if(!root||!state.parts.length)return;
   const r=calculated();
   root.innerHTML='<div class="ua-skp-totals">'+
-   [['Peças',state.parts.reduce((s,p)=>s+p.qty,0)],['Área de peças',format(r.area,3)+' m²'],['Chapas estimadas',r.sheets],['Fita informada',format(r.band,2)+' m'],['Materiais (chapas)',cash(r.matcost)],['Fita de borda',cash(r.edgeCost)],['Custo total previsto',cash(r.cost)],['Preço preliminar (não final)',cash(r.price)]]
+   [['Peças',state.parts.reduce((s,p)=>s+p.qty,0)],['Área de peças',format(r.area,3)+' m²'],['Chapas estimadas',r.sheets],['Fita informada',format(r.band,2)+' m'],['Materiais (chapas)',cash(r.matcost)],['Custo total previsto',cash(r.cost)],['Preço preliminar (não final)',cash(r.price)]]
    .map(([k,v])=>'<div><span>'+safe(k)+'</span><strong>'+safe(v)+'</strong></div>').join('')+'</div>'+
-   '<p class="ua-skp-footnote">A contagem de chapas é uma <strong>aproximação por área e aproveitamento informado</strong>, não um plano de corte otimizado. Não considera automaticamente sentido do veio, espessura do corte da serra, fita, usinagem, falhas e sobra. O custo utiliza os preços fornecidos. A margem refere-se ao preço de venda, não a impostos.</p>'+
+   '<p class="ua-skp-footnote">A contagem de chapas é uma <strong>aproximação por área e aproveitamento informado</strong>, não um plano de corte otimizado. Não considera automaticamente sentido do veio, espessura do corte da serra, fita, usinagem, falhas e sobra. Informe fita de borda e ferragens juntos no campo Fitas/Ferragens e acessórios. O custo utiliza os preços fornecidos. A margem refere-se ao preço de venda, não a impostos.</p>'+
    (r.bad.length?'<div class="ua-skp-warnings">'+r.bad.map(x=>'<p>⚠ '+safe(x)+'</p>').join('')+'</div>':'')+
    (state.map.edge<0?'<div class="ua-skp-warnings">⚠ O CSV não possui coluna de metros de fita. O custo da fita está em zero até informar a metragem em uma exportação revisada.</div>':'')+
    (!r.matcost?'<div class="ua-skp-warnings">⚠ Nenhum preço de chapa informado. O valor sugerido não deve ser usado como orçamento final.</div>':'');
