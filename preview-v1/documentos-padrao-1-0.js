@@ -1,7 +1,7 @@
 'use strict';
 /* OFICINA 1.0 — layout de impressão padrão de orçamentos e pedidos.
  * Referência: orçamento-modelo PDF fornecido pela UNIVERSA ART em 11/11/2026.
- * Não utiliza assinatura manuscrita do modelo; deixa linha para assinar.
+ * Orçamentos não exibem assinatura; pedidos mantêm assinatura da empresa e linha para assinar.
  * Não modifica dados, condições nem valores do orçamento/pedido.
  */
 (function(){
@@ -128,8 +128,8 @@
     '<section class="ua-doc-extra ua-doc-payment"><h2>'+(isQuote?'PROPOSTAS DE PAGAMENTO':'CONDIÇÕES DE PAGAMENTO')+
      '</h2><ol>'+terms+'</ol></section>'+
     '<section class="ua-doc-sign"><p class="ua-doc-city-date">'+dateFooter+'</p>'+
-     '<div class="ua-doc-signature">'+signature+'<div class="ua-doc-sign-line"></div><strong>'+text(name)+'</strong>'+
-     (companyDoc?'<div>CPF / CNPJ: '+text(companyDoc)+'</div>':'')+'</div></section>'+
+     (isOrder?'<div class="ua-doc-signature">'+signature+'<div class="ua-doc-sign-line"></div><strong>'+text(name)+'</strong>'+
+     (companyDoc?'<div>CPF / CNPJ: '+text(companyDoc)+'</div>':'')+'</div>':'')+'</section>'+
    '</main></body></html>';
  }
  function printStyle(){
