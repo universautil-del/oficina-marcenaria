@@ -23,7 +23,7 @@ function supplierModal(sid=''){const old=getSupplier(sid)||{};openModal(sid?'Edi
  const s={...old,...v,id:old.id||id(),nome:v.nome.trim()};if(!s.nome)throw Error('Informe o nome do fornecedor.');if(sid){db.suppliers=db.suppliers.map(x=>x.id===sid?s:x);db.purchases.forEach(p=>{if(p.supplierId===sid)p.supplierNome=s.nome})}else db.suppliers.push(s);return save();});}
 function deleteSupplier(sid){if(db.purchases.some(p=>p.supplierId===sid))return alert('Fornecedor vinculado a compras. Exclusão bloqueada.');if(confirm('Excluir este fornecedor?')){db.suppliers=db.suppliers.filter(s=>s.id!==sid);save();render()}}
 function purchasesView(){const q=search.compras.toLowerCase();const list=(db.purchases||[]).slice().reverse().filter(p=>[p.number,p.supplierNome,p.status].some(v=>String(v||'').toLowerCase().includes(q)));const open=db.purchases.filter(p=>p.status==='aberta'),rec=db.purchases.filter(p=>p.status==='recebida');
- content.innerHTML=`${intro('Entrada de Materiais','Registre os materiais recebidos e os que ainda aguardam conferência. O estoque só é atualizado após confirmar a entrada.',`${db.purchases.length} registro(s)`)}<div class="cards cards-three"><div class="card"><div class="label">A receber em estoque</div><div class="value">${open.length}</div><div class="note">Entradas aguardando conferência</div></div><div class="card"><div class="label">Entradas confirmadas</div><div class="value">${rec.length}</div><div class="note">Entradas concluídas</div></div><div class="card"><div class="label">Valor das entradas pendentes</div><div class="value">${money(open.reduce((s,p)=>s+purchaseTotal(p),0))}</div><div class="note">Valor contratado</div></div></div><section class="panel gap-top"><div class="toolbar">${inputSearch('compras')}<div class="actions">${button('+ Nova entrada de materiais','new-purchase','','primary')}</div></div>${table(['Entrada / Data','Fornecedor','Total','Entrega / Situação','Ações'],list.map(p=>td(`<strong>#${p.number}</strong><div class="muted small">${date(p.date)}</div>`,esc(p.supplierNome),money(purchaseTotal(p)),`${purchaseStatus(p)}${p.receivedAt?`<div class="muted small">${date(p.receivedAt)}</div>`:''}`,`<div class="row-actions">${p.status==='aberta'?button('Confirmar entrada','receive-purchase',p.id,'small accent'):''}${p.status==='aberta'?button('Editar','edit-purchase',p.id,'small'):''}${p.status==='aberta'?button('Cancelar','cancel-purchase',p.id,'small danger'):''}${button('Detalhes','view-purchase',p.id,'small')}</div>`)),'Nenhuma entrada de materiais registrada.')}</section><p class="footer-note">Ao salvar uma entrada de materiais, uma conta a pagar é registrada. O estoque só aumenta após clicar em “Confirmar entrada”.</p>`;
+ content.innerHTML=`${intro('Entrada de Materiais','Registre os materiais recebidos e os que ainda aguardam conferência. O estoque só é atualizado após confirmar a entrada.',`${db.purchases.length} registro(s)`)}<div class="cards cards-three"><div class="card"><div class="label">A receber em estoque</div><div class="value">${open.length}</div><div class="note">Entradas aguardando conferência</div></div><div class="card"><div class="label">Entradas confirmadas</div><div class="value">${rec.length}</div><div class="note">Entradas concluídas</div></div><div class="card"><div class="label">Valor das entradas pendentes</div><div class="value">${money(open.reduce((s,p)=>s+purchaseTotal(p),0))}</div><div class="note">Valor contratado</div></div></div><section class="panel gap-top"><div class="toolbar">${inputSearch('compras')}<div class="actions">${button('+ Nova entrada de materiais','new-purchase','','primary')}</div></div>${table(['Entrada / Data','Fornecedor','Total','Entrega / Situação','Ações'],list.map(p=>td(`<strong>#${p.number}</strong><div class="muted small">${date(p.date)}</div>`,esc(p.supplierNome),money(purchaseTotal(p)),`${purchaseStatus(p)}${p.receivedAt?`<div class="muted small">${date(p.receivedAt)}</div>`:''}`,`<div class="row-actions">${p.status==='aberta'?button('Confirmar entrada','receive-purchase',p.id,'small accent'):''}${p.status==='aberta'?button('Editar','edit-purchase',p.id,'small'):''}${p.status==='aberta'?button('Cancelar','cancel-purchase',p.id,'small danger'):''}${button('Pedido de compra/PDF','print-purchase',p.id,'small')}${button('Detalhes','view-purchase',p.id,'small')}</div>`)),'Nenhuma entrada de materiais registrada.')}</section><p class="footer-note">Ao salvar uma entrada de materiais, uma conta a pagar é registrada. O estoque só aumenta após clicar em “Confirmar entrada”.</p>`;
 }
 function addPurchaseRow(dlg,item={}){const wrap=dlg.querySelector('#purchaseRows');const options=`<option value="">Selecione a matéria-prima</option>`+db.products.filter(p=>p.tipo==='materia').map(p=>`<option value="${esc(p.id)}">${esc(p.nome)} (${esc(p.unidade||'un')})</option>`).join('');const el=document.createElement('div');el.className='purchase-row';el.innerHTML=`<label>Matéria-prima<select data-pur-product required>${options}</select></label><label>Quantidade *<input type="number" min="0.001" step="0.001" data-pur-qty required value="${item.quantidade||1}"></label><label>Custo unitário (R$) *<input type="number" min="0.01" step="0.01" data-pur-cost required value="${item.custo||0}"></label><button type="button" class="btn danger" data-del-purchase>Remover</button>`;wrap.append(el);const sel=el.querySelector('select');if(item.productId)sel.value=item.productId;
  if(item.nfDescricao){
@@ -272,6 +272,31 @@ function cancelPurchase(pid){
   return alert('Falha ao salvar cancelamento. Nenhum lançamento foi excluído.');
  }
  render();
+}
+function printPurchaseOrder(pid){
+ const p=db.purchases.find(x=>x.id===pid);
+ if(!p)return alert('Entrada / pedido de compra não encontrado.');
+ const supplier=getSupplier(p.supplierId);
+ const details=[supplier?.nome||p.supplierNome,supplier?.doc||supplier?.cnpj||'',
+  supplier?.endereco||''].filter(Boolean).join(' · ');
+ const lines=(p.items||[]).map(item=>{
+  const product=getProduct(item.productId);
+  return '<tr><td>'+esc(product?.nome||'Material não identificado')+'</td>'+
+   '<td>'+dec(item.quantidade)+'</td><td>'+esc(product?.unidade||'un')+'</td>'+
+   '<td>'+money(item.custo)+'</td><td>'+money(Number(item.quantidade)*Number(item.custo))+'</td></tr>';
+ }).join('');
+ const signature=window.universaArtAssinatura?.image?.('ua-receipt-sig-img')||'';
+ openPrint('Pedido de compra de materiais nº '+p.number,
+  '<p><strong>Fornecedor:</strong> '+esc(details)+
+  '<br><strong>Data:</strong> '+date(p.date)+
+  '<br><strong>Vencimento:</strong> '+date(p.dueDate)+
+  '<br><strong>Referência / NF:</strong> '+esc(p.referencia||'—')+
+  '<br><strong>Situação:</strong> '+esc(p.status||'aberta')+'</p>'+
+  '<table><thead><tr><th>Material</th><th>Quantidade</th><th>Unidade</th><th>Preço unitário</th><th>Total</th></tr></thead>'+
+   '<tbody>'+lines+'</tbody></table>'+
+  '<h2>Total: '+money(purchaseTotal(p))+'</h2>'+
+  '<p>Conferir quantidades, especificações e condições antes da compra/recebimento.</p>'+
+  '<div class="sign"><div>'+signature+'UNIVERSA ART DESIGN · Responsável</div></div>');
 }
 function viewPurchase(pid){const p=db.purchases.find(x=>x.id===pid);if(!p)return;const rows=p.items.map(i=>td(esc(getProduct(i.productId)?.nome||'Produto não encontrado'),dec(i.quantidade),money(i.custo),money(i.quantidade*i.custo)));openModal('Entrada #'+p.number,`<p><strong>Fornecedor:</strong> ${esc(p.supplierNome)}<br><strong>Data:</strong> ${date(p.date)}<br><strong>Vencimento:</strong> ${date(p.dueDate)}<br><strong>Referência:</strong> ${esc(p.referencia||'—')}<br><strong>Situação:</strong> ${esc(p.status)}</p>${table(['Matéria-prima','Qtd.','Custo unit.','Subtotal'],rows)}<h3>Total: ${money(purchaseTotal(p))}</h3>`,()=>true)}
 function duplicateQuote(qid){
