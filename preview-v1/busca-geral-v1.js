@@ -141,7 +141,9 @@
   button.setAttribute('aria-label','Abrir busca geral e atalhos');
   button.textContent='⌕ Buscar em tudo';
   button.addEventListener('click',openSearch);
-  header.insertBefore(button,header.querySelector('.ua-header-logo')||null);
+  // Posicionar à direita da marca e imediatamente antes do indicador de sincronização.
+  // Se o indicador ainda não foi criado, ele será adicionado ao final do cabeçalho.
+  header.insertBefore(button,header.querySelector('#cloudStatus')||null);
  }
  document.addEventListener('keydown',event=>{
   if((event.ctrlKey||event.metaKey)&&String(event.key||'').toLowerCase()==='k'){
