@@ -17,7 +17,7 @@ const base={clientId:'cl1',clientNome:client.nome,date:'2026-11-11',items:[
 ],desconto:150,frete:50,ambientes:'Dormitório',entrega:'30 dias úteis',entregaData:'2026-12-12',validade:'2026-11-30',
 propostasPagamento:'50% de entrada e 50% na entrega\n6x no cartão',payment:{tipo:'avista',forma:'Pix'},observacoes:'Acabamento amadeirado',
 projectId:'p1',projectNome:'Dormitório',number:1};
-const ctx={db,window:{open:()=>({document:{open(){},write(t){html=t},close(){}},focus(){}})},
+const ctx={db,window:{universaArtAssinatura:{image:()=>'<img class="ua-doc-sig-img" src="data:image/png;base64,QUJD">'},open:()=>({document:{open(){},write(t){html=t},close(){}},focus(){}})},
  location:{href:'https://universautil-del.github.io/oficina-marcenaria/preview-v1/seguro.html'},
  URL,Intl,Date,String,Number,Math,RegExp,Array,Error,
  salesPrint:()=>{throw Error('Impressão antiga chamada')},
@@ -48,13 +48,15 @@ assert(quote.includes('50% de entrada e 50% na entrega'));
 assert(quote.includes('6x no cartão'));
 assert(quote.includes('VALOR TOTAL DO ORÇAMENTO:'));
 assert(quote.includes('R$ 3.900,00'));
-assert(quote.includes('data:image/webp;base64,QUJD'));
+assert(quote.includes('assets/universa-art-logo-novo.webp'));
+assert(!quote.includes('ua-doc-sig-img" src='),'Orçamentos continuam sem assinatura manuscrita pré-aplicada');
 assert(quote.includes('ua-doc-sign-line'),'Assinatura fica em branco e não é falsificada');
 assert(quote.includes('@page{size:A4')&&quote.includes('counter(page)'));
 assert(quote.includes('Imprimir / Salvar em PDF'));
 assert(quote.includes('São Paulo, 11 de novembro de 2026'));
 const order=docs.htmlForSale({...base,controlCode:'PED-2026-000123',status:'confirmado'},'Pedido');
 assert(order.includes('PEDIDO Nº')&&order.includes('PED-2026-000123'));
+assert(order.includes('<img class="ua-doc-sig-img"'),'Pedido deve conter assinatura da empresa quando cadastrada');
 assert(order.includes('VALOR TOTAL DO PEDIDO:'));
 assert(order.includes('CONDIÇÕES DE PAGAMENTO'));
 assert(order.includes('Situação do pedido:'));
@@ -66,5 +68,5 @@ const injected=docs.htmlForSale({...base,controlCode:'ORC-2026-2',items:[{descri
 assert(!injected.includes('<script>')&&!injected.includes('<img src=x'),'HTML do PDF não executa informações do cadastro');
 db.company.logo='';
 const fallback=docs.htmlForSale({...base,controlCode:'ORC-2026-3'},'Orçamento');
-assert(fallback.includes('assets/universa-art-logo.webp'),'Logo institucional caso nenhuma foto própria tenha sido escolhida');
+assert(fallback.includes('assets/universa-art-logo-novo.webp'),'Logo institucional caso nenhuma foto própria tenha sido escolhida');
 console.log('OK orçamento e pedido em layout A4 oficial: cabeçalho, logo, cliente, itens, totais, validade, condições e assinatura segura.');
