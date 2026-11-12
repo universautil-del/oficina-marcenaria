@@ -60,7 +60,7 @@ function v5ProjectModal(pid=''){
    </div>
    <div class="form-grid ua-project-fields ua-project-materials">
     <label>Material principal<input name="material" maxlength="120" value="${esc(old.material||'')}" placeholder="MDF branco TX 15 mm"></label>
-    <div class="full ua-leo-launch"><button type="button" class="btn small" data-ua-leo-open>Consultar MDF, parafusos e fitas na Léo Madeiras</button><small>Opções e preços de referência; disponibilidade da loja não confirmada.</small></div>
+    <div class="full ua-mat-launch"><button type="button" class="btn small" data-ua-material-open>Consultar Catálogo UNIVERSA ART</button><small>Materiais da nossa planilha, mesmo sem estoque. Preços a cotar.</small></div>
     <label>Acabamento<input name="acabamento" maxlength="120" value="${esc(old.acabamento||'')}" placeholder="Amadeirado, fosco..."></label>
    </div>
   </section>
