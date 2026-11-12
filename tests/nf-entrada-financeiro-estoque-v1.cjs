@@ -22,8 +22,8 @@ const db={products:[
  invoices:[
  {id:'nf1',numero:'101',tipo:'entrada',valor:410,emitente:'FORNECEDOR TESTE',data:'2026-11-11',vencimento:'2026-12-10',
   origem:'XML',items:[
-   {nome:'MDF BRANCO TX 15 MM',quantidade:2,custo:200},
-   {nome:'Parafuso 4 × 40 mm',quantidade:20,custo:.50}
+   {nome:'MDF BRANCO TX 15 MM',unidade:'CHAPA',quantidade:2,custo:200},
+   {nome:'Parafuso 4 × 40 mm',unidade:'UN',quantidade:20,custo:.50}
   ]},
  {id:'nf2',numero:'102',tipo:'entrada',valor:410,emitente:'Fornecedor Teste',data:'2026-11-11',items:[]}
 ],seq:{purchase:1,invoice:3}};
