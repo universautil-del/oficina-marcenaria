@@ -183,8 +183,8 @@ async function main(){
 
  for(const page of ['preview-v1/index.html','preview-v1/seguro.html']){
   const html=read(page);
-  assert(html.includes('leo-catalogo-v1.js?v=links-individuais-desempenho-20261112'));
-  assert(html.includes('leo-catalogo-v1.css?v=filtros-tecnicos-20261112'));
+  assert(html.includes('leo-catalogo-v1.js?v=filtros-dependentes-20261112'));
+  assert(html.includes('leo-catalogo-v1.css?v=combos-validos-20261112'));
   assert(!html.includes('src="leo-dados-v2.js"'),'Não carregar dados antes de abrir o catálogo');
  }
  assert(read('preview-v1/features-v05.js').includes('data-ua-leo-open'));
