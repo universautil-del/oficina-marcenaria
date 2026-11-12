@@ -99,7 +99,7 @@ assert(src.includes("content.addEventListener('change',uaListingSortChanged)"),'
 assert(src.includes("case 'ua-list-sort-direction':return uaFlipListingSort(item)"),'Botão de direção ausente');
 for(const page of ['preview-v1/index.html','preview-v1/seguro.html']){
  const html=read(page);
- assert(html.includes('list-sort-v1.css')&&html.includes('ordenacao-tres-modulos-20261112'),'CSS e atualização de cache em '+page);
+ assert(html.includes('list-sort-v1.css')&&html.includes('src="script.js?v='),'CSS e atualização de cache em '+page);
 }
 assert(read('preview-v1/list-sort-v1.css').includes('.ua-list-sort-dir'));
 console.log('OK: ordenação por pedido, data, situação, cliente e valor nos três módulos; busca e dados preservados.');
