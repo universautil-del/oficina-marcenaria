@@ -147,10 +147,24 @@
    '<label>Unidade *<select name="unidade" required>'+unitOptions+'</select></label>'+
    (!pid?'<label class="ua-product-wide" data-ua-raw>Escolha um exemplo para preencher mais rápido (opcional)<select id="uaMaterialPreset" aria-label="Exemplo de material">'+
     '<option value="">Selecione um exemplo ou cadastre livremente</option>'+
-    '<option value="mdf18">Chapa MDF 18 mm</option><option value="mdf25">Chapa MDF 25 mm</option>'+
-    '<option value="mdf15">Chapa MDF 15 mm</option><option value="parafuso">Parafusos</option>'+
+    '<optgroup label="Madeiras / MDF (espessura)">'+
+    '<option value="mdf15">MDF 15 mm</option><option value="mdf18">MDF 18 mm</option>'+
+    '<option value="mdf25">MDF 25 mm</option><option value="mdf06">MDF 6 mm</option></optgroup>'+
+    '<optgroup label="Parafusos (diâmetro × comprimento, mm)">'+
+    '<option value="par3_5x16">3,5 × 16</option><option value="par4x20">4 × 20</option>'+
+    '<option value="par4x25">4 × 25</option><option value="par4x30">4 × 30</option>'+
+    '<option value="par4x35">4 × 35</option><option value="par4x40">4 × 40</option>'+
+    '<option value="par4x45">4 × 45</option><option value="par4x50">4 × 50</option>'+
+    '<option value="par4x60">4 × 60</option><option value="par5x70">5 × 70</option></optgroup>'+
+    '<optgroup label="Buchas (diâmetro)">'+
+    '<option value="bucha06">Bucha 6 mm</option><option value="bucha08">Bucha 8 mm</option>'+
+    '<option value="bucha10">Bucha 10 mm</option><option value="bucha12">Bucha 12 mm</option></optgroup>'+
+    '<optgroup label="Fitas de borda (largura)">'+
+    '<option value="fita22">Fita de borda 22 mm</option><option value="fita35">Fita de borda 35 mm</option>'+
+    '<option value="fita45">Fita de borda 45 mm</option><option value="fita64">Fita de borda 64 mm</option></optgroup>'+
+    '<optgroup label="Outras ferragens e insumos">'+
     '<option value="dobradica">Dobradiças</option><option value="corredica">Corrediças</option>'+
-    '<option value="fita">Fita de borda</option><option value="cola">Cola para madeira</option>'+
+    '<option value="cola">Cola para madeira</option></optgroup>'+
     '</select></label>':'')+
    '<label class="ua-product-wide"><span data-product-name-label>Descrição do produto *</span><input name="nome" required maxlength="180" autocomplete="off" placeholder="Ex.: MDF branco TX 18 mm, MDF 25 mm, parafuso 4 × 40 mm" value="'+safe(old.nome||'')+'"></label>'+
    '<label data-ua-raw>Espessura (mm), quando aplicável<input name="espessuraMm" type="number" inputmode="decimal" min="0" max="1000" step="0.1" placeholder="Ex.: 18 ou 25" value="'+safe(old.espessuraMm??'')+'"></label>'+
@@ -165,7 +179,7 @@
     '<label class="ua-product-wide" data-ua-raw>'+(pid?'Saldo em estoque':'Saldo inicial de estoque')+
     '<input name="estoque" type="number" min="0" step="0.001" value="'+Number(old.estoque||0)+'"></label>')+
    '<label class="ua-product-wide">Categoria (opcional)<input name="categoria" list="uaMarcenariaCategorias" maxlength="120" value="'+safe(old.categoria||'')+'" placeholder="Ex.: Chapas MDF, parafusos, ferragens"></label>'+
-   '<datalist id="uaMarcenariaCategorias"><option value="Chapas MDF"><option value="Fitas de borda"><option value="Parafusos"><option value="Dobradiças"><option value="Corrediças"><option value="Puxadores"><option value="Colas e adesivos"><option value="Outros insumos"></datalist>'+
+   '<datalist id="uaMarcenariaCategorias"><option value="Chapas MDF"><option value="Fitas de borda"><option value="Parafusos"><option value="Buchas"><option value="Dobradiças"><option value="Corrediças"><option value="Puxadores"><option value="Colas e adesivos"><option value="Outros insumos"></datalist>'+
    '<label class="ua-product-wide">Observações<textarea name="observacoes" maxlength="2500" rows="2">'+safe(old.observacoes||'')+'</textarea></label>'+
    '</div>'+
    '<section class="ua-product-finished" data-ua-finished hidden>'+
@@ -238,15 +252,20 @@
    const sample=dialog.querySelector('#uaMaterialPreset');
    if(sample)sample.onchange=()=>{
     const options={
+     mdf15:{nome:'MDF 15 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:15},
      mdf18:{nome:'MDF 18 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:18},
      mdf25:{nome:'MDF 25 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:25},
-     mdf15:{nome:'MDF 15 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:15},
-     parafuso:{nome:'Parafuso',categoria:'Parafusos',unidade:'un'},
+     mdf06:{nome:'MDF 6 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:6},
      dobradica:{nome:'Dobradiça',categoria:'Dobradiças',unidade:'un'},
      corredica:{nome:'Corrediça',categoria:'Corrediças',unidade:'par'},
-     fita:{nome:'Fita de borda',categoria:'Fitas de borda',unidade:'m'},
      cola:{nome:'Cola para madeira',categoria:'Colas e adesivos',unidade:'un'}
     };
+    for(const size of ['3,5x16','4x20','4x25','4x30','4x35','4x40','4x45','4x50','4x60','5x70'])
+     options['par'+size.replace(',','.').replace('x','x').replace('.','_')]={nome:'Parafuso '+size.replace('x',' × ')+' mm',categoria:'Parafusos',unidade:'un'};
+    for(const size of ['06','08','10','12'])
+     options['bucha'+size]={nome:'Bucha '+Number(size)+' mm',categoria:'Buchas',unidade:'un'};
+    for(const size of ['22','35','45','64'])
+     options['fita'+size]={nome:'Fita de borda '+size+' mm',categoria:'Fitas de borda',unidade:'m'};
     const chosen=options[sample.value];
     if(!chosen)return;
     for(const key of ['nome','categoria','unidade','espessuraMm']){
