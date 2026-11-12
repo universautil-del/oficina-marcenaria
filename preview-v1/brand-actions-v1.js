@@ -10,7 +10,7 @@
   if(!panel)return;
   const div=document.createElement('section');
   div.className='ua-brand-in-settings';
-  div.innerHTML='<img src="assets/universa-art-logo.webp" alt="Logomarca Universa Art">'+
+  div.innerHTML='<img src="assets/universa-art-logo-novo.webp" alt="Logomarca Universa Art">'+
     '<div><strong>Marca: UNIVERSA ART</strong><p class="muted">Esta é a logomarca enviada pela empresa. Aplicá-la aos PDFs não altera automaticamente sua razão social.</p>'+
     '<button type="button" class="btn" id="uaUseOfficialLogo">Usar esta logomarca nos documentos</button></div>';
   panel.prepend(div);
@@ -18,7 +18,7 @@
    const button=div.querySelector('#uaUseOfficialLogo');
    button.disabled=true;
    try{
-    const response=await fetch('assets/universa-art-logo.webp',{cache:'no-store'});
+    const response=await fetch('assets/universa-art-logo-novo.webp',{cache:'no-store'});
     if(!response.ok)throw Error('Não foi possível carregar a imagem da empresa.');
     const blob=await response.blob();
     if(blob.size>300000||blob.type!=='image/webp')throw Error('O arquivo da marca não é válido.');
