@@ -35,6 +35,84 @@ const orderPaid=o=>round(db.transactions.filter(t=>t.orderId===o.id&&t.kind==='r
 const statusText={confirmado:'Confirmado',producao:'Em produção',pronto:'Pronto',entregue:'Entregue',cancelado:'Cancelado',aberto:'Aberto',convertido:'Convertido'};
 const kindText={materia:'Matéria-prima',acabado:'Produto acabado',receber:'Receita',pagar:'Despesa'};
 const search={clientes:'',produtos:'',fornecedores:'',compras:'',orcamentos:'',pedidos:'',producao:'',financeiro:''};
+/* A ordenação é apenas visual: não altera registros, pagamentos, sequências ou backup. */
+const uaListingSort={
+ financeiro:{field:'vencimento',direction:'asc'},
+ orcamentos:{field:'cadastro',direction:'desc'},
+ pedidos:{field:'cadastro',direction:'desc'}
+};
+const uaListingSortOptions={
+ financeiro:[['vencimento','Vencimento'],['pedido','Número do pedido'],['situacao','Situação'],['cliente','Cliente'],['valor','Valor'],['saldo','Saldo'],['tipo','Receita / despesa'],['lancamento','Descrição']],
+ orcamentos:[['cadastro','Ordem de cadastro'],['numero','Número do orçamento'],['data','Data'],['situacao','Situação'],['cliente','Cliente'],['valor','Valor']],
+ pedidos:[['cadastro','Ordem de cadastro'],['numero','Número do pedido'],['data','Data'],['situacao','Situação'],['cliente','Cliente'],['valor','Valor'],['recebido','Valor recebido'],['entrega','Data da entrega']]
+};
+function uaListingSortControl(section){
+ const state=uaListingSort[section],options=uaListingSortOptions[section];
+ if(!state||!options)return '';
+ return '<div class="ua-list-sort"><label class="ua-list-sort-label">Ordenar por'+
+  '<select data-ua-list-sort="'+esc(section)+'" aria-label="Ordenar '+esc(section)+' por">'+
+  options.map(([key,label])=>'<option value="'+esc(key)+'" '+(state.field===key?'selected':'')+'>'+esc(label)+'</option>').join('')+
+  '</select></label>'+
+  '<button type="button" class="btn ua-list-sort-dir" data-action="ua-list-sort-direction" data-id="'+esc(section)+'" title="Alternar ordem de visualização" aria-label="Ordem '+(state.direction==='asc'?'crescente':'decrescente')+' — inverter">'+
+  (state.direction==='asc'?'↑ Crescente':'↓ Decrescente')+'</button></div>';
+}
+function uaListingSortValue(section,item,field,index){
+ if(field==='cadastro')return index;
+ if(field==='cliente')return section==='financeiro'?financeClientName(item):item.clientNome||'';
+ if(field==='valor')return section==='financeiro'?Number(item.valor)||0:orderTotal(item);
+ if(field==='numero')return item.controlCode||Number(item.number)||0;
+ if(field==='pedido'){
+  if(!item.orderId)return null;
+  const order=getOrder(item.orderId);
+  return order?.controlCode||order?.number||null;
+ }
+ if(field==='vencimento')return item.dueDate||null;
+ if(field==='data')return item.date||null;
+ if(field==='lancamento')return item.descricao||'';
+ if(field==='tipo')return item.kind==='receber'?0:1;
+ if(field==='saldo')return balance(item);
+ if(field==='recebido')return orderPaid(item);
+ if(field==='entrega')return item.entregaData||null;
+ if(field==='situacao'){
+  if(section==='financeiro')return balance(item)<.005?2:cashReceived(item)>0?1:0;
+  if(section==='orcamentos')return item.status==='aberto'?0:item.status==='convertido'?1:2;
+  const stages=['aberto','confirmado','producao','pronto','entregue','cancelado'];
+  const n=stages.indexOf(item.status);
+  return n<0?stages.length:n;
+ }
+ return null;
+}
+function uaSortListing(section,items){
+ const state=uaListingSort[section];
+ if(!state)return items.slice();
+ const direction=state.direction==='asc'?1:-1;
+ const collator=new Intl.Collator('pt-BR',{numeric:true,sensitivity:'base'});
+ return items.map((item,index)=>({item,index,key:uaListingSortValue(section,item,state.field,index)}))
+  .sort((a,b)=>{
+   // Registros sem data ou sem pedido vinculado ficam no final, em qualquer direção.
+   if(a.key===null||a.key===undefined||a.key==='')return b.key===null||b.key===undefined||b.key===''?a.index-b.index:1;
+   if(b.key===null||b.key===undefined||b.key==='')return -1;
+   const result=typeof a.key==='number'&&typeof b.key==='number'?
+    a.key-b.key:collator.compare(String(a.key),String(b.key));
+   return result?result*direction:a.index-b.index;
+  }).map(row=>row.item);
+}
+function uaSetListingSort(section,field){
+ if(!uaListingSort[section]||!uaListingSortOptions[section].some(row=>row[0]===field))return false;
+ uaListingSort[section].field=field;
+ render(section);
+ return true;
+}
+function uaFlipListingSort(section){
+ if(!uaListingSort[section])return false;
+ uaListingSort[section].direction=uaListingSort[section].direction==='asc'?'desc':'asc';
+ render(section);
+ return true;
+}
+function uaListingSortChanged(e){
+ const section=e.target?.dataset?.uaListSort;
+ if(section)uaSetListingSort(section,e.target.value);
+}
 function button(label,action,item='',cls=''){return `<button type="button" class="btn ${cls}" data-action="${esc(action)}" data-id="${esc(item)}">${label}</button>`}
 function intro(head,sub,tag=''){return `<div class="intro"><div><h2>${esc(head)}</h2><p class="muted">${esc(sub)}</p></div>${tag?`<span class="tag">${esc(tag)}</span>`:''}</div>`}
 function notice(){return window.oficinaCloud?.active?'<div class="alert-bar">Nuvem ativada: alterações são enviadas ao banco quando houver conexão. Confirme o indicador de sincronização antes de trocar de aparelho. Faça backup regularmente.</div>':'<div class="alert-bar">Modo local de testes: os dados ficam somente neste navegador. Configure a nuvem em Minha Empresa para sincronizar. Não use dados sensíveis sem autenticação.</div>'}
@@ -223,8 +301,8 @@ function ensureControlCodes(){
 }
 function clientOptions(chosen=''){return db.clients.slice().sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR')).map(c=>`<option value="${esc(c.id)}" ${c.id===chosen?'selected':''}>${esc(c.nome)}</option>`).join('')}
 function quoteStatus(q){return q.status==='convertido'?pill('Convertido','success'):pill('Aberto','warn')}
-function quotesView(){const q=search.orcamentos.toLowerCase();const list=db.quotes.slice().reverse().filter(o=>[o.number,o.controlCode,o.clientNome,o.status,o.projectNome].some(v=>String(v||'').toLowerCase().includes(q)));
- content.innerHTML=`${intro('Orçamentos','Propostas comerciais e conversão em pedidos.',`${db.quotes.length} orçamento(s)`)}<section class="panel"><div class="toolbar">${inputSearch('orcamentos')}<div class="actions">${button('+ Novo orçamento','new-quote','','primary')}</div></div>${table(['Número','Cliente','Data','Total','Situação','Ações'],list.map(o=>td(esc(o.controlCode||'#'+o.number),esc(o.clientNome)+(o.projectId?'<div class="muted small">Projeto: '+esc(o.projectNome||'Vinculado')+'</div>':''),date(o.date),money(orderTotal(o)),quoteStatus(o),`<div class="row-actions">${button('Imprimir/PDF','print-quote',o.id,'small')}${button('Duplicar','duplicate-quote',o.id,'small')}${button('WhatsApp','share-quote',o.id,'small')}${o.status==='aberto'?button('Editar','edit-quote',o.id,'small'):''}${o.status==='aberto'?button('Virar pedido','convert-quote',o.id,'small accent'):''}${o.status==='aberto'?button('Excluir','delete-quote',o.id,'small danger'):''}</div>`)))}</section>`;
+function quotesView(){const q=search.orcamentos.toLowerCase();const list=uaSortListing('orcamentos',db.quotes.filter(o=>[o.number,o.controlCode,o.clientNome,o.status,o.projectNome].some(v=>String(v||'').toLowerCase().includes(q))));
+ content.innerHTML=`${intro('Orçamentos','Propostas comerciais e conversão em pedidos.',`${db.quotes.length} orçamento(s)`)}<section class="panel"><div class="toolbar">${inputSearch('orcamentos')}${uaListingSortControl('orcamentos')}<div class="actions">${button('+ Novo orçamento','new-quote','','primary')}</div></div>${table(['Número','Cliente','Data','Total','Situação','Ações'],list.map(o=>td(esc(o.controlCode||'#'+o.number),esc(o.clientNome)+(o.projectId?'<div class="muted small">Projeto: '+esc(o.projectNome||'Vinculado')+'</div>':''),date(o.date),money(orderTotal(o)),quoteStatus(o),`<div class="row-actions">${button('Imprimir/PDF','print-quote',o.id,'small')}${button('Duplicar','duplicate-quote',o.id,'small')}${button('WhatsApp','share-quote',o.id,'small')}${o.status==='aberto'?button('Editar','edit-quote',o.id,'small'):''}${o.status==='aberto'?button('Virar pedido','convert-quote',o.id,'small accent'):''}${o.status==='aberto'?button('Excluir','delete-quote',o.id,'small danger'):''}</div>`)))}</section>`;
 }
 function addSaleRow(dlg,item={}){const area=dlg.querySelector('#saleRows');const opt=db.products.map(p=>`<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('');const line=document.createElement('div');line.className='item-row';line.innerHTML=`<label>Produto<select data-item-product><option value="">Item livre / serviço</option>${opt}</select></label><label>Descrição<input data-item-desc required maxlength="250" value="${esc(item.descricao||'')}"></label><label>Qtd.<input data-item-qty required type="number" min="0.001" step="0.001" value="${Number(item.quantidade||1)}"></label><label>Valor unit. (R$)<input data-item-price required type="number" min="0" step="0.01" value="${Number(item.preco||0)}"></label><button type="button" class="btn danger" data-del-item>✕</button>`;area.append(line);const select=line.querySelector('select');if(item.productId&&getProduct(item.productId))select.value=item.productId;select.onchange=()=>{const p=getProduct(select.value);if(p){line.querySelector('[data-item-desc]').value=p.nome;line.querySelector('[data-item-price]').value=p.preco}calcSale(dlg)};line.querySelector('[data-del-item]').onclick=()=>{line.remove();calcSale(dlg)};line.querySelectorAll('input').forEach(x=>x.addEventListener('input',()=>calcSale(dlg)))}
 function collectSaleItems(dlg){const arr=[...dlg.querySelectorAll('.item-row')].map(row=>({productId:row.querySelector('[data-item-product]').value,descricao:row.querySelector('[data-item-desc]').value.trim(),quantidade:Number(row.querySelector('[data-item-qty]').value),preco:round(row.querySelector('[data-item-price]').value)}));if(!arr.length)throw Error('Adicione ao menos um item.');if(arr.some(x=>!x.descricao||x.quantidade<=0||!Number.isFinite(x.preco)||x.preco<0||!Number.isFinite(x.quantidade)))throw Error('Revise descrições, quantidades e valores.');return arr}
@@ -388,8 +466,8 @@ function confirmOpenOrder(oid){
 }
 function convertQuote(qid){const q=getQuote(qid);if(!q||q.status==='convertido')return alert('Orçamento já convertido.');if(!confirm(`Converter orçamento ${q.controlCode||'#'+q.number} em pedido em aberto? As parcelas financeiras serão criadas e o pedido poderá ser editado antes de confirmar.`))return;try{if(createOrder({clientId:q.clientId,clientNome:q.clientNome,date:iso(),items:q.items.map(i=>({...i})),desconto:q.desconto,frete:q.frete||0,ambientes:q.ambientes||'',entrega:q.entrega,entregaData:q.entregaData||"",propostasPagamento:q.propostasPagamento||'',observacoes:q.observacoes,projectId:q.projectId||'',projectNome:q.projectNome||'',payment:{...q.payment}},qid)){location.hash='pedidos';render('pedidos')}}catch(e){alert(e.message)}}
 function removeQuote(qid){const q=getQuote(qid);if(!q||q.status!=='aberto')return;if(confirm('Excluir este orçamento?')){const before=db.quotes;db.quotes=db.quotes.filter(q=>q.id!==qid);if(save()===false){db.quotes=before;return alert('Não foi possível excluir o orçamento.');}render()}}
-function ordersView(){const q=search.pedidos.toLowerCase();const list=db.orders.slice().reverse().filter(o=>[o.number,o.controlCode,o.clientNome,o.projectNome,statusText[o.status]].some(v=>String(v||'').toLowerCase().includes(q)));
- content.innerHTML=`${intro('Pedidos','Controle de produção, estoque e cobrança.',`${db.orders.length} pedido(s)`)}<section class="panel"><div class="toolbar">${inputSearch('pedidos')}<div class="actions">${button('+ Novo pedido','new-order','','primary')}</div></div>${table(['Pedido / Cliente','Valor e recebimento','Entrega','Produção / Materiais','Ações'],list.map(o=>{
+function ordersView(){const q=search.pedidos.toLowerCase();const list=uaSortListing('pedidos',db.orders.filter(o=>[o.number,o.controlCode,o.clientNome,o.projectNome,statusText[o.status]].some(v=>String(v||'').toLowerCase().includes(q))));
+ content.innerHTML=`${intro('Pedidos','Controle de produção, estoque e cobrança.',`${db.orders.length} pedido(s)`)}<section class="panel"><div class="toolbar">${inputSearch('pedidos')}${uaListingSortControl('pedidos')}<div class="actions">${button('+ Novo pedido','new-order','','primary')}</div></div>${table(['Pedido / Cliente','Valor e recebimento','Entrega','Produção / Materiais','Ações'],list.map(o=>{
  const state=o.status==='aberto'?pill('Aguardando confirmação','warn'):o.stockState==='reservado'?pill('Materiais reservados','success'):o.stockState==='baixado'?pill('Estoque baixado','success'):pill('Reserva pendente','warn');
  return td(`<strong>${esc(o.controlCode||'#'+o.number)} · ${esc(o.clientNome)}</strong>${o.projectId?'<div class="small muted">Projeto: '+esc(o.projectNome||'Vinculado')+'</div>':''}<div class="small muted">${date(o.date)}</div>`,`<strong>${money(orderTotal(o))}</strong><div class="small muted">Recebido: ${money(orderPaid(o))}</div>`,esc(o.entrega||'A combinar'),`${pill(statusText[o.status]||o.status,o.status==='cancelado'?'danger':o.status==='entregue'?'success':'')}<div style="margin-top:6px">${o.status==='cancelado'?'':state}</div>`,`<div class="row-actions">${button('Detalhes','view-order',o.id,'small')}${o.status==='aberto'?button('Editar','edit-order',o.id,'small')+button('Confirmar pedido','confirm-order',o.id,'small accent'):''}${o.status==='confirmado'&&o.stockState==='pendente'?button('Reservar','reserve-order',o.id,'small accent'):''}${o.status==='confirmado'?button('Produção','start-order',o.id,'small'):''}${o.status==='producao'?button('Pronto','ready-order',o.id,'small'):''}${o.status==='pronto'?button('Entregar','deliver-order',o.id,'small'):''}${['aberto','confirmado'].includes(o.status)?button('Cancelar','cancel-order',o.id,'small danger'):''}</div>`)}))}</section>`;
 }
@@ -460,14 +538,60 @@ function financeClientName(t){
  const client=(t.clientId?getClient(t.clientId):null)||(o?.clientId?getClient(o.clientId):null);
  return String(client?.nome||o?.clientNome||t.clientNome||'').trim();
 }
-function financeView(){const q=search.financeiro.toLowerCase();const list=db.transactions.slice().sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).filter(t=>[t.descricao,t.kind,t.dueDate,financeClientName(t)].some(v=>String(v||'').toLowerCase().includes(q)));
+function financeView(){const q=search.financeiro.toLowerCase();const list=uaSortListing('financeiro',db.transactions.filter(t=>[t.descricao,t.kind,t.dueDate,financeClientName(t)].some(v=>String(v||'').toLowerCase().includes(q))));
  const due=db.transactions.filter(t=>t.kind==='receber').reduce((s,t)=>s+balance(t),0),owing=db.transactions.filter(t=>t.kind==='pagar').reduce((s,t)=>s+balance(t),0);
  const earned=db.transactions.filter(t=>t.kind==='receber').reduce((s,t)=>s+cashReceived(t),0),spent=db.transactions.filter(t=>t.kind==='pagar').reduce((s,t)=>s+cashReceived(t),0);
  content.innerHTML=`${intro('Financeiro','Receitas, despesas, parcelas e pagamentos parciais.')}<div class="cards"><div class="card"><div class="label">A receber</div><div class="value">${money(due)}</div></div><div class="card"><div class="label">A pagar</div><div class="value">${money(owing)}</div></div><div class="card"><div class="label">Recebido</div><div class="value">${money(earned)}</div></div><div class="card"><div class="label">Saldo de caixa</div><div class="value">${money(earned-spent)}</div></div></div>
- <section class="panel gap-top"><div class="toolbar">${inputSearch('financeiro')}<div class="actions">${button('Exportar CSV','export-finance')}${button('+ Receita / Despesa','new-transaction','','primary')}</div></div>${table(['Lançamento','Vencimento','Valor','Saldo','Situação','Ações'],list.map(t=>{const paid=cashReceived(t);return td(`<strong>${esc(t.descricao)}</strong><div class="small muted">${esc(kindText[t.kind])}${t.orderId?' · Pedido #'+(getOrder(t.orderId)?.number||'—'):''}</div>${t.kind==='receber'&&financeClientName(t)?`<div class="small"><strong>Cliente:</strong> ${esc(financeClientName(t))}</div>`:''}${(t.paymentMethod||(!t.purchaseId&&t.orderId?getOrder(t.orderId)?.payment?.forma:''))?`<div class="small muted">Forma prevista: ${esc(t.paymentMethod||getOrder(t.orderId)?.payment?.forma||'')}</div>`:''}`,date(t.dueDate),money(t.valor),money(balance(t)),pill(balance(t)<0.005?'Pago':paid>0?'Parcial':'Pendente',balance(t)<0.005?'success':paid>0?'warn':''),`<div class="row-actions">${button('Editar','edit-transaction',t.id,'small')}${balance(t)>0?button('Registrar pagamento','pay-transaction',t.id,'small'):''}${t.kind==='receber'&&paid>0?button('Recibos','show-receipts',t.id,'small'):''}${paid>0?button('Desfazer pagamento','list-payments',t.id,'small danger'):''}${!t.orderId&&paid===0?button('Excluir','delete-transaction',t.id,'small danger'):''}</div>`)}))}</section>`;
+ <section class="panel gap-top"><div class="toolbar">${inputSearch('financeiro')}${uaListingSortControl('financeiro')}<div class="actions">${button('Exportar CSV','export-finance')}${button('+ Receita / Despesa','new-transaction','','primary')}</div></div>${table(['Lançamento','Vencimento','Valor','Saldo','Situação','Ações'],list.map(t=>{const paid=cashReceived(t);return td(`<strong>${esc(t.descricao)}</strong><div class="small muted">${esc(kindText[t.kind])}${t.orderId?' · Pedido #'+(getOrder(t.orderId)?.number||'—'):''}</div>${t.kind==='receber'&&financeClientName(t)?`<div class="small"><strong>Cliente:</strong> ${esc(financeClientName(t))}</div>`:''}${(t.paymentMethod||(!t.purchaseId&&t.orderId?getOrder(t.orderId)?.payment?.forma:''))?`<div class="small muted">Forma prevista: ${esc(t.paymentMethod||getOrder(t.orderId)?.payment?.forma||'')}</div>`:''}`,date(t.dueDate),money(t.valor),money(balance(t)),pill(balance(t)<0.005?'Pago':paid>0?'Parcial':'Pendente',balance(t)<0.005?'success':paid>0?'warn':''),`<div class="row-actions">${button('Editar','edit-transaction',t.id,'small')}${balance(t)>0?button('Registrar pagamento','pay-transaction',t.id,'small'):''}${t.kind==='receber'&&paid>0?button('Recibos','show-receipts',t.id,'small'):''}${paid>0?button('Desfazer pagamento','list-payments',t.id,'small danger'):''}${!t.orderId&&paid===0?button('Excluir','delete-transaction',t.id,'small danger'):''}</div>`)}))}</section>`;
 }
-function transactionModal(){openModal('Nova receita ou despesa',`<div class="form-grid"><label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label><label>Vencimento<input type="date" name="dueDate" value="${iso()}" required></label><label class="full">Descrição *<input name="descricao" required></label><label>Valor (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label><label class="full">Forma de pagamento prevista<input name="paymentMethod" maxlength="100" placeholder="Pix, boleto, cartão, dinheiro..."></label><label class="full">Observações<textarea name="observacoes" maxlength="900" rows="2"></textarea></label></div>`,v=>{if(!Number.isFinite(Number(v.valor))||Number(v.valor)<=0||!['receber','pagar'].includes(v.kind)||!String(v.descricao||'').trim())throw Error('Valor, tipo ou descrição inválidos.');const before=db.transactions;db.transactions=[...db.transactions,{id:id(),kind:v.kind,descricao:v.descricao.trim(),dueDate:v.dueDate,valor:round(v.valor),paymentMethod:String(v.paymentMethod||'').trim().slice(0,100),observacoes:String(v.observacoes||'').trim().slice(0,900),payments:[],orderId:''}];if(save()===false){db.transactions=before;throw Error('Não foi possível salvar o lançamento.');}return true})}
-
+function transactionModal(){
+ return openModal('Nova receita ou despesa',
+  '<div class="form-grid">'+
+  '<label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label>'+
+  '<label>Primeiro vencimento *<input type="date" name="dueDate" value="'+iso()+'" required></label>'+
+  '<label class="full">Descrição *<input name="descricao" maxlength="240" placeholder="Ex.: Aluguel da oficina" required></label>'+
+  '<label>Valor de cada parcela (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label>'+
+  '<label>Quantidade de parcelas *<input name="parcelas" type="number" min="1" max="60" step="1" value="1" required></label>'+
+  '<p class="form-note full ua-finance-installment-note">Para despesas recorrentes, informe o valor mensal e a quantidade de meses. Ex.: aluguel de R$ 1.500,00 por 12 meses criará 12 lançamentos de R$ 1.500,00, com vencimentos mensais. Com 1 parcela, será criado apenas um lançamento.</p>'+
+  '<label class="full">Forma de pagamento prevista<input name="paymentMethod" maxlength="100" placeholder="Pix, boleto, cartão, dinheiro..."></label>'+
+  '<label class="full">Observações<textarea name="observacoes" maxlength="900" rows="2"></textarea></label>'+
+  '</div>',v=>{
+   const amount=Number(v.valor);
+   const qty=v.parcelas===undefined?1:Number(v.parcelas);
+   const kind=String(v.kind||'');
+   const description=String(v.descricao||'').trim();
+   const startDate=String(v.dueDate||'').trim();
+   const paymentMethod=String(v.paymentMethod||'').trim();
+   const observacoes=String(v.observacoes||'').trim();
+   if(!Number.isFinite(amount)||amount<=0||round(amount)<=0||
+      !Number.isFinite(round(amount*qty))||!['receber','pagar'].includes(kind)||
+      !description||description.length>240)
+    throw Error('Tipo, descrição ou valor mensal inválido.');
+   if(!Number.isInteger(qty)||qty<1||qty>60)
+    throw Error('Informe uma quantidade de parcelas entre 1 e 60 meses.');
+   if(!financeValidDate(startDate))throw Error('Informe uma data válida para o primeiro vencimento.');
+   if(paymentMethod.length>100||observacoes.length>900)
+    throw Error('Resuma a forma de pagamento ou as observações.');
+   // Cada lançamento mensal é independente. Os já quitados não são replicados.
+   const recurrenceId=qty>1?id():'';
+   const entries=Array.from({length:qty},(_,i)=>({
+    id:id(),kind,
+    descricao:qty===1?description:description+' · Parcela '+(i+1)+'/'+qty,
+    dueDate:i===0?startDate:addMonths(startDate,i),
+    valor:round(amount),
+    paymentMethod,observacoes,payments:[],orderId:'',
+    ...(qty>1?{recurrenceId,numeroParcela:i+1,totalParcelas:qty,
+       periodicidade:'mensal',descricaoBase:description}: {})
+   }));
+   // Uma única gravação para evitar criar uma série incompleta.
+   const before=db.transactions;
+   db.transactions=[...before,...entries];
+   try{
+    if(save()===false)throw Error('Não foi possível salvar os lançamentos. Nenhuma parcela foi criada.');
+   }catch(error){db.transactions=before;throw error}
+   return true;
+  });
+}
 function financeValidDate(value){
  const dateText=String(value||'');
  if(!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(dateText))return false;
@@ -749,6 +873,7 @@ function handleAction(action,item){switch(action){
  case 'duplicate-quote':return duplicateQuote(item);case 'share-quote':return shareQuote(item);
  case 'export-finance':return exportFinanceCsv();case 'export-report':return exportReportCsv();case 'print-report':return printReport();
  case 'goto-products':location.hash='produtos';return;case 'goto-orders':location.hash='pedidos';return;case 'goto-finance':location.hash='financeiro';return;
+ case 'ua-list-sort-direction':return uaFlipListingSort(item);
  case 'filter-low-stock':lowStockOnly=!lowStockOnly;return render('produtos');
  case 'new-raw':return productModal('','materia');case 'edit-product':return productModal(item);case 'adjust-stock':return adjustStock(item);case 'delete-product':return removeProduct(item);
  case 'new-quote':return openSales('quote');case 'edit-quote':return openSales('quote',item);case 'convert-quote':return convertQuote(item);case 'delete-quote':return removeQuote(item);
@@ -763,6 +888,7 @@ function handleAction(action,item){switch(action){
  }}
 document.addEventListener('click',e=>{const btn=e.target.closest('[data-action]');if(btn&&!btn.closest('.sidebar')){const a=btn.dataset.action;if(['add-bom','add-sale-item'].includes(a))return;handleAction(a,btn.dataset.id||'')}});
 content.addEventListener('input',setSearch);
+content.addEventListener('change',uaListingSortChanged);
 document.querySelector('#menuToggle').addEventListener('click',()=>sidebar.classList.toggle('open'));
 window.addEventListener('hashchange',()=>render());
 setupExtras();

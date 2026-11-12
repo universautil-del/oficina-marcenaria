@@ -3,9 +3,10 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const src=fs.readFileSync(path.join(__dirname,'../preview-v1/script.js'),'utf8');
 const slice=(a,b)=>{const i=src.indexOf(a),j=src.indexOf(b,i+a.length);assert(i>=0&&j>i,'Fonte não encontrada '+a);return src.slice(i,j)};
+const sortingSrc=slice('/* A ordenação é apenas visual:','function button(label,action');
 const financeSrc=slice('function financeClientName(t){','function transactionModal(){');
 const historySrc=slice('function paymentHistoryModal(tid){','const defaultContract=');
-new vm.Script(financeSrc+historySrc);
+new vm.Script(sortingSrc+financeSrc+historySrc);
 const receivable={id:'t1',kind:'receber',descricao:'Pedido PED-2026-004 · Parcela 1/1',valor:5300,
  dueDate:'2026-11-11',orderId:'o1',
  payments:[{id:'pay1',valor:2000,date:'2026-11-09',method:'Pix'}, {id:'pay2',valor:3300,date:'2026-11-11',method:'Dinheiro'}]};
@@ -34,7 +35,7 @@ const ctx={db,content,search:{financeiro:''},Number,Math,Date,Set,Map,String,Err
  confirm:()=>confirmResult,alert:v=>alerts.push(v),render:()=>{renders++},
  save:()=>{saves++;return saveResult}
 };
-vm.runInNewContext(financeSrc+historySrc,ctx,{timeout:2500});
+vm.runInNewContext(sortingSrc+financeSrc+historySrc,ctx,{timeout:2500});
 ctx.financeView();
 assert(content.innerHTML.includes('Desfazer pagamento'));
 assert(content.innerHTML.includes('Recibos'));
