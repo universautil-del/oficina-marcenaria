@@ -41,3 +41,17 @@ dialog.ua-leo-dialog{width:min(900px,96vw);max-height:90dvh;overflow:auto;paddin
 .ua-leo-filter-tools .btn{font-size:12px;color:#193d30;border-color:#c99763}
 .ua-leo-filter-notice{font-size:12px;color:#705116;background:#fff8e9;border:1px solid #ebd2a2;border-radius:9px;padding:10px 12px;line-height:1.55;margin:7px 0 12px}
 .ua-leo-filter-notice[hidden]{display:none}
+
+/* Simulação opcional, totalmente local, inclusive para material sem saldo em estoque. */
+.ua-leo-simulate-trigger{border:1px solid #c99763!important;background:#fff9ed!important;color:#193d30!important}
+.ua-leo-simulator{border:1px solid #c99763;border-radius:12px;background:#fffaf1;padding:15px;margin:12px 0}
+.ua-leo-simulator[hidden]{display:none}
+.ua-leo-simulator h3{color:#193d30;font-size:16px;margin:0 0 8px}
+.ua-leo-sim-product{font-size:13px;font-weight:700;margin:4px 0 6px;color:#294d37;line-height:1.5}
+.ua-leo-sim-mode,.ua-leo-sim-hint{font-size:12px;color:#746042;line-height:1.5;margin:7px 0}
+.ua-leo-sim-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:13px 0}
+.ua-leo-sim-grid label{font-size:12px;font-weight:650;color:#284934}
+.ua-leo-sim-grid input{display:block;width:100%;padding:10px;border:1px solid #cdd8ce;border-radius:8px;background:#fff;margin-top:5px;font:inherit}
+.ua-leo-sim-total{font-size:16px;color:#193d30;margin:10px 0}
+.ua-leo-sim-copy{font-size:12px;color:#286b42;margin-left:10px}
+@media(max-width:520px){.ua-leo-sim-grid{grid-template-columns:1fr}.ua-leo-sim-copy{display:block;margin:8px 0 0}}
