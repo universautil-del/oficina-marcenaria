@@ -229,16 +229,16 @@
   wb.created=new Date();
   const r=result,filters=r.filters,s=r.summary;
   const summary=wb.addWorksheet('Resumo');
-  summary.columns=[{width:29},{width:27},{width:27}];
-  summary.addRow(['UNIVERSA ART — RELATÓRIO FINANCEIRO']);
+  summary.columns=[{key:'campo',width:29},{key:'valor',width:27},{key:'extra',width:27}];
+  summary.addRow({campo:'UNIVERSA ART — RELATÓRIO FINANCEIRO'});
   summary.mergeCells('A1:C1');
   summary.getCell('A1').font={bold:true,size:17,color:{argb:'FF1D503A'}};
-  summary.addRow(['Período inicial',formatDate(filters.from)]);
-  summary.addRow(['Período final',formatDate(filters.to)]);
-  summary.addRow(['Critério',filters.basis==='caixa'?'Por data do pagamento':'Por vencimento']);
-  summary.addRow(['Tipo',filters.type==='todos'?'Receitas e despesas':kindLabel(filters.type)]);
-  summary.addRow(['Situação',filters.basis==='caixa'?'Não aplicável':filters.status==='todos'?'Todas':statusLabel(filters.status)]);
-  summary.addRow([]);
+  summary.addRow({campo:'Período inicial',valor:formatDate(filters.from)});
+  summary.addRow({campo:'Período final',valor:formatDate(filters.to)});
+  summary.addRow({campo:'Critério',valor:filters.basis==='caixa'?'Por data do pagamento':'Por vencimento'});
+  summary.addRow({campo:'Tipo',valor:filters.type==='todos'?'Receitas e despesas':kindLabel(filters.type)});
+  summary.addRow({campo:'Situação',valor:filters.basis==='caixa'?'Não aplicável':filters.status==='todos'?'Todas':statusLabel(filters.status)});
+  summary.addRow({});
   const metrics=filters.basis==='caixa'?[
    ['Recebido no período',s.received],
    ['Pago no período',s.paid],
@@ -255,12 +255,12 @@
    ['Registros',s.records]
   ];
   for(const [name,val] of metrics){
-   const row=summary.addRow([name,val]);
+   const row=summary.addRow({campo:name,valor:val});
    if(name!=='Registros'&&name!=='Movimentações')row.getCell(2).numFmt=moneyCell;
    if(name==='Resultado'||name==='Resultado de caixa')row.font={bold:true,color:{argb:'FF1D503A'}};
   }
-  summary.addRow([]);
-  summary.addRow(['Observação',filters.basis==='caixa'?'Pagamentos efetivos do período.':'Por vencimento; liquidado considera pagamentos registrados até agora.']);
+  summary.addRow({});
+  summary.addRow({campo:'Observação',valor:filters.basis==='caixa'?'Pagamentos efetivos do período.':'Por vencimento; liquidado considera pagamentos registrados até agora.'});
   summary.getColumn(2).alignment={wrapText:true};
   summary.getColumn(3).alignment={wrapText:true};
   const detail=wb.addWorksheet(filters.basis==='caixa'?'Pagamentos':'Lançamentos');
