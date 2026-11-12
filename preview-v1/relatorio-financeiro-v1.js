@@ -233,10 +233,8 @@
   summary.addRow(['UNIVERSA ART — RELATÓRIO FINANCEIRO']);
   summary.mergeCells('A1:C1');
   summary.getCell('A1').font={bold:true,size:17,color:{argb:'FF1D503A'}};
-  summary.addRow(['Período inicial',excelDate(filters.from)]);
-  summary.addRow(['Período final',excelDate(filters.to)]);
-  summary.getCell('B2').numFmt='dd/mm/yyyy';
-  summary.getCell('B3').numFmt='dd/mm/yyyy';
+  summary.addRow(['Período inicial',formatDate(filters.from)]);
+  summary.addRow(['Período final',formatDate(filters.to)]);
   summary.addRow(['Critério',filters.basis==='caixa'?'Por data do pagamento':'Por vencimento']);
   summary.addRow(['Tipo',filters.type==='todos'?'Receitas e despesas':kindLabel(filters.type)]);
   summary.addRow(['Situação',filters.basis==='caixa'?'Não aplicável':filters.status==='todos'?'Todas':statusLabel(filters.status)]);
