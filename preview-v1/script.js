@@ -399,11 +399,59 @@ function financeView(){const q=search.financeiro.toLowerCase();const list=db.tra
  const due=db.transactions.filter(t=>t.kind==='receber').reduce((s,t)=>s+balance(t),0),owing=db.transactions.filter(t=>t.kind==='pagar').reduce((s,t)=>s+balance(t),0);
  const earned=db.transactions.filter(t=>t.kind==='receber').reduce((s,t)=>s+cashReceived(t),0),spent=db.transactions.filter(t=>t.kind==='pagar').reduce((s,t)=>s+cashReceived(t),0);
  content.innerHTML=`${intro('Financeiro','Receitas, despesas, parcelas e pagamentos parciais.')}<div class="cards"><div class="card"><div class="label">A receber</div><div class="value">${money(due)}</div></div><div class="card"><div class="label">A pagar</div><div class="value">${money(owing)}</div></div><div class="card"><div class="label">Recebido</div><div class="value">${money(earned)}</div></div><div class="card"><div class="label">Saldo de caixa</div><div class="value">${money(earned-spent)}</div></div></div>
- <section class="panel gap-top"><div class="toolbar">${inputSearch('financeiro')}<div class="actions">${button('Exportar CSV','export-finance')}${button('+ Receita / Despesa','new-transaction','','primary')}</div></div>${table(['Lançamento','Vencimento','Valor','Saldo','Situação','Ações'],list.map(t=>{const paid=cashReceived(t);return td(`<strong>${esc(t.descricao)}</strong><div class="small muted">${esc(kindText[t.kind])}${t.orderId?' · Pedido #'+getOrder(t.orderId)?.number:''}</div>`,date(t.dueDate),money(t.valor),money(balance(t)),pill(balance(t)<0.005?'Pago':paid>0?'Parcial':'Pendente',balance(t)<0.005?'success':paid>0?'warn':''),`<div class="row-actions">${balance(t)>0?button('Registrar pagamento','pay-transaction',t.id,'small'):''}${t.kind==='receber'&&paid>0?button('Recibos','show-receipts',t.id,'small'):''}${!t.orderId&&paid===0?button('Excluir','delete-transaction',t.id,'small danger'):''}</div>`)}))}</section>`;
+ <section class="panel gap-top"><div class="toolbar">${inputSearch('financeiro')}<div class="actions">${button('Exportar CSV','export-finance')}${button('+ Receita / Despesa','new-transaction','','primary')}</div></div>${table(['Lançamento','Vencimento','Valor','Saldo','Situação','Ações'],list.map(t=>{const paid=cashReceived(t);return td(`<strong>${esc(t.descricao)}</strong><div class="small muted">${esc(kindText[t.kind])}${t.orderId?' · Pedido #'+getOrder(t.orderId)?.number:''}</div>`,date(t.dueDate),money(t.valor),money(balance(t)),pill(balance(t)<0.005?'Pago':paid>0?'Parcial':'Pendente',balance(t)<0.005?'success':paid>0?'warn':''),`<div class="row-actions">${balance(t)>0?button('Registrar pagamento','pay-transaction',t.id,'small'):''}${t.kind==='receber'&&paid>0?button('Recibos','show-receipts',t.id,'small'):''}${paid>0?button('Desfazer pagamento','list-payments',t.id,'small danger'):''}${!t.orderId&&paid===0?button('Excluir','delete-transaction',t.id,'small danger'):''}</div>`)}))}</section>`;
 }
 function transactionModal(){openModal('Nova receita ou despesa',`<div class="form-grid"><label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label><label>Vencimento<input type="date" name="dueDate" value="${iso()}" required></label><label class="full">Descrição *<input name="descricao" required></label><label>Valor (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label></div>`,v=>{if(!Number.isFinite(Number(v.valor))||Number(v.valor)<=0||!['receber','pagar'].includes(v.kind)||!String(v.descricao||'').trim())throw Error('Valor, tipo ou descrição inválidos.');const before=db.transactions;db.transactions=[...db.transactions,{id:id(),kind:v.kind,descricao:v.descricao.trim(),dueDate:v.dueDate,valor:round(v.valor),payments:[],orderId:''}];if(save()===false){db.transactions=before;throw Error('Não foi possível salvar o lançamento.');}return true})}
 function paymentModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t)return;const left=balance(t);if(left<=0)return alert('Lançamento quitado.');openModal('Registrar '+(t.kind==='receber'?'recebimento':'pagamento'),`<p class="form-note">${esc(t.descricao)}<br>Saldo em aberto: <strong>${money(left)}</strong></p><div class="form-grid"><label>Valor ${t.kind==='receber'?'recebido':'pago'} *<input type="number" name="valor" required min="0.01" step="0.01" max="${left}" value="${left}"></label><label>Data<input type="date" name="date" required value="${iso()}"></label><label class="full">Forma de pagamento<input name="method" placeholder="Pix, dinheiro, transferência, cartão..."></label></div>`,v=>{const val=round(v.valor);if(!(val>0)||val>balance(t)+.001)throw Error('Valor deve ser maior que zero e não ultrapassar o saldo.');const oldPayments=t.payments||[];t.payments=[...oldPayments,{id:id(),valor:val,date:v.date,method:v.method||''}];if(save()===false){t.payments=oldPayments;throw Error('Não foi possível registrar o pagamento; o saldo foi preservado.');}return true})}
-function receiptModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t||t.kind!=='receber')return;const rows=(t.payments||[]).slice().reverse().map(p=>td(date(p.date),money(p.valor),esc(p.method||'—'),button('Imprimir recibo','print-receipt',`${t.id}:${p.id}`,'small')));openModal('Recibos — '+t.descricao,table(['Data','Valor','Forma','Ação'],rows,'Nenhum recebimento.'),()=>true)}
+function paymentHistoryModal(tid){
+ const t=db.transactions.find(x=>x.id===tid);
+ if(!t)return alert('Lançamento financeiro não encontrado.');
+ const rows=(t.payments||[]).slice().reverse().map(p=>td(
+  date(p.date),money(p.valor),esc(p.method||'—'),
+  (t.kind==='receber'?button('Imprimir recibo','print-receipt',t.id+':'+p.id,'small'):'')+
+  button('Desfazer','undo-payment',t.id+':'+p.id,'small danger')
+ ));
+ const reversals=(t.paymentReversals||[]).slice().reverse().map(r=>
+  td(date(r.reversedAt),money(r.valor),esc(r.method||'—'),
+   '<span class="muted small">Pagamento de '+date(r.date)+' desfeito (histórico preservado)</span>'));
+ openModal('Histórico de pagamentos — '+t.descricao,
+  '<p class="form-note">Escolha o pagamento que deseja desfazer. O saldo e o caixa serão recalculados. Esta correção não exclui o pedido nem as demais parcelas.</p>'+
+  '<h3>Pagamentos válidos</h3>'+table(['Data','Valor','Forma','Ações'],rows,'Nenhum pagamento ativo.')+
+  (reversals.length?'<h3>Estornos registrados</h3>'+table(['Data do estorno','Valor','Forma','Situação'],reversals):''),
+  ()=>true,
+  dlg=>dlg.dataset.uaPaymentHistory=tid
+ );
+}
+function undoPayment(reference){
+ const separator=String(reference||'').lastIndexOf(':');
+ if(separator<=0)throw Error('Selecione o pagamento que deseja desfazer.');
+ const tid=reference.slice(0,separator),pid=reference.slice(separator+1);
+ const t=db.transactions.find(x=>x.id===tid);
+ const payment=t?.payments?.find(p=>p.id===pid);
+ if(!t||!payment)throw Error('Este pagamento já foi desfeito ou não foi encontrado. Atualize o Financeiro.');
+ const ok=confirm('Desfazer '+(t.kind==='receber'?'o recebimento':'o pagamento')+' de '+money(payment.valor)+
+  ' de '+date(payment.date)+'?\nO saldo e o caixa serão atualizados. A correção ficará registrada no histórico.');
+ if(!ok)return false;
+ const beforePayments=t.payments;
+ const beforeReversals=t.paymentReversals||[];
+ t.payments=beforePayments.filter(p=>p.id!==pid);
+ t.paymentReversals=[...beforeReversals,{
+  ...payment,originalPaymentId:payment.id,reversalId:id(),reversedAt:iso(),
+  reason:'Correção manual de pagamento'
+ }];
+ try{
+  if(save()===false)throw Error('Não foi possível salvar o estorno; o pagamento original foi preservado.');
+ }catch(error){
+  t.payments=beforePayments;
+  t.paymentReversals=beforeReversals;
+  throw error;
+ }
+ document.querySelector('dialog[open][data-ua-payment-history]')?.close();
+ render('financeiro');
+ alert('Pagamento desfeito. Saldo e caixa atualizados. Aguarde a sincronização no Supabase.');
+ return true;
+}
+function receiptModal(tid){return paymentHistoryModal(tid)}
 const defaultContract=`CONTRATO DE FORNECIMENTO DE MÓVEIS / SERVIÇOS\n\nCONTRATADA: {{empresa}}\nCONTRATANTE: {{cliente}}\nPEDIDO Nº {{pedido}} — DATA: {{data}}\n\nOBJETO DO CONTRATO:\n{{itens}}\n\nVALOR TOTAL: {{total}}\nCONDIÇÃO DE PAGAMENTO: {{pagamento}}\nPRAZO OU PREVISÃO DE ENTREGA: {{entrega}}\n\nOUTRAS CONDIÇÕES / OBSERVAÇÕES:\n{{observacoes}}\n\nAs condições de instalação, garantia, alterações de projeto e responsabilidades devem ser definidas e revisadas pelas partes antes da assinatura.\n\n{{assinaturas}}`;
 function companyView(){const c=db.company||{};
  content.innerHTML=`${intro('Minha Empresa','Dados para documentos e backup completo.')}<div class="settings-grid"><section class="panel"><h3>Dados da marcenaria</h3><div class="form-grid gap-top"><label class="full">Nome / Razão social<input id="coNome" value="${esc(c.nome||'Universa Art')}"></label><label>CPF / CNPJ<input id="coCnpj" value="${esc(c.cnpj)}"></label><label>Telefone<input id="coTel" value="${esc(c.telefone)}"></label><label class="full">E-mail<input id="coEmail" type="email" value="${esc(c.email)}"></label><label class="full">Endereço<input id="coEndereco" value="${esc(c.endereco)}"></label><label class="full">Pix / Dados bancários<input id="coPix" value="${esc(c.pix)}"></label></div><div class="actions gap-top">${button('Salvar dados','save-company','','primary')}${button('Adicionar logotipo','upload-logo')}</div><input type="file" id="uaCompanyLogoInput" hidden accept="image/png,image/jpeg,image/webp" aria-label="Selecionar logotipo PNG JPG ou WebP"><p id="uaCompanyLogoStatus" class="muted small" role="status" aria-live="polite">PNG, JPG ou WebP (até 4 MB). A imagem será ajustada para os documentos.</p><div id="uaCompanyLogoPreview">${c.logo?`<div class="gap-top"><img src="${esc(c.logo)}" alt="Logotipo atual da empresa" style="max-height:85px;max-width:220px;object-fit:contain"></div>`:''}</div></section><section class="panel"><h3>Contrato padrão UNIVERSA ART DESIGN</h3><p class="muted">O contrato padrão para os pedidos usa as 15 cláusulas, a identificação das partes, os itens e o parcelamento automaticamente. Confira os dados e as condições antes de assinar.</p><p class="muted small">O modelo antigo continua preservado abaixo como opção. Marque a caixa somente se preferir imprimir esse texto personalizado no lugar do padrão da UNIVERSA ART DESIGN.</p><label class="full" style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="useCustomContract" ${c.contratoPersonalizado===true?'checked':''}>Usar modelo personalizado antigo em vez do padrão</label><textarea id="contractTemplate" rows="20" style="width:100%;margin-top:15px;padding:13px;border:1px solid #cdd6d0;border-radius:9px;font:inherit">${esc(c.contrato||defaultContract)}</textarea><div class="actions gap-top">${button('Salvar modelo','save-contract','','primary')}</div></section></div><section class="panel gap-top"><div class="panel-head"><h3>Backup e restauração</h3></div><p class="muted">Exporta clientes, produtos, pedidos, movimentações, financeiro, empresa e contratos para um arquivo JSON. Guarde o backup em local seguro.</p><div class="actions gap-top">${button('Exportar backup completo','backup','','primary')}${button('Importar backup','import')}</div><div class="notice">Este site no GitHub Pages é público e não tem login. Os dados ficam apenas no navegador deste aparelho. Não use informações comerciais sensíveis até configurar banco de dados e autenticação seguros.</div></section>`;
@@ -530,7 +578,7 @@ function handleAction(action,item){switch(action){
  case 'print-quote':{const o=getQuote(item);if(o)salesPrint(o,'Orçamento');return}
  case 'new-order':return openSales('order');case 'view-order':return orderDetails(item);case 'reserve-order':return reserveOrder(item);case 'start-order':return startOrder(item);
  case 'ready-order':return advanceOrder(item,'pronto');case 'deliver-order':return advanceOrder(item,'entregue');case 'cancel-order':return cancelOrder(item);
- case 'new-transaction':return transactionModal();case 'pay-transaction':return paymentModal(item);case 'show-receipts':return receiptModal(item);case 'delete-transaction':return deleteTransaction(item);
+ case 'new-transaction':return transactionModal();case 'pay-transaction':return paymentModal(item);case 'show-receipts':return receiptModal(item);case 'list-payments':return paymentHistoryModal(item);case 'undo-payment':return undoPayment(item);case 'delete-transaction':return deleteTransaction(item);
  case 'print-order':{const o=getOrder(item);if(o)salesPrint(o,'Pedido');return}case 'print-contract':{const o=getOrder(item);if(o)contractPrint(o);return}
  case 'print-receipt':{const [tid,pid]=item.split(':');return receiptPrint(tid,pid)}
  case 'save-company':return companySave();case 'upload-logo':return uploadLogo();case 'save-contract':{const before={contrato:db.company.contrato,contratoPersonalizado:db.company.contratoPersonalizado};db.company.contrato=content.querySelector('#contractTemplate').value;db.company.contratoPersonalizado=!!content.querySelector('#useCustomContract')?.checked;if(save()===false){db.company.contrato=before.contrato;db.company.contratoPersonalizado=before.contratoPersonalizado;return alert('Não foi possível salvar o modelo. Os dados anteriores foram preservados.');}return alert(db.company.contratoPersonalizado?'Modelo personalizado ativado.':'Modelo padrão UNIVERSA ART DESIGN ativado.');}
