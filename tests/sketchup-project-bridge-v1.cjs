@@ -12,7 +12,7 @@ assert(features.includes('Importar SketchUp'));
 assert(skp.includes('window.universaArtProjectBridge?.panel?.()'));
 const up=read('preview-v1/upgrade.js'),base=read('preview-v1/script.js');
 assert(base.includes("['compras','▥','Entrada de Materiais']"));
-assert(up.includes("openModal('Nova entrada de materiais'"));
+assert(up.includes("invoice?'Conferir entrada da NF")&&up.includes(":'Nova entrada de materiais'"),'Entrada de Materiais deve manter título normal e permitir NF vinculada');
 assert(up.includes("button('Confirmar entrada','receive-purchase'"));
 assert(up.includes("p.status='recebida'"));
 assert(up.includes("const account={id:id(),kind:'pagar',purchaseId:pur.id"));
