@@ -23,3 +23,14 @@
 .ua-skp-material .muted{line-height:1.6}
 @media(max-width:1000px){.ua-skp-totals{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:690px){.ua-mapping,.ua-skp-settings{grid-template-columns:1fr}.ua-skp-totals{grid-template-columns:repeat(2,minmax(0,1fr))}.ua-skp-upload input{width:100%}}
+
+/* Integração da lista de peças com a matéria-prima cadastrada na OFICINA */
+.ua-skp-material-link{padding:13px 14px;background:#f0f6f0;border:1px solid #cfdfd1;border-radius:9px;margin:11px 0}
+.ua-skp-material-link>strong{display:block;color:#25523b;font-size:13px;margin-bottom:5px}
+.ua-skp-material-link p{margin:5px 0 10px}
+.ua-skp-material-link-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ua-skp-material-link-fields label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#385645}
+.ua-skp-material-link-fields input,.ua-skp-material-link-fields select{width:100%;min-width:0;min-height:41px;padding:8px 10px;border:1px solid #c2d5c8;border-radius:8px;background:#fff;color:#1d4230;font:inherit}
+.ua-skp-material-link .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.ua-skp-material-link .actions .btn{min-height:39px}
+@media(max-width:690px){.ua-skp-material-link-fields{grid-template-columns:1fr}.ua-skp-material-link{padding:11px}}
