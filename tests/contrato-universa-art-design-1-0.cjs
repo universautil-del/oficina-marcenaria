@@ -73,7 +73,7 @@ assert(html.includes('.ua-contract-sign-signed>div:nth-child(2) .ua-contract-lin
 const priorSignature=ctx.window.universaArtAssinatura;
 ctx.window.universaArtAssinatura=null;
 const withoutImage=api.htmlForContract(order);
-assert(!withoutImage.includes('ua-contract-sign-signed'),'Sem imagem, manter assinatura manual');
+assert(!withoutImage.includes('<section class="ua-contract-sign ua-contract-sign-signed"'),'Sem imagem, manter assinatura manual');
 ctx.window.universaArtAssinatura=priorSignature;
 assert(!html.includes('RASCUNHO — DADOS PENDENTES'));
 assert(html.includes('São Paulo/SP, terça-feira, 10 de novembro de 2026.'),'Dia da semana não deve ser inventado');
