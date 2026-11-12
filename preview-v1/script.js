@@ -404,16 +404,84 @@ function financeView(){const q=search.financeiro.toLowerCase();const list=db.tra
  const due=db.transactions.filter(t=>t.kind==='receber').reduce((s,t)=>s+balance(t),0),owing=db.transactions.filter(t=>t.kind==='pagar').reduce((s,t)=>s+balance(t),0);
  const earned=db.transactions.filter(t=>t.kind==='receber').reduce((s,t)=>s+cashReceived(t),0),spent=db.transactions.filter(t=>t.kind==='pagar').reduce((s,t)=>s+cashReceived(t),0);
  content.innerHTML=`${intro('Financeiro','Receitas, despesas, parcelas e pagamentos parciais.')}<div class="cards"><div class="card"><div class="label">A receber</div><div class="value">${money(due)}</div></div><div class="card"><div class="label">A pagar</div><div class="value">${money(owing)}</div></div><div class="card"><div class="label">Recebido</div><div class="value">${money(earned)}</div></div><div class="card"><div class="label">Saldo de caixa</div><div class="value">${money(earned-spent)}</div></div></div>
- <section class="panel gap-top"><div class="toolbar">${inputSearch('financeiro')}<div class="actions">${button('Exportar CSV','export-finance')}${button('+ Receita / Despesa','new-transaction','','primary')}</div></div>${table(['Lançamento','Vencimento','Valor','Saldo','Situação','Ações'],list.map(t=>{const paid=cashReceived(t);return td(`<strong>${esc(t.descricao)}</strong><div class="small muted">${esc(kindText[t.kind])}${t.orderId?' · Pedido #'+(getOrder(t.orderId)?.number||'—'):''}</div>${t.kind==='receber'&&financeClientName(t)?`<div class="small"><strong>Cliente:</strong> ${esc(financeClientName(t))}</div>`:''}`,date(t.dueDate),money(t.valor),money(balance(t)),pill(balance(t)<0.005?'Pago':paid>0?'Parcial':'Pendente',balance(t)<0.005?'success':paid>0?'warn':''),`<div class="row-actions">${balance(t)>0?button('Registrar pagamento','pay-transaction',t.id,'small'):''}${t.kind==='receber'&&paid>0?button('Recibos','show-receipts',t.id,'small'):''}${paid>0?button('Desfazer pagamento','list-payments',t.id,'small danger'):''}${!t.orderId&&paid===0?button('Excluir','delete-transaction',t.id,'small danger'):''}</div>`)}))}</section>`;
+ <section class="panel gap-top"><div class="toolbar">${inputSearch('financeiro')}<div class="actions">${button('Exportar CSV','export-finance')}${button('+ Receita / Despesa','new-transaction','','primary')}</div></div>${table(['Lançamento','Vencimento','Valor','Saldo','Situação','Ações'],list.map(t=>{const paid=cashReceived(t);return td(`<strong>${esc(t.descricao)}</strong><div class="small muted">${esc(kindText[t.kind])}${t.orderId?' · Pedido #'+(getOrder(t.orderId)?.number||'—'):''}</div>${t.kind==='receber'&&financeClientName(t)?`<div class="small"><strong>Cliente:</strong> ${esc(financeClientName(t))}</div>`:''}${(t.paymentMethod||(!t.purchaseId&&t.orderId?getOrder(t.orderId)?.payment?.forma:''))?`<div class="small muted">Forma prevista: ${esc(t.paymentMethod||getOrder(t.orderId)?.payment?.forma||'')}</div>`:''}`,date(t.dueDate),money(t.valor),money(balance(t)),pill(balance(t)<0.005?'Pago':paid>0?'Parcial':'Pendente',balance(t)<0.005?'success':paid>0?'warn':''),`<div class="row-actions">${button('Editar','edit-transaction',t.id,'small')}${balance(t)>0?button('Registrar pagamento','pay-transaction',t.id,'small'):''}${t.kind==='receber'&&paid>0?button('Recibos','show-receipts',t.id,'small'):''}${paid>0?button('Desfazer pagamento','list-payments',t.id,'small danger'):''}${!t.orderId&&paid===0?button('Excluir','delete-transaction',t.id,'small danger'):''}</div>`)}))}</section>`;
 }
-function transactionModal(){openModal('Nova receita ou despesa',`<div class="form-grid"><label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label><label>Vencimento<input type="date" name="dueDate" value="${iso()}" required></label><label class="full">Descrição *<input name="descricao" required></label><label>Valor (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label></div>`,v=>{if(!Number.isFinite(Number(v.valor))||Number(v.valor)<=0||!['receber','pagar'].includes(v.kind)||!String(v.descricao||'').trim())throw Error('Valor, tipo ou descrição inválidos.');const before=db.transactions;db.transactions=[...db.transactions,{id:id(),kind:v.kind,descricao:v.descricao.trim(),dueDate:v.dueDate,valor:round(v.valor),payments:[],orderId:''}];if(save()===false){db.transactions=before;throw Error('Não foi possível salvar o lançamento.');}return true})}
-function paymentModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t)return;const left=balance(t);if(left<=0)return alert('Lançamento quitado.');openModal('Registrar '+(t.kind==='receber'?'recebimento':'pagamento'),`<p class="form-note">${esc(t.descricao)}<br>Saldo em aberto: <strong>${money(left)}</strong></p><div class="form-grid"><label>Valor ${t.kind==='receber'?'recebido':'pago'} *<input type="number" name="valor" required min="0.01" step="0.01" max="${left}" value="${left}"></label><label>Data<input type="date" name="date" required value="${iso()}"></label><label class="full">Forma de pagamento<input name="method" placeholder="Pix, dinheiro, transferência, cartão..."></label></div>`,v=>{const val=round(v.valor);if(!(val>0)||val>balance(t)+.001)throw Error('Valor deve ser maior que zero e não ultrapassar o saldo.');const oldPayments=t.payments||[];t.payments=[...oldPayments,{id:id(),valor:val,date:v.date,method:v.method||''}];if(save()===false){t.payments=oldPayments;throw Error('Não foi possível registrar o pagamento; o saldo foi preservado.');}return true})}
+function transactionModal(){openModal('Nova receita ou despesa',`<div class="form-grid"><label>Tipo<select name="kind"><option value="receber">Receita</option><option value="pagar">Despesa</option></select></label><label>Vencimento<input type="date" name="dueDate" value="${iso()}" required></label><label class="full">Descrição *<input name="descricao" required></label><label>Valor (R$) *<input name="valor" type="number" step="0.01" min="0.01" required></label><label class="full">Forma de pagamento prevista<input name="paymentMethod" maxlength="100" placeholder="Pix, boleto, cartão, dinheiro..."></label><label class="full">Observações<textarea name="observacoes" maxlength="900" rows="2"></textarea></label></div>`,v=>{if(!Number.isFinite(Number(v.valor))||Number(v.valor)<=0||!['receber','pagar'].includes(v.kind)||!String(v.descricao||'').trim())throw Error('Valor, tipo ou descrição inválidos.');const before=db.transactions;db.transactions=[...db.transactions,{id:id(),kind:v.kind,descricao:v.descricao.trim(),dueDate:v.dueDate,valor:round(v.valor),paymentMethod:String(v.paymentMethod||'').trim().slice(0,100),observacoes:String(v.observacoes||'').trim().slice(0,900),payments:[],orderId:''}];if(save()===false){db.transactions=before;throw Error('Não foi possível salvar o lançamento.');}return true})}
+
+function financeValidDate(value){
+ const dateText=String(value||'');
+ if(!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(dateText))return false;
+ const parsed=new Date(dateText+'T12:00:00Z');
+ return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===dateText;
+}
+function editTransactionModal(tid){
+ const t=db.transactions.find(x=>x.id===tid);
+ if(!t)return alert('Lançamento financeiro não encontrado.');
+ const linked=!!(t.orderId||t.purchaseId),paid=cashReceived(t);
+ const order=t.orderId?getOrder(t.orderId):null;
+ const method=t.paymentMethod||(!t.purchaseId&&order?.payment?.forma)||'';
+ const locked=linked||paid>0;
+ const fields=`<p class="form-note">${linked?'Lançamento vinculado a pedido ou entrada de materiais. Para preservar o valor contratado e a conciliação, o tipo, a descrição e o valor não podem ser alterados aqui.':'Altere os dados do lançamento. O valor não pode ser menor que o total já recebido ou pago.'}</p>
+ <div class="form-grid">
+  <label>Tipo de lançamento<select name="kind" ${locked?'disabled':''}>
+   <option value="receber" ${t.kind==='receber'?'selected':''}>Receita / a receber</option>
+   <option value="pagar" ${t.kind==='pagar'?'selected':''}>Despesa / a pagar</option>
+  </select></label>
+  <label>Data de vencimento *<input name="dueDate" type="date" required value="${esc(t.dueDate||'')}"></label>
+  <label class="full">Descrição *<input name="descricao" maxlength="240" required ${linked?'readonly':''} value="${esc(t.descricao||'')}"></label>
+  <label>Valor do lançamento (R$) *<input name="valor" type="number" min="0.01" step="0.01" required ${linked?'readonly':''} value="${Number(t.valor||0)}"></label>
+  <label>Forma de pagamento prevista
+   <input name="paymentMethod" maxlength="100" list="ua-finance-methods" placeholder="Pix, boleto, dinheiro, cartão..." value="${esc(method)}">
+   <datalist id="ua-finance-methods"><option value="Pix"><option value="Boleto"><option value="Dinheiro"><option value="Cartão de crédito"><option value="Cartão de débito"><option value="Transferência"><option value="Cheque"></datalist>
+  </label>
+  <label class="full">Observações<textarea name="observacoes" maxlength="900" rows="3">${esc(t.observacoes||'')}</textarea></label>
+ </div>
+ <p class="inline-note">${paid>0?'Já existem pagamentos: '+money(paid)+'. Os comprovantes e datas de recebimento são editados no Histórico de pagamentos.':'A edição não registra recebimento nem pagamento.'}
+ ${linked?'Ao alterar a data ou forma prevista desta parcela, os valores e as outras parcelas do pedido permanecem intactos.':''}</p>`;
+ return openModal('Editar lançamento financeiro',fields,v=>{
+  const dueDate=String(v.dueDate||'').trim();
+  if(!financeValidDate(dueDate))throw Error('Informe uma data de vencimento válida.');
+  const kind=locked?t.kind:String(v.kind||'');
+  if(!['receber','pagar'].includes(kind))throw Error('Tipo de lançamento inválido.');
+  const descricao=linked?t.descricao:String(v.descricao||'').trim();
+  if(!descricao||descricao.length>240)throw Error('Informe a descrição (até 240 caracteres).');
+  const amount=linked?Number(t.valor):Number(v.valor);
+  if(!Number.isFinite(amount)||amount<=0||amount+0.005<paid)throw Error('O valor deve ser maior que zero e não pode ficar abaixo do total já pago.');
+  const paymentMethod=String(v.paymentMethod||'').trim();
+  const observacoes=String(v.observacoes||'').trim();
+  if(paymentMethod.length>100||observacoes.length>900)throw Error('Resuma a forma de pagamento ou as observações.');
+  const next={...t,kind,descricao,dueDate,valor:round(amount),paymentMethod,observacoes};
+  const fieldsToCheck=['kind','descricao','dueDate','valor','paymentMethod','observacoes'];
+  if(!fieldsToCheck.some(key=>String(t[key]??'')!==String(next[key]??'')))return true;
+  next.financeEditHistory=[...(t.financeEditHistory||[]),{
+   changedAt:new Date().toISOString(),
+   before:Object.fromEntries(fieldsToCheck.map(key=>[key,t[key]??''])),
+   after:Object.fromEntries(fieldsToCheck.map(key=>[key,next[key]??'']))
+  }];
+  const beforeTransactions=db.transactions;
+  const purchase=t.purchaseId?(db.purchases||[]).find(p=>p.id===t.purchaseId):null;
+  const previousPurchaseDate=purchase?.dueDate;
+  db.transactions=db.transactions.map(row=>row.id===tid?next:row);
+  if(purchase)purchase.dueDate=dueDate;
+  try{
+   if(save()===false)throw Error('Não foi possível salvar a edição do lançamento.');
+  }catch(error){
+   db.transactions=beforeTransactions;
+   if(purchase)purchase.dueDate=previousPurchaseDate;
+   throw error;
+  }
+  return true;
+ });
+}
+
+function paymentModal(tid){const t=db.transactions.find(x=>x.id===tid);if(!t)return;const left=balance(t);if(left<=0)return alert('Lançamento quitado.');openModal('Registrar '+(t.kind==='receber'?'recebimento':'pagamento'),`<p class="form-note">${esc(t.descricao)}<br>Saldo em aberto: <strong>${money(left)}</strong></p><div class="form-grid"><label>Valor ${t.kind==='receber'?'recebido':'pago'} *<input type="number" name="valor" required min="0.01" step="0.01" max="${left}" value="${left}"></label><label>Data<input type="date" name="date" required value="${iso()}"></label><label class="full">Forma de pagamento<input name="method" maxlength="100" value="${esc(t.paymentMethod||getOrder(t.orderId)?.payment?.forma||'')}" placeholder="Pix, dinheiro, transferência, cartão..."></label></div>`,v=>{const val=round(v.valor);if(!(val>0)||val>balance(t)+.001)throw Error('Valor deve ser maior que zero e não ultrapassar o saldo.');const oldPayments=t.payments||[];t.payments=[...oldPayments,{id:id(),valor:val,date:v.date,method:v.method||''}];if(save()===false){t.payments=oldPayments;throw Error('Não foi possível registrar o pagamento; o saldo foi preservado.');}return true})}
 function paymentHistoryModal(tid){
  const t=db.transactions.find(x=>x.id===tid);
  if(!t)return alert('Lançamento financeiro não encontrado.');
  const rows=(t.payments||[]).slice().reverse().map(p=>td(
   date(p.date),money(p.valor),esc(p.method||'—'),
   (t.kind==='receber'?button('Imprimir recibo','print-receipt',t.id+':'+p.id,'small'):'')+
+  button('Editar','edit-payment',t.id+':'+p.id,'small')+
   button('Desfazer','undo-payment',t.id+':'+p.id,'small danger')
  ));
  const reversals=(t.paymentReversals||[]).slice().reverse().map(r=>
@@ -427,6 +495,47 @@ function paymentHistoryModal(tid){
   dlg=>dlg.dataset.uaPaymentHistory=tid
  );
 }
+
+function editRecordedPaymentModal(reference){
+ const separator=String(reference||'').lastIndexOf(':');
+ if(separator<=0)throw Error('Pagamento não identificado.');
+ const tid=reference.slice(0,separator),pid=reference.slice(separator+1);
+ const t=db.transactions.find(x=>x.id===tid),payment=t?.payments?.find(p=>p.id===pid);
+ if(!t||!payment)throw Error('Pagamento não encontrado ou já desfeito.');
+ const fields=`<p class="form-note">Correção de dados do pagamento de ${money(payment.valor)}. Para modificar o valor, use Desfazer pagamento e registre o valor correto. Esta edição não movimenta o caixa novamente.</p>
+ <div class="form-grid">
+  <label>Data do pagamento *<input type="date" name="date" required value="${esc(payment.date||'')}"></label>
+  <label>Valor (R$)<input type="number" readonly value="${Number(payment.valor)}"></label>
+  <label class="full">Forma de pagamento<input name="method" maxlength="100" list="ua-finance-recorded-methods" placeholder="Pix, cartão, dinheiro..." value="${esc(payment.method||'')}">
+   <datalist id="ua-finance-recorded-methods"><option value="Pix"><option value="Boleto"><option value="Dinheiro"><option value="Cartão de crédito"><option value="Cartão de débito"><option value="Transferência"><option value="Cheque"></datalist>
+  </label>
+ </div>`;
+ return openModal('Editar pagamento registrado',fields,v=>{
+  const dateText=String(v.date||'').trim(),method=String(v.method||'').trim();
+  if(!financeValidDate(dateText))throw Error('Data de pagamento inválida.');
+  if(method.length>100)throw Error('Forma de pagamento muito longa.');
+  if(dateText===payment.date&&method===(payment.method||''))return true;
+  const oldPayments=t.payments,hadCorrections=Object.prototype.hasOwnProperty.call(t,'paymentCorrections');
+  const oldCorrections=t.paymentCorrections;
+  t.payments=oldPayments.map(p=>p.id===pid?{...p,date:dateText,method}:p);
+  t.paymentCorrections=[...(oldCorrections||[]),{
+   paymentId:pid,correctedAt:new Date().toISOString(),
+   before:{date:payment.date,method:payment.method||''},
+   after:{date:dateText,method}
+  }];
+  try{
+   if(save()===false)throw Error('Falha ao salvar a correção do pagamento.');
+  }catch(error){
+   t.payments=oldPayments;
+   if(hadCorrections)t.paymentCorrections=oldCorrections;
+   else delete t.paymentCorrections;
+   throw error;
+  }
+  document.querySelector('dialog[open][data-ua-payment-history]')?.close();
+  return true;
+ });
+}
+
 function undoPayment(reference){
  const separator=String(reference||'').lastIndexOf(':');
  if(separator<=0)throw Error('Selecione o pagamento que deseja desfazer.');
@@ -586,7 +695,7 @@ function handleAction(action,item){switch(action){
  case 'print-quote':{const o=getQuote(item);if(o)salesPrint(o,'Orçamento');return}
  case 'new-order':return openSales('order');case 'view-order':return orderDetails(item);case 'reserve-order':return reserveOrder(item);case 'start-order':return startOrder(item);
  case 'ready-order':return advanceOrder(item,'pronto');case 'deliver-order':return advanceOrder(item,'entregue');case 'cancel-order':return cancelOrder(item);
- case 'new-transaction':return transactionModal();case 'pay-transaction':return paymentModal(item);case 'show-receipts':return receiptModal(item);case 'list-payments':return paymentHistoryModal(item);case 'undo-payment':return undoPayment(item);case 'delete-transaction':return deleteTransaction(item);
+ case 'new-transaction':return transactionModal();case 'edit-transaction':return editTransactionModal(item);case 'pay-transaction':return paymentModal(item);case 'edit-payment':return editRecordedPaymentModal(item);case 'show-receipts':return receiptModal(item);case 'list-payments':return paymentHistoryModal(item);case 'undo-payment':return undoPayment(item);case 'delete-transaction':return deleteTransaction(item);
  case 'print-order':{const o=getOrder(item);if(o)salesPrint(o,'Pedido');return}case 'print-contract':{const o=getOrder(item);if(o)contractPrint(o);return}
  case 'print-receipt':{const [tid,pid]=item.split(':');return receiptPrint(tid,pid)}
  case 'save-company':return companySave();case 'upload-logo':return uploadLogo();case 'save-contract':{const before={contrato:db.company.contrato,contratoPersonalizado:db.company.contratoPersonalizado};db.company.contrato=content.querySelector('#contractTemplate').value;db.company.contratoPersonalizado=!!content.querySelector('#useCustomContract')?.checked;if(save()===false){db.company.contrato=before.contrato;db.company.contratoPersonalizado=before.contratoPersonalizado;return alert('Não foi possível salvar o modelo. Os dados anteriores foram preservados.');}return alert(db.company.contratoPersonalizado?'Modelo personalizado ativado.':'Modelo padrão UNIVERSA ART DESIGN ativado.');}
