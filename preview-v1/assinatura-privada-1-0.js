@@ -9,7 +9,7 @@
  const source=()=>pattern.test(signStored())?signStored():'';
  const logoSource=()=>{
   const stored=String(db.company?.logo||'');
-  return pattern.test(stored)?stored:'assets/universa-art-logo-novo.webp';
+  return db.company?.logoPersonalizado===true&&pattern.test(stored)?stored:'assets/universa-art-logo-novo.webp';
  };
  const image=(cls='ua-document-signature')=>{
   const src=source();
@@ -117,12 +117,27 @@
   return data;
  }
  const previousCompanyView=companyView;
- companyView=function(){const r=previousCompanyView();signaturePanel();refreshLogo();return r};
+ companyView=function(){
+  const r=previousCompanyView();
+  const logoPreview=content.querySelector('#uaCompanyLogoPreview');
+  if(logoPreview&&db.company?.logoPersonalizado!==true){
+   logoPreview.innerHTML='<div class="gap-top"><img src="assets/universa-art-logo-novo.webp" alt="Nova logomarca da UNIVERSA ART" style="max-height:85px;max-width:220px;object-fit:contain"></div>';
+  }
+  signaturePanel();refreshLogo();return r;
+ };
  const previousProcessLogo=processCompanyLogo;
  processCompanyLogo=async function(file){
-  const result=await previousProcessLogo(file);
-  if(result)refreshLogo();
-  return result;
+  const before=db.company?.logoPersonalizado;
+  if(db.company)db.company.logoPersonalizado=true;
+  try{
+   const result=await previousProcessLogo(file);
+   if(!result&&db.company)db.company.logoPersonalizado=before;
+   if(result)refreshLogo();
+   return result;
+  }catch(error){
+   if(db.company)db.company.logoPersonalizado=before;
+   throw error;
+  }
  };
  const previousRender=render;
  render=function(...args){const r=previousRender(...args);refreshLogo();return r};
