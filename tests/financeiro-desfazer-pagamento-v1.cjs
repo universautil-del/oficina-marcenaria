@@ -41,7 +41,7 @@ assert(content.innerHTML.includes('Recibos'));
 assert(content.innerHTML.includes('Cliente:')&&content.innerHTML.includes('Cliente do Pedido Teste'),'Financeiro mostra cliente de cada pedido');
 ctx.search.financeiro='Cliente do Pedido Teste';ctx.financeView();
 assert(content.innerHTML.includes('Pedido PED-2026-004'),'Busca deve encontrar lançamento pelo cliente');
-ctx.search.financeiro='';
+ctx.search.financeiro='';ctx.financeView();
 assert(content.innerHTML.includes('R$ 5.300,00')&&content.innerHTML.includes('R$ 500,00'));
 ctx.paymentHistoryModal('t1');
 assert(modal[0].html.includes('undo-payment'));
