@@ -7,7 +7,7 @@ const sales=fs.readFileSync(path.join(__dirname,'../preview-v1/script.js'),'utf8
 const page=fs.readFileSync(path.join(__dirname,'../preview-v1/seguro.html'),'utf8');
 new vm.Script(js,{filename:'integracoes-produtividade-1-0.js'});
 assert(page.includes('integracoes-produtividade-1-0.js')&&page.includes('integracoes-produtividade-1-0.css'));
-assert(upgrade.includes('function purchaseModal(prefillItems=[])'));
+assert(upgrade.includes('function purchaseModal(prefillItems=[],context={})'));
 assert(upgrade.includes('validated.forEach(row=>addPurchaseRow(dlg,row))'));
 assert(sales.includes('Lista SketchUp:'));
 const clients=[{id:'c1',nome:'Cliente Demonstrativo',telefone:'11999998888'},{id:'c2',nome:'Sem telefone'}];
