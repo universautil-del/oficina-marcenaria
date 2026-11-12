@@ -70,11 +70,13 @@
    '<input id="uaQuickInput" class="ua-quick-input" type="search" maxlength="120" autocomplete="off" placeholder="Ex.: PED-2026-005, MDF branco, aluguel...">'+
    '<div id="uaQuickMatches" class="ua-quick-matches" aria-live="polite"></div>'+
    '<div class="ua-quick-tasks"><strong>Atalhos de trabalho</strong><div class="ua-quick-task-buttons">'+
-   '<button type="button" class="btn" data-ua-quick-task="projeto">Projetos de móveis</button>'+
+   '<button type="button" class="btn" data-ua-quick-task="projeto">Novo projeto</button>'+
    '<button type="button" class="btn" data-ua-quick-task="orcamento">Novo orçamento</button>'+
    '<button type="button" class="btn" data-ua-quick-task="pedido">Novo pedido</button>'+
    '<button type="button" class="btn" data-ua-quick-task="entrada">Entrada de materiais</button>'+
    '<button type="button" class="btn" data-ua-quick-task="financeiro">Novo lançamento</button>'+
+   '<button type="button" class="btn" data-ua-quick-task="seguranca">Segurança</button>'+
+   '<button type="button" class="btn" data-ua-quick-task="backup">Backup</button>'+
    '</div></div>'+
    '<p class="ua-quick-footer">Atalho: Ctrl + K (ou ⌘ + K no Mac). Busca apenas nos registros que já estão carregados nesta sessão.</p>';
   document.body.append(dlg);
@@ -122,7 +124,8 @@
  function runTask(key){
   if(!allowed())return;
   removeDialog();
-  if(key==='projeto'){location.hash='projetos';render('projetos');return}
+  if(key==='projeto'){location.hash='projetos';render('projetos');if(typeof v5ProjectModal==='function')v5ProjectModal('');return}
+  if(key==='seguranca'||key==='backup'){const section=key==='seguranca'?'seguranca':'backupdrive';location.hash=section;render(section);return}
   if(key==='orcamento')return handleAction('new-quote','');
   if(key==='pedido')return handleAction('new-order','');
   if(key==='entrada')return handleAction('new-purchase','');
