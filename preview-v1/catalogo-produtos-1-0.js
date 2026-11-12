@@ -149,7 +149,7 @@
     '<option value="">Selecione um exemplo ou cadastre livremente</option>'+
     '<optgroup label="Madeiras / MDF (espessura)">'+
     '<option value="mdf15">MDF 15 mm</option><option value="mdf18">MDF 18 mm</option>'+
-    '<option value="mdf25">MDF 25 mm</option><option value="mdf06">MDF 6 mm</option></optgroup>'+
+    '<option value="mdf25">MDF 25 mm</option><option value="mdf06">MDF 06 mm</option></optgroup>'+
     '<optgroup label="Parafusos (diâmetro × comprimento, mm)">'+
     '<option value="par3_5x16">3,5 × 16</option><option value="par4x20">4 × 20</option>'+
     '<option value="par4x25">4 × 25</option><option value="par4x30">4 × 30</option>'+
@@ -255,7 +255,7 @@
      mdf15:{nome:'MDF 15 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:15},
      mdf18:{nome:'MDF 18 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:18},
      mdf25:{nome:'MDF 25 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:25},
-     mdf06:{nome:'MDF 6 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:6},
+     mdf06:{nome:'MDF 06 mm',categoria:'Chapas MDF',unidade:'chapa',espessuraMm:6},
      dobradica:{nome:'Dobradiça',categoria:'Dobradiças',unidade:'un'},
      corredica:{nome:'Corrediça',categoria:'Corrediças',unidade:'par'},
      cola:{nome:'Cola para madeira',categoria:'Colas e adesivos',unidade:'un'}
@@ -263,7 +263,7 @@
     for(const size of ['3,5x16','4x20','4x25','4x30','4x35','4x40','4x45','4x50','4x60','5x70'])
      options['par'+size.replace(',','.').replace('x','x').replace('.','_')]={nome:'Parafuso '+size.replace('x',' × ')+' mm',categoria:'Parafusos',unidade:'un'};
     for(const size of ['06','08','10','12'])
-     options['bucha'+size]={nome:'Bucha '+Number(size)+' mm',categoria:'Buchas',unidade:'un'};
+     options['bucha'+size]={nome:'Bucha '+size+' mm',categoria:'Buchas',unidade:'un'};
     for(const size of ['22','35','45','64'])
      options['fita'+size]={nome:'Fita de borda '+size+' mm',categoria:'Fitas de borda',unidade:'m'};
     const chosen=options[sample.value];
