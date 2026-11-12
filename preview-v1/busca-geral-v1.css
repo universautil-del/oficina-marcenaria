@@ -1,6 +1,44 @@
 /* OFICINA — busca geral e atalhos de trabalho */
-.ua-quick-trigger{font-weight:650;border-color:#c9d8ce;color:#1f593e;background:#f7faf7;margin-left:auto;white-space:nowrap}
-.ua-quick-trigger:hover{background:#e9f3eb}
+/* Cores da identidade Universa Art: verde-floresta, madeira e bege. */
+:root{--ua-quick-forest:#193d30;--ua-quick-forest-hover:#275842;--ua-quick-wood:#c99763;--ua-quick-beige:#fff8e9}
+header.top{justify-content:flex-start;gap:14px}
+header.top .ua-header-logo{flex:0 0 auto}
+header.top #uaOpenQuickSearch{
+ margin-left:auto;
+ order:2;
+ flex-shrink:0;
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:6px;
+ min-height:41px;
+ padding:10px 16px;
+ border:1px solid var(--ua-quick-wood);
+ border-radius:10px;
+ background:var(--ua-quick-forest);
+ color:var(--ua-quick-beige);
+ font-weight:700;
+ font-size:13px;
+ white-space:nowrap;
+ box-shadow:0 2px 8px rgba(25,61,48,.14);
+ transition:background-color .15s ease,box-shadow .15s ease;
+}
+header.top #uaOpenQuickSearch:hover{background:var(--ua-quick-forest-hover);color:#fff}
+header.top #uaOpenQuickSearch:focus-visible{outline:3px solid var(--ua-quick-wood);outline-offset:2px}
+header.top #cloudStatus{
+ margin-left:0;
+ order:3;
+ flex-shrink:0;
+ border-color:var(--ua-quick-wood);
+ background:#f1f7f1;
+ color:var(--ua-quick-forest);
+}
+header.top #cloudStatus.cloud-warn{
+ background:#fff0cf;
+ border-color:#e4b15b;
+ color:#82510e;
+}
+
 dialog.ua-quick-dialog{width:min(730px,95vw);max-height:88dvh;overflow-y:auto;border-radius:16px;padding:21px 22px 18px}
 .ua-quick-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:14px}
 dialog.ua-quick-dialog .ua-quick-head h2{font-size:22px;margin:0}
@@ -20,12 +58,21 @@ dialog.ua-quick-dialog .ua-quick-head h2{font-size:22px;margin:0}
 .ua-quick-task-buttons .btn{font-size:12px;padding:9px 11px}
 .ua-quick-footer{font-size:11px;color:#819188;margin:16px 0 0;line-height:1.6}
 @media(max-width:760px){
- .ua-quick-trigger{margin-left:0;padding:8px 10px;font-size:12px}
+ header.top{gap:8px;padding:13px 12px}
+ header.top .ua-header-logo{display:none}
+ header.top #uaOpenQuickSearch{padding:8px 10px;min-width:42px;min-height:42px;font-size:0}
+ header.top #uaOpenQuickSearch::before{content:'⌕';font-size:22px;line-height:1}
+ header.top #cloudStatus{font-size:10px;padding:8px 9px;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+ header.top h1{font-size:clamp(15px,4vw,20px);line-height:1.15}
  dialog.ua-quick-dialog{width:calc(100vw - 12px);padding:15px 13px}
  .ua-quick-result-type{min-width:66px}
  .ua-quick-matches{max-height:47vh}
 }
-@media(max-width:430px){
- .ua-quick-trigger{font-size:0;min-width:40px}
- .ua-quick-trigger::before{content:'⌕';font-size:21px}
+@media(max-width:400px){
+ header.top{gap:6px;padding:12px 9px}
+ header.top .eyebrow{font-size:8px;letter-spacing:.8px}
+ header.top #cloudStatus{max-width:85px;font-size:9px;padding:7px 6px}
+}
+@media(prefers-reduced-motion:reduce){
+ header.top #uaOpenQuickSearch{transition:none}
 }
