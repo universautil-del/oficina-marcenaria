@@ -5,7 +5,8 @@ const src=fs.readFileSync(path.join(__dirname,'../preview-v1/script.js'),'utf8')
 const from=src.indexOf('function financeClientName(t){'),to=src.indexOf('function receiptModal(tid){',from);
 assert(from>=0&&to>from,'Editor financeiro ausente');
 const code=src.slice(from,to);
-new vm.Script(code);
+const sortingSrc=src.slice(src.indexOf('/* A ordenação é apenas visual:'),src.indexOf('function button(label,action'));
+new vm.Script(sortingSrc+code);
 assert(src.includes("case 'edit-transaction':return editTransactionModal(item)"),'Ação do lançamento ausente');
 assert(src.includes("case 'edit-payment':return editRecordedPaymentModal(item)"),'Ação do pagamento ausente');
 
@@ -34,7 +35,7 @@ const ctx={
  save:()=>{saved++;return saveOK},alert:message=>alerts.push(message),
  document:{querySelector:()=>({close:()=>{}})}
 };
-vm.runInNewContext(code,ctx,{timeout:2500});
+vm.runInNewContext(sortingSrc+code,ctx,{timeout:2500});
 ctx.financeView();
 assert(ctx.content.innerHTML.includes('data-action="edit-transaction"'), 'Botão Editar ausente');
 assert(ctx.content.innerHTML.includes('Forma prevista: Pix'), 'Forma do pedido não exibida');
