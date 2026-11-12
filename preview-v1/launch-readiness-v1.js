@@ -11,6 +11,14 @@
   }
   const status={remote:null,error:'',testedAt:'',backupChecked:false,message:'',backupRemote:null,backupRemoteError:'',backupRemoteLoading:false,backupRemoteAttempted:false};
   const isSecure=!!window.UNIVERSA_REQUIRE_AUTH;
+  // Uma cópia semanal deve ser recente, não apenas existir no histórico.
+  // Até 9 dias considera a tolerância do agendamento semanal (7 dias + 2).
+  function backupAgeInfo(dateText,now=Date.now()){
+    const time=Date.parse(String(dateText||''));
+    if(!Number.isFinite(time)||time>now+300000)return {valid:false,recent:false,days:null};
+    const days=Math.max(0,(now-time)/86400000);
+    return {valid:true,recent:days<=9,days:Math.floor(days)};
+  }
   function inspect(data){
     const messages=[],metrics={};
     const required=['clients','products','quotes','orders','transactions','stockMovements'];
@@ -118,11 +126,12 @@
       {title:'Estrutura e consistência dos registros',ok:audit.passed,description:audit.passed?'Nenhuma inconsistência crítica detectada na checagem local.':'Corrija os erros antes de usar cadastros reais.'},
       {title:'Conta autenticada e nuvem ativa',ok:!!connection,description:connection?'A nuvem está ativada. Execute também o teste da conexão.':'Necessário entrar no Supabase e ativar a sincronização.'},
       {title:'Leitura autenticada do banco',ok:status.remote?.auth&&status.remote?.table,description:status.remote?.auth?'Leitura da tabela com sua conta verificada nesta sessão.':'Clique em Verificar conexão após entrar na nuvem.'},
-      {title:'Cópia semanal no Supabase',ok:!!status.backupRemote?.count,description:status.backupRemoteLoading?
+      {title:'Cópia semanal no Supabase',ok:!!status.backupRemote?.count&&status.backupRemote.active&&backupAgeInfo(status.backupRemote.createdAt).recent,description:status.backupRemoteLoading?
        'Consultando as cópias disponíveis na sua conta Supabase…':
        status.backupRemote?.count?
          status.backupRemote.count+' cópia(s) encontrada(s). Última: '+(status.backupRemote.last||'data não informada')+
-         '. Agendamento '+(status.backupRemote.active?'ativo':'não confirmado')+'. Cópia no mesmo projeto não substitui backup externo.':
+         '. '+(backupAgeInfo(status.backupRemote.createdAt).recent?'Cópia recente (até 9 dias).':'Cópia antiga ou sem data válida: verifique o backup.')+
+         ' Agendamento '+(status.backupRemote.active?'ativo.':'não confirmado; confira o Cron.')+' Cópia no mesmo projeto não substitui backup externo.':
        status.backupRemoteError?
          'Não foi possível consultar o backup do servidor: '+status.backupRemoteError+'. Confira em Backup e recuperação.':
          'Ainda não consultado nesta sessão. Abra esta tela com a nuvem ativa ou clique em Consultar backups no Supabase.'}
@@ -210,7 +219,7 @@
       const newest=backups[0]?.criado_em;
       const rawDate=newest?new Date(newest):null;
       const last=rawDate&&Number.isFinite(rawDate.getTime())?rawDate.toLocaleString('pt-BR'):'';
-      status.backupRemote={count,last,active:schedule?.agendamento_ativo===true};
+      status.backupRemote={count,last,createdAt:newest||'',active:schedule?.agendamento_ativo===true};
       status.message=count?'Consulta concluída: '+count+' cópia(s) semanais no Supabase.':'Consulta concluída: não há cópias semanais acessíveis.';
     }catch(error){
       status.backupRemote=null;
@@ -246,6 +255,6 @@
     // podendo ser repetida pelo botão sempre que desejar.
     if(!status.backupRemoteAttempted&&window.oficinaCloud?.active)void refreshBackupStatus();
   };
-  window.universalartesLaunch={inspect,renderHealth,checkBackup,refreshBackupStatus};
+  window.universalartesLaunch={inspect,renderHealth,checkBackup,refreshBackupStatus,backupAgeInfo};
   render(location.hash.slice(1)||'dashboard');
 })();
