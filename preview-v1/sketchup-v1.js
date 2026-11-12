@@ -2,7 +2,7 @@
 /* UNIVERSA ART 1.0 — Importador SketchUp / OpenCutList, cálculo preliminar no navegador.
    CSV de peças, não interpreta .skp. Não grava em estoque, financeiro ou pedidos. */
 (function(){
- const state={file:'',headers:[],raw:[],map:{},parts:[],settings:{},efficiency:80,edgePrice:0,hardware:0,labor:0,install:0,delivery:0,margin:25,error:'',note:'',separator:';'};
+ const state={file:'',headers:[],raw:[],map:{},parts:[],settings:{},materialAssignments:{},efficiency:80,edgePrice:0,hardware:0,labor:0,install:0,delivery:0,margin:25,error:'',note:'',separator:';'};
  const fields=[
   ['name','Peça / Designação',true],
   ['code','Código da peça',false],
@@ -127,10 +127,80 @@
    const ed=get(row,'edge');const edge=ed?positive(ed,'Linha '+(i+2)+': fita por peça (m)',true):0;
    if(edge>1000)throw Error('Fita por peça muito alta na linha '+(i+2)+'. Confira se está em metros.');
    const material=get(row,'material'),unspecified=!material||/^(not assigned|unassigned|nao atribuido|sem material)$/i.test(material);
-   list.push({code:get(row,'code'),name,length,width,thickness,qty,edge,material:unspecified?'Material não definido':material});
+   const sourceMaterial=unspecified?'Material não definido':material;
+   const chosen=state.materialAssignments[sourceMaterial+'|'+thickness];
+   list.push({code:get(row,'code'),name,length,width,thickness,qty,edge,
+    sourceMaterial,material:chosen?.material||sourceMaterial,materialProductId:chosen?.productId||''});
   }
   if(!list.length)throw Error('Nenhuma peça válida foi encontrada no CSV.');
   return list;
+ }
+ function isUnspecified(material){
+  return /^(material n[aã]o definido|material n[aã]o identificado|sem material|unassigned|not assigned)$/i.test(String(material||'').trim());
+ }
+ function materialCatalog(){
+  const products=typeof db==='object'&&Array.isArray(db?.products)?db.products:[];
+  return products.filter(p=>p.tipo==='materia'&&
+   (p.unidade==='chapa'||/\b(?:mdf|mdp|chapa|compensado)\b/i.test(String(p.nome||''))));
+ }
+ function materialThickness(product){
+  if(Number(product?.espessuraMm)>0)return Number(product.espessuraMm);
+  const match=String(product?.nome||'').match(/(?:^|\D)(\d+(?:[.,]\d+)?)\s*mm\b/i);
+  return match?Number(match[1].replace(',','.')):0;
+ }
+ function chooseMaterial(groupKey,productId,manualName=''){
+  const g=groups().find(row=>row.key===groupKey);
+  if(!g)throw Error('Grupo de peças não encontrado. Confira a lista importada.');
+  const product=productId?materialCatalog().find(p=>String(p.id)===String(productId)):null;
+  if(productId&&!product)throw Error('O material escolhido não existe no cadastro de chapas.');
+  const name=product?String(product.nome).trim():String(manualName||'').trim();
+  if(name.length<3||name.length>150||isUnspecified(name))
+   throw Error('Escolha uma chapa cadastrada ou informe o nome correto do material.');
+  const thickness=materialThickness(product);
+  if(product&&g.thickness>0&&thickness>0&&Math.abs(g.thickness-thickness)>.001)
+   throw Error('Espessura incompatível: as peças têm '+fmtMm(g.thickness)+
+    ', mas a matéria-prima cadastrada é de '+fmtMm(thickness)+'. Selecione a chapa correta.');
+  const oldCfg={...groupCfg(g.key)};
+  for(const part of g.rows){
+   const src=part.sourceMaterial||part.material;
+   state.materialAssignments[src+'|'+part.thickness]={material:name,productId:product?.id||''};
+   part.sourceMaterial=src;
+   part.material=name;
+   part.materialProductId=product?.id||'';
+  }
+  const newKey=name+'|'+g.thickness;
+  if(!state.settings[newKey]||newKey===g.key){
+   state.settings[newKey]={
+    ...oldCfg,
+    boardLength:product&&Number(product.chapaComprimentoMm)>0?Number(product.chapaComprimentoMm):oldCfg.boardLength,
+    boardWidth:product&&Number(product.chapaLarguraMm)>0?Number(product.chapaLarguraMm):oldCfg.boardWidth,
+    boardPrice:product&&Number(product.custo)>0?Number(product.custo):oldCfg.boardPrice
+   };
+  }
+  state.error='';
+  return {material:name,productId:product?.id||'',pieces:g.parts};
+ }
+ function groupMaterialChooser(g){
+  const isMissing=isUnspecified(g.material);
+  const catalog=materialCatalog();
+  const options=catalog.map(p=>{
+   const t=materialThickness(p);
+   const incompatible=g.thickness>0&&t>0&&Math.abs(g.thickness-t)>.001;
+   return '<option value="'+safe(p.id)+'"'+(incompatible?' disabled':'')+'>'+
+    safe(p.codigo||'')+' · '+safe(p.nome)+(t?' · '+fmtMm(t):'')+
+    (incompatible?' (espessura diferente)':'')+'</option>';
+  }).join('');
+  return '<div class="ua-skp-material-link" data-ua-skp-material-group="'+safe(g.key)+'">'+
+   '<strong>'+(isMissing?'⚠ Definir qual MDF é usado neste grupo':'Conferir ou substituir o material')+'</strong>'+
+   '<p class="muted small">Escolha uma matéria-prima do estoque ou informe o nome manualmente. '+ 
+     'Somente chapas de espessura compatível podem ser vinculadas. Não altera o estoque.</p>'+
+   '<div class="ua-skp-material-link-fields">'+
+   '<label>Material cadastrado<select data-ua-skp-pick aria-label="Material para o grupo de '+safe(g.thickness)+' mm">'+
+    '<option value="">Escolha uma chapa cadastrada</option>'+options+'</select></label>'+
+   '<label>Ou informe o nome<input type="text" data-ua-skp-manual maxlength="150" '+
+    'placeholder="Ex.: MDF Branco TX '+safe(g.thickness||15)+' mm"></label></div>'+
+   '<div class="actions"><button type="button" class="btn primary" data-ua-skp="assign-material">Aplicar material</button>'+
+   '<button type="button" class="btn" data-ua-skp="new-material">+ Cadastrar matéria-prima</button></div></div>';
  }
  function groups(){
   const map=new Map();
@@ -157,7 +227,7 @@
    const cost=count*cfg.boardPrice;
    if(oversize.length)bad.push(g.material+': '+oversize.length+' peça(s) não cabem na chapa informada.');
    if(g.thickness<=0)bad.push(g.material+': espessura não informada.');
-   if(g.material==='Material não definido'||g.material==='Material não identificado')bad.push('Material não definido no SketchUp: selecione o MDF correto antes de usar orçamento/compra.');
+   if(isUnspecified(g.material))bad.push('Material não definido no SketchUp: escolha o MDF correto no grupo de '+fmtMm(g.thickness)+'.');
    if(cfg.boardPrice===0)bad.push(g.material+': preço da chapa não informado.');
    sheets+=count;matcost+=cost;area+=g.area;band+=g.edge;
    return {...g,sheetArea,count,cost,oversize:oversize.length,cfg};
@@ -180,7 +250,7 @@
    const cfg=groupCfg(g.key);
    const calculate=res.result.find(x=>x.key===g.key);
    return '<div class="ua-skp-material"><h4>'+safe(g.material)+' <span>· '+safe(g.thickness?fmtMm(g.thickness):'Espessura pendente')+'</span></h4>'+
-    '<p class="muted">'+g.parts+' peça(s) · '+format(g.area,3)+' m² · '+format(g.edge,2)+' m de fita informados</p>'+
+    '<p class="muted">'+g.parts+' peça(s) · '+format(g.area,3)+' m² · '+format(g.edge,2)+' m de fita informados</p>'+groupMaterialChooser(g)+
     '<div class="ua-skp-settings">'+
     '<label>Chapa: comprimento (mm)<input type="number" min="1" step="1" data-ua-group="'+safe(g.key)+'" data-ua-param="boardLength" value="'+cfg.boardLength+'"></label>'+
     '<label>Chapa: largura (mm)<input type="number" min="1" step="1" data-ua-group="'+safe(g.key)+'" data-ua-param="boardWidth" value="'+cfg.boardWidth+'"></label>'+
@@ -284,7 +354,7 @@
    if(rows.length<2)throw Error('CSV precisa ter cabeçalho e pelo menos uma peça.');
    const {headers,raw,skipped}=extractPartTable(rows);
    if(headers.length<3)throw Error('CSV precisa ter colunas de peça, comprimento e largura.');
-   state.file=file.name;state.headers=headers;state.raw=raw;state.parts=[];state.settings={};state.separator=sep;state.error='';state.note=skipped?'Cabeçalho encontrado após '+skipped+' linha(s) introdutória(s) do OpenCutList.':'';
+   state.file=file.name;state.headers=headers;state.raw=raw;state.parts=[];state.settings={};state.materialAssignments={};state.separator=sep;state.error='';state.note=skipped?'Cabeçalho encontrado após '+skipped+' linha(s) introdutória(s) do OpenCutList.':'';
    mapping();autoReadParts();view();
   });
  }
@@ -348,9 +418,31 @@
    if(action==='template'){
     exportText('modelo-universalartes-sketchup.csv','\uFEFFPeca;Comprimento_mm;Largura_mm;Espessura_mm;Quantidade;Material;Fita_m_por_peca\r\nLateral;2100;550;15;2;MDF Branco TX;1,6\r\nPrateleira;760;500;15;3;MDF Branco TX;0,76\r\nPorta;1950;400;18;2;MDF Amadeirado;4,7');return;
    }
-   if(action==='reset'){state.file='';state.raw=[];state.headers=[];state.parts=[];state.map={};state.settings={};state.error='';state.note='';view();return;}
+   if(action==='reset'){state.file='';state.raw=[];state.headers=[];state.parts=[];state.map={};state.settings={};state.materialAssignments={};state.error='';state.note='';view();return;}
    if(action==='calculate'){
     state.parts=makeParts();state.error='';view();return;
+   }
+   if(action==='assign-material'||action==='new-material'){
+    const root=btn.closest('.ua-skp-material-link');
+    const key=root?.getAttribute('data-ua-skp-material-group');
+    if(!key)throw Error('Selecione o grupo de material a corrigir.');
+    if(action==='assign-material'){
+     // Preservar preços/dimensões digitados antes de trocar o nome do material.
+     recalcInputs();
+     chooseMaterial(key,root.querySelector('[data-ua-skp-pick]')?.value,
+      root.querySelector('[data-ua-skp-manual]')?.value);
+     view();return;
+    }
+    if(typeof productModal!=='function')throw Error('Abra Produtos para cadastrar a matéria-prima.');
+    const oldIds=new Set((typeof db==='object'?db.products:[]).map(p=>String(p.id)));
+    const dlg=productModal('','materia-entrada');
+    dlg?.addEventListener('close',()=>{
+     const created=(typeof db==='object'?db.products:[]).find(p=>p.tipo==='materia'&&!oldIds.has(String(p.id)));
+     if(!created)return; // Cancelar não modifica a lista.
+     try{recalcInputs();chooseMaterial(key,created.id);view()}
+     catch(error){state.error=error.message||'Não foi possível vincular a chapa';view()}
+    },{once:true});
+    return;
    }
    if(action==='recalculate'){recalcInputs();view();return}
    if(action==='export'){exportParts();return}
@@ -363,5 +455,5 @@
    }
   }catch(error){alert(error.message||'Não foi possível concluir o cálculo.')}
  });
- window.universalartesSketchUp={parseCSV,detectSep,extractPartTable,makeParts,autoReadParts,calculated,state,mapping,view};
+ window.universalartesSketchUp={parseCSV,detectSep,extractPartTable,makeParts,autoReadParts,calculated,state,mapping,view,chooseMaterial,materialCatalog,materialThickness,groupMaterialChooser};
 })();
