@@ -1,6 +1,8 @@
 'use strict';
 /* OFICINA v0.6 — login + sincronização opcional no Supabase (não armazena senhas). */
 (function () {
+ // Ambiente 1.1 de homologação: bloquear integralmente conexão e sincronização com qualquer Supabase.
+ if(window.UNIVERSA_DEV_V11)return;
  const SECURE=!!window.UNIVERSA_REQUIRE_AUTH;
  const CFG='universalartes-v1-cloud-config';
  const SES=SECURE?'universalartes-secure-session-v1':'universalartes-v1-cloud-session';
