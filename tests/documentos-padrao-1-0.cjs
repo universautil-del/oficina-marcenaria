@@ -59,6 +59,10 @@ const order=docs.htmlForSale({...base,controlCode:'PED-2026-000123',status:'conf
 assert(order.includes('PEDIDO Nº')&&order.includes('PED-2026-000123'));
 assert(order.includes('<img class="ua-doc-sig-img"'),'Pedido deve conter assinatura da empresa quando cadastrada');
 assert(order.includes('<div class="ua-doc-sign-line"></div>'),'Pedido deve manter linha de assinatura');
+assert(order.includes('max-width:88mm;height:26mm'),'Assinatura do pedido aumentada proporcionalmente');
+assert(order.includes('mix-blend-mode:multiply;margin:0 auto -11mm'),'Imagem deve sobrepor a linha, inclusive com fundo branco');
+assert(order.includes('.ua-doc-sign-line{position:relative;z-index:1'),'Linha fica atrás da assinatura');
+assert(order.indexOf('class="ua-doc-sig-img"')<order.indexOf('class="ua-doc-sign-line"'),'Imagem aparece antes da linha e nome');
 assert(order.includes('VALOR TOTAL DO PEDIDO:'));
 assert(order.includes('CONDIÇÕES DE PAGAMENTO'));
 assert(order.includes('Situação do pedido:'));
