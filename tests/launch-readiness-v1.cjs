@@ -31,6 +31,12 @@ const ctx={
 vm.runInNewContext(script,ctx,{timeout:1800});
 const api=ctx.window.universalartesLaunch;
 assert(api&&typeof api.inspect==='function');
+const backupDate=Date.parse('2026-11-12T12:00:00Z');
+assert.equal(api.backupAgeInfo('2026-11-11T11:00:00Z',backupDate).recent,true,'Cópia de ontem é recente');
+assert.equal(api.backupAgeInfo('2026-11-03T12:00:00Z',backupDate).recent,true,'Cópia de 9 dias é tolerada');
+assert.equal(api.backupAgeInfo('2026-11-02T11:00:00Z',backupDate).recent,false,'Cópia de mais de 9 dias exige atenção');
+assert.equal(api.backupAgeInfo('data inválida',backupDate).recent,false,'Data inválida não aprova backup');
+assert.equal(api.backupAgeInfo('2030-01-01T12:00:00Z',backupDate).recent,false,'Data futura suspeita não aprova backup');
 assert(ctx.sections.some(x=>x[0]==='seguranca'),'Menu Segurança e lançamento deve aparecer');
 const baseline=JSON.stringify(db);
 const clean=api.inspect(db);
