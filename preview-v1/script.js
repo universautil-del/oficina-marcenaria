@@ -566,7 +566,7 @@ function transactionModal(){
    if(!Number.isFinite(amount)||amount<=0||round(amount)<=0||
       !Number.isFinite(round(amount*qty))||!['receber','pagar'].includes(kind)||
       !description||description.length>240)
-    throw Error('Informe um tipo, descrição e valor mensal válidos.');
+    throw Error('Tipo, descrição ou valor mensal inválido.');
    if(!Number.isInteger(qty)||qty<1||qty>60)
     throw Error('Informe uma quantidade de parcelas entre 1 e 60 meses.');
    if(!financeValidDate(startDate))throw Error('Informe uma data válida para o primeiro vencimento.');
