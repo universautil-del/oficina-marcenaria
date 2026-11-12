@@ -43,10 +43,10 @@ const ctx={
  cashReceived:paid,balance:t=>Math.max(0,round(t.valor-paid(t))),
  getOrder:id=>db.orders.find(o=>o.id===id),
  getClient:id=>db.clients.find(c=>c.id===id),
- kindText:{receber:'Receita',pagar:'Despesa'},statusText:{aberto:'Aberto',confirmado:'Confirmado',producao:'Em produção'},
+ kindText:{receber:'Receita',pagar:'Despesa'},statusText:{aberto:'Aberto',confirmado:'Confirmado',producao:'Em produção'},quoteStatus:q=>q.status,
  render:section=>rendered.push(section)
 };
-vm.runInNewContext(helper+codeQuotes+codeOrders+codeFinance,ctx,{timeout:3000});
+vm.runInNewContext(helper+codeQuotes+codeOrders+codeFinance+'\nthis.uaListingSort=uaListingSort;',ctx,{timeout:3000});
 const ids=(section,field,direction)=>{ctx.uaListingSort[section].field=field;ctx.uaListingSort[section].direction=direction;const rows=section==='financeiro'?db.transactions:section==='pedidos'?db.orders:db.quotes;return ctx.uaSortListing(section,rows).map(x=>x.id).join(',')};
 assert.equal(ids('financeiro','vencimento','asc'),'t3,t2,t1','Financeiro: vencimento crescente');
 assert.equal(ids('financeiro','vencimento','desc'),'t1,t2,t3','Financeiro: vencimento decrescente');
@@ -67,6 +67,7 @@ assert.equal(ids('pedidos','situacao','asc'),'o2,o1','Pedidos: aberto antes de c
 assert.equal(ids('pedidos','cliente','asc'),'o2,o1','Pedidos: cliente em ordem alfabética');
 assert.equal(ids('pedidos','recebido','desc'),'o2,o1','Pedidos: valor recebido');
 assert.equal(JSON.stringify(db),initial,'A ordenação nunca altera registros');
+ctx.uaListingSort.financeiro.direction='desc';
 assert.equal(ctx.uaSetListingSort('financeiro','pedido'),true);
 assert.equal(rendered.at(-1),'financeiro','Troca na seleção renderiza somente Financeiro');
 assert.equal(ctx.uaFlipListingSort('financeiro'),true);
