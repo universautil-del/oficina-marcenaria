@@ -576,7 +576,7 @@ function deleteTransaction(tid){const t=db.transactions.find(x=>x.id===tid);if(!
 function handleAction(action,item){switch(action){
  case 'new-client':return clientModal();case 'edit-client':return clientModal(item);case 'delete-client':return removeClient(item);
  case 'new-supplier':return supplierModal();case 'edit-supplier':return supplierModal(item);case 'delete-supplier':return deleteSupplier(item);
- case 'new-purchase':return purchaseModal();case 'edit-purchase':return editPurchase(item);case 'view-purchase':return viewPurchase(item);case 'go-purchases':location.hash='compras';return;case 'go-reports':location.hash='relatorios';return;case 'receive-purchase':return receivePurchase(item);case 'cancel-purchase':return cancelPurchase(item);
+ case 'new-purchase':return purchaseModal();case 'edit-purchase':return editPurchase(item);case 'print-purchase':return printPurchaseOrder(item);case 'view-purchase':return viewPurchase(item);case 'go-purchases':location.hash='compras';return;case 'go-reports':location.hash='relatorios';return;case 'receive-purchase':return receivePurchase(item);case 'cancel-purchase':return cancelPurchase(item);
  case 'duplicate-quote':return duplicateQuote(item);case 'share-quote':return shareQuote(item);
  case 'export-finance':return exportFinanceCsv();case 'export-report':return exportReportCsv();case 'print-report':return printReport();
  case 'goto-products':location.hash='produtos';return;case 'goto-orders':location.hash='pedidos';return;case 'goto-finance':location.hash='financeiro';return;
