@@ -1,0 +1,45 @@
+name: OFICINA 1.1 — Ambiente isolado (sem publicacao)
+on:
+  push:
+    branches:
+      - develop/v1.1
+    paths:
+      - 'preview-v1/**'
+      - 'tests/v11-dev-isolation.cjs'
+      - 'docs/OFICINA-1.1-PLANO-E-HOMOLOGACAO.md'
+      - '.github/workflows/v11-sandbox.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preparar-sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir segurança e ausência de conexão com produção
+        run: node tests/v11-dev-isolation.cjs
+      - name: Preparar pacote apenas para execução local
+        run: |
+          mkdir -p dist/preview-v1 dist/docs
+          cp -R preview-v1/. dist/preview-v1/
+          cp docs/OFICINA-1.1-PLANO-E-HOMOLOGACAO.md dist/docs/
+          rm -f dist/preview-v1/index.html
+          rm -f dist/preview-v1/seguro.html
+          rm -f dist/preview-v1/cloud-preview.js
+          rm -f dist/preview-v1/public-cloud-config.js
+          rm -f dist/preview-v1/secure-access-v1.js
+          test -f dist/preview-v1/dev-v1.1.html
+          test ! -f dist/preview-v1/cloud-preview.js
+          test ! -f dist/preview-v1/seguro.html
+          printf '%s\n' "OFICINA 1.1: AMBIENTE DE TESTES LOCAL" "Inicie um servidor HTTP na pasta extraida: python -m http.server 8080" "Abra: http://localhost:8080/preview-v1/dev-v1.1.html" "Nao use dados de clientes reais. Nao configure Supabase de producao." > dist/LEIA-ME-OFICINA-1.1.txt
+      - name: Disponibilizar pacote de homologacao sem deploy
+        uses: actions/upload-artifact@v4
+        with:
+          name: oficina-1-1-sandbox-local
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
