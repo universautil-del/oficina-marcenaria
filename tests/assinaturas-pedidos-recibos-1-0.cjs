@@ -3,6 +3,9 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 const core=read('preview-v1/script.js'),upgrade=read('preview-v1/upgrade.js'),feature=read('preview-v1/features-v05.js');
+assert(core.includes('max-width:240px;max-height:90px'),'Assinatura de recibos e pedidos de compra deve ficar maior');
+assert(core.includes('mix-blend-mode:multiply;margin:-72px auto 7px'),'Assinatura deve sobrepor a linha com fundo branco');
+assert(core.includes('.sign{margin-top:90px;display:flex;gap:40px;break-inside:avoid}'),'Preservar espaço da assinatura ao imprimir');
 const snippet=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>=0&&j>i,'Trecho não encontrado: '+a);return s.slice(i,j)};
 const purchaseSource=snippet(upgrade,'function printPurchaseOrder(','function viewPurchase(');
 const receiptSource=snippet(core,'function receiptPrint(','function backup(');
