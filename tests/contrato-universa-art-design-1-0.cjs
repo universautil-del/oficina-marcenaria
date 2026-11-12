@@ -37,7 +37,7 @@ const ctx={db,Date,Intl,Number,Math,String,Array,Set,URL,RegExp,
  location:{href:'https://universautil-del.github.io/oficina-marcenaria/preview-v1/seguro.html'},
  contractPrint:()=>{oldPrints++},
  alert:message=>alerted.push(message),
- window:{open:()=>({document:{open(){},write(html){newHTML=html},close(){}},focus(){}})}
+ window:{universaArtAssinatura:{image:()=>'<img class="ua-contract-sig-img" src="data:image/png;base64,QUJD">'},open:()=>({document:{open(){},write(html){newHTML=html},close(){}},focus(){}})}
 };
 vm.runInNewContext(src,ctx,{timeout:2500});
 const api=ctx.window.universaArtContratoPadrao;
@@ -63,7 +63,9 @@ assert(html.includes('R$ 2.000,00')&&html.includes('R$ 1.650,00'));
 assert(html.includes('07/01/2027'),'Pagamento deve usar vencimento da última parcela');
 assert(html.includes('Testemunha 1')&&html.includes('Testemunha 2'));
 assert(html.includes('@page{size:A4'));
-assert(html.includes('data:image/webp;base64,QUJD'));
+assert(html.includes('assets/universa-art-logo-novo.webp'));
+assert(html.includes('<img class="ua-contract-sig-img"'),'Assinatura só aparece no lado da contratada');
+assert.equal((html.match(/ua-contract-sig-img" src=/g)||[]).length,1,'Nunca aplicar a assinatura da contratada ao cliente');
 assert(!html.includes('RASCUNHO — DADOS PENDENTES'));
 assert(html.includes('São Paulo/SP, terça-feira, 10 de novembro de 2026.'),'Dia da semana não deve ser inventado');
 ctx.contractPrint(order);
