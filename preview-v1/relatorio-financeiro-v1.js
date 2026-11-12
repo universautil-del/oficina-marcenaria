@@ -2,7 +2,7 @@
 /* UNIVERSA ART — Relatório financeiro analítico e exportação XLSX.
    Apenas lê dados; nenhum lançamento ou pagamento é modificado. */
 (function(){
- const TWO=2,MAX_EXPORT=20000;
+ const MAX_EXPORT=20000;
  const state={preset:'seis',from:'',to:'',type:'todos',status:'todos',basis:'vencimento'};
  let excelPromise=null,busy=false;
  const currencies=val=>Math.round((Number(val)||0)*100)/100;
@@ -91,7 +91,7 @@
      status,method:String(t.paymentMethod||''),paymentId:''
     });
    }else{
-    for(const p of t.payments||[]){
+    for(const p of (Array.isArray(t.payments)?t.payments:[])){
      if(!isDate(p.date)||p.date<filters.from||p.date>filters.to||!Number.isFinite(Number(p.valor))||Number(p.valor)<=0)continue;
      rows.push({
       id:t.id,date:p.date,kind:t.kind,description:String(t.descricao||''),
@@ -150,7 +150,7 @@
    money(row.amount),
    isCash?esc(row.method||'—'):money(row.paid),
    isCash?pill('Pago','success'):money(row.open),
-   isCash?'':pill(statusLabel(row.status),row.status==='pago'?'success':row.status==='vencido'?'danger':row.status==='parcial'?'warn':'')
+   ...(!isCash?[pill(statusLabel(row.status),row.status==='pago'?'success':row.status==='vencido'?'danger':row.status==='parcial'?'warn':'')]:[])
   )).join('');
   const heads=isCash?['Pagamento','Tipo','Lançamento / Cliente','Pedido / Entrada','Valor','Forma','Situação']:['Vencimento','Tipo','Lançamento / Cliente','Pedido / Entrada','Valor','Liquidado','Saldo','Situação'];
   const noRows='<div class="empty compact">Nenhum lançamento encontrado para os filtros selecionados.</div>';
@@ -204,7 +204,7 @@
  }
  function excelDate(value){return isDate(value)?new Date(value+'T12:00:00Z'):null}
  function styleSheet(ws,columns,currencyColumns=[],dateColumns=[]){
-  ws.columns=columns.map(([header,key,width])=>({header,key,width}));
+  if(!ws.columns.length)ws.columns=columns.map(([header,key,width])=>({header,key,width}));
   ws.views=[{state:'frozen',ySplit:1}];
   ws.autoFilter={from:{row:1,column:1},to:{row:1,column:columns.length}};
   ws.getRow(1).height=26;
@@ -241,7 +241,12 @@
   summary.addRow(['Tipo',filters.type==='todos'?'Receitas e despesas':kindLabel(filters.type)]);
   summary.addRow(['Situação',filters.basis==='caixa'?'Não aplicável':filters.status==='todos'?'Todas':statusLabel(filters.status)]);
   summary.addRow([]);
-  const metrics=[
+  const metrics=filters.basis==='caixa'?[
+   ['Recebido no período',s.received],
+   ['Pago no período',s.paid],
+   ['Resultado de caixa',currencies(s.received-s.paid)],
+   ['Movimentações',s.records]
+  ]:[
    ['Receitas previstas',s.expectedIncome],
    ['Despesas previstas',s.expectedExpense],
    ['Recebido',s.received],
@@ -253,8 +258,8 @@
   ];
   for(const [name,val] of metrics){
    const row=summary.addRow([name,val]);
-   if(name!=='Registros')row.getCell(2).numFmt=moneyCell;
-   if(name==='Resultado')row.font={bold:true,color:{argb:'FF1D503A'}};
+   if(name!=='Registros'&&name!=='Movimentações')row.getCell(2).numFmt=moneyCell;
+   if(name==='Resultado'||name==='Resultado de caixa')row.font={bold:true,color:{argb:'FF1D503A'}};
   }
   summary.addRow([]);
   summary.addRow(['Observação',filters.basis==='caixa'?'Pagamentos efetivos do período.':'Por vencimento; liquidado considera pagamentos registrados até agora.']);
