@@ -57,6 +57,7 @@ function newDialog(title,fields,onSubmit,after){
 const ctx={db,Set,Map,Math,String,Number,Date,Array,Error,
  getProduct:id=>db.products.find(p=>p.id===id),getSupplier:id=>db.suppliers.find(p=>p.id===id),
  supplierOptions:()=>'<option value="s1">Fornecedor Teste</option>',
+ purchaseTotal:p=>round((p.items||[]).reduce((v,i)=>v+Number(i.quantidade)*Number(i.custo),0)),
  productModal:()=>{throw Error('Não deveria abrir Produtos')},
  supplierModal:()=>{throw Error('Não deveria abrir Fornecedores')},
  addPurchaseRow:(dlg,item={})=>dlg.rows.push({...item}),
