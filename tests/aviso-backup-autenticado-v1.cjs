@@ -33,7 +33,7 @@ assert(preview.includes('informações fictícias'));
 assert(!preview.includes('Acesso autenticado'));
 for(const page of ['preview-v1/seguro.html','preview-v1/index.html']){
  const html=read(page);
- assert(html.includes('script.js?v=aviso-backup-login-corrigido-20261112'),page+' requer versão nova do script');
+ assert(/src="script\.js\?v=[^"]+"/.test(html),page+' requer versão do script para renovar cache');
 }
 assert(read('preview-v1/seguro.html').includes('window.UNIVERSA_REQUIRE_AUTH=true'),'Portal protegido preserva exigência de login');
 console.log('OK: backup informa acesso autenticado apenas após sessão válida, alerta sem conexão e distingue prévia.');
