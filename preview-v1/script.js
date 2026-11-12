@@ -430,9 +430,10 @@ function undoPayment(reference){
  const payment=t?.payments?.find(p=>p.id===pid);
  if(!t||!payment)throw Error('Este pagamento já foi desfeito ou não foi encontrado. Atualize o Financeiro.');
  const ok=confirm('Desfazer '+(t.kind==='receber'?'o recebimento':'o pagamento')+' de '+money(payment.valor)+
-  ' de '+date(payment.date)+'?\nO saldo e o caixa serão atualizados. A correção ficará registrada no histórico.');
+  ' de '+date(payment.date)+'?\nO saldo e o caixa serão atualizados, com histórico da correção. Isso NÃO cancela Pix, cartão ou transferência no banco.');
  if(!ok)return false;
  const beforePayments=t.payments;
+ const hadReversals=Object.prototype.hasOwnProperty.call(t,'paymentReversals');
  const beforeReversals=t.paymentReversals||[];
  t.payments=beforePayments.filter(p=>p.id!==pid);
  t.paymentReversals=[...beforeReversals,{
@@ -443,7 +444,8 @@ function undoPayment(reference){
   if(save()===false)throw Error('Não foi possível salvar o estorno; o pagamento original foi preservado.');
  }catch(error){
   t.payments=beforePayments;
-  t.paymentReversals=beforeReversals;
+  if(hadReversals)t.paymentReversals=beforeReversals;
+  else delete t.paymentReversals;
   throw error;
  }
  document.querySelector('dialog[open][data-ua-payment-history]')?.close();
