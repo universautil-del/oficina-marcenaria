@@ -235,12 +235,15 @@ function openSales(mode='quote',quoteId='',projectId='',clientId=''){
  if(projectId&&!project)return alert('Projeto não encontrado. Atualize a lista de projetos.');
  if(clientId&&!getClient(clientId))return alert('Cliente não encontrado. Atualize o cadastro de clientes.');
  const q=mode==='quote'&&quoteId?getQuote(quoteId):null;if(q&&q.status!=='aberto')return alert('Orçamento convertido não pode ser editado.');
+ const editingOrder=mode==='order'&&quoteId?getOrder(quoteId):null;
+ if(mode==='order'&&quoteId&&!editingOrder)return alert('Pedido não encontrado.');
+ if(editingOrder&&editingOrder.status!=='aberto')return alert('Somente pedidos em aberto podem ser editados.');
  const cut=project?.cutlist?.summary;
  const projectDescription=project?('Projeto '+project.nome+(project.ambiente?' · '+project.ambiente:'')+(cut?.pecas?' · '+cut.pecas+' peças SketchUp':'')):'';
  const projectNotes=project?('Projeto vinculado: '+project.nome+'. '+(cut?.pecas?('Lista SketchUp: '+cut.pecas+' peças, área bruta '+Number(cut.areaM2||0).toLocaleString('pt-BR',{maximumFractionDigits:3})+' m². Revisar quantidade de chapas, fita, ferragens, perdas e custos manualmente. '):'')+'Conferir medidas e custos antes de aprovar. Não realizar baixa automática de matérias-primas.'):'';
- const old=q||{clientId:clientId||project?.clientId||'',date:iso(),items:project?[{productId:'',descricao:projectDescription,quantidade:1,preco:Number(project.priceA)||0}]:[],desconto:0,entrega:'',ambientes:project?.ambiente||'',observacoes:projectNotes,projectId:project?.id||'',projectNome:project?.nome||'',payment:{tipo:'avista',entrada:0,parcelas:1,primeiroVencimento:iso()}};
- const fields=`${old.projectId?'<div class="ua-project-sales-note"><strong>Projeto vinculado:</strong> '+esc(old.projectNome||project?.nome||'')+' · Valores e materiais precisam de conferência antes da aprovação. <strong>Esta associação não gera baixa de estoque.</strong></div>':''}<div class="form-grid"><label class="full">Cliente *<select name="clientId" required><option value="">Selecione um cliente</option>${clientOptions(old.clientId)}</select><button type="button" class="btn" data-quick-client style="margin-top:8px">+ Novo cliente</button></label><label>Data<input type="date" name="date" value="${esc(old.date)}" required></label><label>Prazo / observação<input name="entrega" placeholder="Ex.: 30 dias úteis" value="${esc(old.entrega||'')}"></label><label>Data prevista de entrega<input type="date" name="entregaData" value="${esc(old.entregaData||'')}"></label>${mode==='quote'?'<label>Validade do orçamento<input type="date" name="validade" value="'+esc(old.validade||'')+'"></label>':''}</div><h3 class="form-section">Itens do ${mode==='quote'?'orçamento':'pedido'}</h3><div id="saleRows"></div><p>${button('+ Adicionar item','add-sale-item','','small')}<button type="button" class="btn small" data-quick-product style="margin-left:8px">+ Cadastrar produto</button></p><div class="form-grid"><label>Desconto (R$)<input type="number" min="0" step="0.01" name="desconto" value="${Number(old.desconto||0)}"></label><label>Frete / entrega (R$)<input type="number" min="0" step="0.01" name="frete" value="${Number(old.frete||0)}"></label><label>Ambientes<input name="ambientes" maxlength="250" placeholder="Cozinha, quarto, sala..." value="${esc(old.ambientes||'')}"></label><div class="card"><span class="label">Total do pedido</span><div class="value" id="saleTotal">${money(orderTotal(old))}</div></div><label>Condição de pagamento<select name="payTipo"><option value="avista">À vista</option><option value="parcelado">Parcelado</option><option value="entrada">Entrada + parcelas</option></select></label><label>Parcelas (saldo)<input name="payParcelas" type="number" min="1" max="36" value="${Number(old.payment?.parcelas||1)}"></label><label>Entrada (R$)<input name="payEntrada" type="number" min="0" step="0.01" value="${Number(old.payment?.entrada||0)}"></label><label>Primeiro vencimento<input type="date" name="payData" value="${esc(old.payment?.primeiroVencimento||iso())}"></label><label>Forma de pagamento<input name="payForma" maxlength="100" placeholder="Pix, cartão, boleto, dinheiro..." value="${esc(old.payment?.forma||'')}"></label><label class="full">Propostas adicionais de pagamento<textarea name="propostasPagamento" rows="3" maxlength="1200" placeholder="Opcional: uma condição por linha">${esc(old.propostasPagamento||'')}</textarea></label><label class="full">Observações<textarea name="observacoes" rows="3">${esc(old.observacoes||'')}</textarea></label></div><p class="inline-note">Item livre ou serviço não tem baixa automática de matérias-primas. Produtos acabados usam sua composição cadastrada.</p>`;
- openModal(mode==='quote'?(q?'Editar orçamento '+(q.controlCode||'#'+q.number):'Novo orçamento'):'Novo pedido',fields,(v,dlg)=>{
+ const old=q||editingOrder||{clientId:clientId||project?.clientId||'',date:iso(),items:project?[{productId:'',descricao:projectDescription,quantidade:1,preco:Number(project.priceA)||0}]:[],desconto:0,entrega:'',ambientes:project?.ambiente||'',observacoes:projectNotes,projectId:project?.id||'',projectNome:project?.nome||'',payment:{tipo:'avista',entrada:0,parcelas:1,primeiroVencimento:iso()}};
+ const fields=`${mode==='order'?'<p class="form-note"><strong>Pedido em aberto:</strong> use Salvar para guardar suas alterações. Quando estiver pronto, clique em Confirmar pedido na listagem. O estoque só será reservado após a confirmação.</p>':''}${old.projectId?'<div class="ua-project-sales-note"><strong>Projeto vinculado:</strong> '+esc(old.projectNome||project?.nome||'')+' · Valores e materiais precisam de conferência antes da aprovação. <strong>Esta associação não gera baixa de estoque.</strong></div>':''}<div class="form-grid"><label class="full">Cliente *<select name="clientId" required><option value="">Selecione um cliente</option>${clientOptions(old.clientId)}</select><button type="button" class="btn" data-quick-client style="margin-top:8px">+ Novo cliente</button></label><label>Data<input type="date" name="date" value="${esc(old.date)}" required></label><label>Prazo / observação<input name="entrega" placeholder="Ex.: 30 dias úteis" value="${esc(old.entrega||'')}"></label><label>Data prevista de entrega<input type="date" name="entregaData" value="${esc(old.entregaData||'')}"></label>${mode==='quote'?'<label>Validade do orçamento<input type="date" name="validade" value="'+esc(old.validade||'')+'"></label>':''}</div><h3 class="form-section">Itens do ${mode==='quote'?'orçamento':'pedido'}</h3><div id="saleRows"></div><p>${button('+ Adicionar item','add-sale-item','','small')}<button type="button" class="btn small" data-quick-product style="margin-left:8px">+ Cadastrar produto</button></p><div class="form-grid"><label>Desconto (R$)<input type="number" min="0" step="0.01" name="desconto" value="${Number(old.desconto||0)}"></label><label>Frete / entrega (R$)<input type="number" min="0" step="0.01" name="frete" value="${Number(old.frete||0)}"></label><label>Ambientes<input name="ambientes" maxlength="250" placeholder="Cozinha, quarto, sala..." value="${esc(old.ambientes||'')}"></label><div class="card"><span class="label">Total do pedido</span><div class="value" id="saleTotal">${money(orderTotal(old))}</div></div><label>Condição de pagamento<select name="payTipo"><option value="avista">À vista</option><option value="parcelado">Parcelado</option><option value="entrada">Entrada + parcelas</option></select></label><label>Parcelas (saldo)<input name="payParcelas" type="number" min="1" max="36" value="${Number(old.payment?.parcelas||1)}"></label><label>Entrada (R$)<input name="payEntrada" type="number" min="0" step="0.01" value="${Number(old.payment?.entrada||0)}"></label><label>Primeiro vencimento<input type="date" name="payData" value="${esc(old.payment?.primeiroVencimento||iso())}"></label><label>Forma de pagamento<input name="payForma" maxlength="100" placeholder="Pix, cartão, boleto, dinheiro..." value="${esc(old.payment?.forma||'')}"></label><label class="full">Propostas adicionais de pagamento<textarea name="propostasPagamento" rows="3" maxlength="1200" placeholder="Opcional: uma condição por linha">${esc(old.propostasPagamento||'')}</textarea></label><label class="full">Observações<textarea name="observacoes" rows="3">${esc(old.observacoes||'')}</textarea></label></div><p class="inline-note">Item livre ou serviço não tem baixa automática de matérias-primas. Produtos acabados usam sua composição cadastrada.</p>`;
+ openModal(mode==='quote'?(q?'Editar orçamento '+(q.controlCode||'#'+q.number):'Novo orçamento'):(editingOrder?'Editar pedido '+(editingOrder.controlCode||'#'+editingOrder.number):'Novo pedido'),fields,(v,dlg)=>{
  const items=collectSaleItems(dlg),desconto=round(v.desconto),subtotal=round(items.reduce((s,i)=>s+i.quantidade*i.preco,0));if(!Number.isFinite(subtotal)||!Number.isFinite(desconto)||desconto<0||desconto>subtotal)throw Error('Desconto ou itens com valor inválido.');const frete=round(v.frete);if(!Number.isFinite(frete)||frete<0)throw Error('Frete inválido.');const total=round(subtotal-desconto+frete);if(!Number.isFinite(total)||total<=0)throw Error('O total precisa ser maior que zero e ter valores numéricos válidos.');
  const payment={tipo:v.payTipo,forma:(v.payForma||'').trim(),entrada:round(v.payEntrada),parcelas:Math.max(1,Math.min(36,Math.floor(Number(v.payParcelas)||1))),primeiroVencimento:v.payData||v.date};if(payment.tipo==='entrada'&&!(payment.entrada>0&&payment.entrada<total))throw Error('A entrada deve ser maior que zero e menor que o valor do pedido.');
  const client=getClient(v.clientId);if(!client)throw Error('Selecione um cliente cadastrado.');const data={clientId:client.id,clientNome:client.nome,date:v.date,items,desconto,frete,ambientes:(v.ambientes||'').trim(),entrega:v.entrega,entregaData:v.entregaData||"",validade:mode==='quote'?(v.validade||''):'',propostasPagamento:(v.propostasPagamento||'').trim().slice(0,1200),observacoes:v.observacoes,payment,projectId:old.projectId||'',projectNome:old.projectNome||''};
@@ -254,8 +257,8 @@ function openSales(mode='quote',quoteId='',projectId='',clientId=''){
   }
   return true;
  }
- return createOrder(data);
- },dlg=>{dlg.querySelector('[data-action="add-sale-item"]').onclick=()=>addSaleRow(dlg);(old.items||[]).forEach(item=>addSaleRow(dlg,item));if(!old.items?.length)addSaleRow(dlg);dlg.querySelector('[name="desconto"]').oninput=()=>calcSale(dlg);dlg.querySelector('[name="frete"]').oninput=()=>calcSale(dlg);dlg.querySelector('[name="payTipo"]').value=old.payment?.tipo||'avista';
+ return editingOrder?updateOpenOrder(editingOrder.id,data):createOrder(data);
+ },dlg=>{if(mode==='order'){dlg.classList.add('ua-order-editor');const saveButton=dlg.querySelector('button[type="submit"]');if(saveButton)saveButton.textContent=editingOrder?'Salvar alterações':'Salvar pedido';}dlg.querySelector('[data-action="add-sale-item"]').onclick=()=>addSaleRow(dlg);(old.items||[]).forEach(item=>addSaleRow(dlg,item));if(!old.items?.length)addSaleRow(dlg);dlg.querySelector('[name="desconto"]').oninput=()=>calcSale(dlg);dlg.querySelector('[name="frete"]').oninput=()=>calcSale(dlg);dlg.querySelector('[name="payTipo"]').value=old.payment?.tipo||'avista';
  dlg.querySelector('[data-quick-product]').onclick=()=>{
   const before=new Set((db.products||[]).map(p=>String(p.id)));
   const productDlg=productModal('',(db.products||[]).some(p=>p.tipo==='materia')?'acabado':'materia');
@@ -308,8 +311,7 @@ function createOrder(data,quoteId=''){
   if(linked&&db.orders.some(o=>String(o.number)===String(orderNumber)))
    throw Error('Já existe pedido com esse número. Verifique o histórico antes de converter.');
   db.seq.order=Math.max(Number(db.seq.order)||1,Number(orderNumber)+1);
-  const order={...data,id:id(),number:orderNumber,controlCode:nextControlCode('order',data.date),status:'confirmado',quoteId,stockState:'pendente',createdAt:iso(),materials:requiredMaterials(data.items)};
-  tryReserve(order);
+  const order={...data,id:id(),number:orderNumber,controlCode:nextControlCode('order',data.date),status:'aberto',quoteId,stockState:'pendente',createdAt:iso(),materials:requiredMaterials(data.items)};
   const amounts=buildInstallments(orderTotal(order),order.payment,order);
   if(!amounts.length||amounts.some(p=>!Number.isFinite(p.valor)||p.valor<0))throw Error('Parcelas inválidas.');
   db.orders=[...db.orders,order];
@@ -326,12 +328,70 @@ function createOrder(data,quoteId=''){
   throw error;
  }
 }
-function convertQuote(qid){const q=getQuote(qid);if(!q||q.status==='convertido')return alert('Orçamento já convertido.');if(!confirm(`Converter orçamento ${q.controlCode||'#'+q.number} em pedido? O financeiro será gerado automaticamente.`))return;try{if(createOrder({clientId:q.clientId,clientNome:q.clientNome,date:iso(),items:q.items.map(i=>({...i})),desconto:q.desconto,frete:q.frete||0,ambientes:q.ambientes||'',entrega:q.entrega,entregaData:q.entregaData||"",propostasPagamento:q.propostasPagamento||'',observacoes:q.observacoes,projectId:q.projectId||'',projectNome:q.projectNome||'',payment:{...q.payment}},qid)){location.hash='pedidos';render('pedidos')}}catch(e){alert(e.message)}}
+function updateOpenOrder(oid,data){
+ const current=getOrder(oid);
+ if(!current||current.status!=='aberto')throw Error('Este pedido não está em aberto e não pode ser alterado.');
+ const linked=db.transactions.filter(t=>t.orderId===oid);
+ if(linked.some(t=>t.kind!=='receber'))throw Error('Há lançamentos financeiros inconsistentes neste pedido. Confira o Financeiro.');
+ const total=orderTotal({...current,...data});
+ const installments=buildInstallments(total,data.payment,{...current,...data});
+ if(!installments.length||installments.some(v=>!Number.isFinite(v.valor)||v.valor<0))
+  throw Error('Valores ou parcelas inválidos.');
+ const financialChange=Math.abs(orderTotal(current)-total)>0.005||
+  current.clientId!==data.clientId||current.date!==data.date||
+  JSON.stringify(current.payment||{})!==JSON.stringify(data.payment||{});
+ const hasPayments=linked.some(t=>cashReceived(t)>0);
+ if(hasPayments&&financialChange)
+  throw Error('Este pedido possui pagamentos registrados. É possível editar itens e observações sem alterar o total, mas para mudar cliente, data ou condições financeiras é necessário corrigir/estornar os pagamentos no Financeiro.');
+ const next={...current,...data,materials:requiredMaterials(data.items),stockState:'pendente'};
+ const previousOrders=db.orders,previousTransactions=db.transactions;
+ db.orders=db.orders.map(row=>row.id===oid?next:row);
+ if(financialChange&&!hasPayments){
+  const replacement=installments.map((part,index)=>{
+   const previous=linked[index];
+   return {
+    ...previous,
+    id:previous?.id||id(),kind:'receber',orderId:oid,
+    clientId:next.clientId,
+    descricao:'Pedido '+next.controlCode+' · '+part.label,
+    valor:part.valor,dueDate:part.date,payments:[],
+    paymentMethod:next.payment?.forma||''
+   };
+  });
+  db.transactions=[...db.transactions.filter(t=>t.orderId!==oid),...replacement];
+ }
+ try{
+  if(save()===false)throw Error('Não foi possível salvar as alterações do pedido.');
+ }catch(error){
+  db.orders=previousOrders;db.transactions=previousTransactions;
+  throw error;
+ }
+ return true;
+}
+function confirmOpenOrder(oid){
+ const o=getOrder(oid);
+ if(!o||o.status!=='aberto')return alert('Somente pedidos em aberto podem ser confirmados.');
+ if(!confirm('Confirmar o pedido '+(o.controlCode||'#'+o.number)+'? Depois da confirmação os itens e valores não poderão mais ser editados diretamente.'))return false;
+ const previous={status:o.status,stockState:o.stockState};
+ o.status='confirmado';
+ const reserved=tryReserve(o);
+ try{
+  if(save()===false)throw Error('Não foi possível salvar a confirmação.');
+ }catch(error){
+  o.status=previous.status;o.stockState=previous.stockState;
+  alert(error.message+' O pedido permanece em aberto.');
+  return false;
+ }
+ render('pedidos');
+ if(!reserved)alert('Pedido confirmado, mas há materiais sem reserva. Regularize o estoque antes de iniciar a produção.');
+ return true;
+}
+function convertQuote(qid){const q=getQuote(qid);if(!q||q.status==='convertido')return alert('Orçamento já convertido.');if(!confirm(`Converter orçamento ${q.controlCode||'#'+q.number} em pedido em aberto? As parcelas financeiras serão criadas e o pedido poderá ser editado antes de confirmar.`))return;try{if(createOrder({clientId:q.clientId,clientNome:q.clientNome,date:iso(),items:q.items.map(i=>({...i})),desconto:q.desconto,frete:q.frete||0,ambientes:q.ambientes||'',entrega:q.entrega,entregaData:q.entregaData||"",propostasPagamento:q.propostasPagamento||'',observacoes:q.observacoes,projectId:q.projectId||'',projectNome:q.projectNome||'',payment:{...q.payment}},qid)){location.hash='pedidos';render('pedidos')}}catch(e){alert(e.message)}}
 function removeQuote(qid){const q=getQuote(qid);if(!q||q.status!=='aberto')return;if(confirm('Excluir este orçamento?')){const before=db.quotes;db.quotes=db.quotes.filter(q=>q.id!==qid);if(save()===false){db.quotes=before;return alert('Não foi possível excluir o orçamento.');}render()}}
 function ordersView(){const q=search.pedidos.toLowerCase();const list=db.orders.slice().reverse().filter(o=>[o.number,o.controlCode,o.clientNome,o.projectNome,statusText[o.status]].some(v=>String(v||'').toLowerCase().includes(q)));
  content.innerHTML=`${intro('Pedidos','Controle de produção, estoque e cobrança.',`${db.orders.length} pedido(s)`)}<section class="panel"><div class="toolbar">${inputSearch('pedidos')}<div class="actions">${button('+ Novo pedido','new-order','','primary')}</div></div>${table(['Pedido / Cliente','Valor e recebimento','Entrega','Produção / Materiais','Ações'],list.map(o=>{
- const state=o.stockState==='reservado'?pill('Materiais reservados','success'):o.stockState==='baixado'?pill('Estoque baixado','success'):pill('Reserva pendente','warn');
- return td(`<strong>${esc(o.controlCode||'#'+o.number)} · ${esc(o.clientNome)}</strong>${o.projectId?'<div class="small muted">Projeto: '+esc(o.projectNome||'Vinculado')+'</div>':''}<div class="small muted">${date(o.date)}</div>`,`<strong>${money(orderTotal(o))}</strong><div class="small muted">Recebido: ${money(orderPaid(o))}</div>`,esc(o.entrega||'A combinar'),`${pill(statusText[o.status]||o.status,o.status==='cancelado'?'danger':o.status==='entregue'?'success':'')}<div style="margin-top:6px">${o.status==='cancelado'?'':state}</div>`,`<div class="row-actions">${button('Detalhes','view-order',o.id,'small')}${o.status==='confirmado'&&o.stockState==='pendente'?button('Reservar','reserve-order',o.id,'small accent'):''}${o.status==='confirmado'?button('Produção','start-order',o.id,'small'):''}${o.status==='producao'?button('Pronto','ready-order',o.id,'small'):''}${o.status==='pronto'?button('Entregar','deliver-order',o.id,'small'):''}${o.status==='confirmado'?button('Cancelar','cancel-order',o.id,'small danger'):''}</div>`)}))}</section>`;
+ const state=o.status==='aberto'?pill('Aguardando confirmação','warn'):o.stockState==='reservado'?pill('Materiais reservados','success'):o.stockState==='baixado'?pill('Estoque baixado','success'):pill('Reserva pendente','warn');
+ return td(`<strong>${esc(o.controlCode||'#'+o.number)} · ${esc(o.clientNome)}</strong>${o.projectId?'<div class="small muted">Projeto: '+esc(o.projectNome||'Vinculado')+'</div>':''}<div class="small muted">${date(o.date)}</div>`,`<strong>${money(orderTotal(o))}</strong><div class="small muted">Recebido: ${money(orderPaid(o))}</div>`,esc(o.entrega||'A combinar'),`${pill(statusText[o.status]||o.status,o.status==='cancelado'?'danger':o.status==='entregue'?'success':'')}<div style="margin-top:6px">${o.status==='cancelado'?'':state}</div>`,`<div class="row-actions">${button('Detalhes','view-order',o.id,'small')}${o.status==='aberto'?button('Editar','edit-order',o.id,'small')+button('Confirmar pedido','confirm-order',o.id,'small accent'):''}${o.status==='confirmado'&&o.stockState==='pendente'?button('Reservar','reserve-order',o.id,'small accent'):''}${o.status==='confirmado'?button('Produção','start-order',o.id,'small'):''}${o.status==='producao'?button('Pronto','ready-order',o.id,'small'):''}${o.status==='pronto'?button('Entregar','deliver-order',o.id,'small'):''}${['aberto','confirmado'].includes(o.status)?button('Cancelar','cancel-order',o.id,'small danger'):''}</div>`)}))}</section>`;
 }
 function reserveOrder(oid){
  const o=getOrder(oid);if(!o||o.status!=='confirmado')return;
@@ -384,7 +444,7 @@ function advanceOrder(oid,newStatus){
  render();
 }
 function cancelOrder(oid){
- const o=getOrder(oid);if(!o||o.status!=='confirmado')return alert('Somente pedidos confirmados podem ser cancelados nesta versão.');
+ const o=getOrder(oid);if(!o||!['aberto','confirmado'].includes(o.status))return alert('Somente pedidos em aberto ou confirmados podem ser cancelados.');
  if(orderPaid(o)>0)return alert('Há pagamento recebido. Regularize financeiramente antes de cancelar.');
  if(!confirm('Cancelar pedido #'+o.number+'? Reservas e contas ainda não pagas serão liberadas.'))return;
  const before={status:o.status,stockState:o.stockState,transactions:db.transactions};
@@ -693,7 +753,7 @@ function handleAction(action,item){switch(action){
  case 'new-raw':return productModal('','materia');case 'edit-product':return productModal(item);case 'adjust-stock':return adjustStock(item);case 'delete-product':return removeProduct(item);
  case 'new-quote':return openSales('quote');case 'edit-quote':return openSales('quote',item);case 'convert-quote':return convertQuote(item);case 'delete-quote':return removeQuote(item);
  case 'print-quote':{const o=getQuote(item);if(o)salesPrint(o,'Orçamento');return}
- case 'new-order':return openSales('order');case 'view-order':return orderDetails(item);case 'reserve-order':return reserveOrder(item);case 'start-order':return startOrder(item);
+ case 'new-order':return openSales('order');case 'edit-order':return openSales('order',item);case 'confirm-order':return confirmOpenOrder(item);case 'view-order':return orderDetails(item);case 'reserve-order':return reserveOrder(item);case 'start-order':return startOrder(item);
  case 'ready-order':return advanceOrder(item,'pronto');case 'deliver-order':return advanceOrder(item,'entregue');case 'cancel-order':return cancelOrder(item);
  case 'new-transaction':return transactionModal();case 'edit-transaction':return editTransactionModal(item);case 'pay-transaction':return paymentModal(item);case 'edit-payment':return editRecordedPaymentModal(item);case 'show-receipts':return receiptModal(item);case 'list-payments':return paymentHistoryModal(item);case 'undo-payment':return undoPayment(item);case 'delete-transaction':return deleteTransaction(item);
  case 'print-order':{const o=getOrder(item);if(o)salesPrint(o,'Pedido');return}case 'print-contract':{const o=getOrder(item);if(o)contractPrint(o);return}
