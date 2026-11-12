@@ -5,10 +5,10 @@ const {webcrypto}=require('node:crypto');
 const source=fs.readFileSync(path.join(__dirname,'../preview-v1/backup-oficina-v1.js'),'utf8');
 new vm.Script(source,{filename:'backup-oficina-v1.js'});
 const index=fs.readFileSync(path.join(__dirname,'../preview-v1/index.html'),'utf8');
-const logo=fs.readFileSync(path.join(__dirname,'../preview-v1/assets/universa-art-logo.webp'));
+const logo=fs.readFileSync(path.join(__dirname,'../preview-v1/assets/universa-art-logo-novo.webp'));
 assert.equal(logo.subarray(0,4).toString(),'RIFF','A logomarca precisa ser imagem WEBP real');
 assert.equal(logo.subarray(8,12).toString(),'WEBP');
-assert(index.includes('UNIVERSA ART')&&index.includes('assets/universa-art-logo.webp'),'Nome e logotipo visíveis na interface');
+assert(index.includes('UNIVERSA ART')&&index.includes('assets/universa-art-logo-novo.webp'),'Nome e logotipo visíveis na interface');
 assert(index.includes('backup-oficina-v1.js')&&!index.includes('accounts.google.com/gsi/client'),'Tela de backup novo sem dependencia Google Drive');
 assert(!source.includes('https://www.googleapis.com/drive'),'Backup novo sem API do Google');
 
