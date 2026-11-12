@@ -1,103 +1,167 @@
-/* OFICINA — catálogo consultivo Léo Madeiras, sem prometer estoque ao vivo. */
+/* OFICINA — catálogo Léo: links diretos, filtros, preço opcional e performance. */
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const {performance}=require('node:perf_hooks');
 const read=name=>fs.readFileSync(path.join(__dirname,'..',name),'utf8');
-const source=read('preview-v1/leo-catalogo-v1.js');
-new vm.Script(source,{filename:'leo-catalogo-v1.js'});
-const listeners={};let latestDialog=null,created=0;
+const src=read('preview-v1/leo-catalogo-v1.js');
+const dataSrc=read('preview-v1/leo-dados-v2.js');
+const css=read('preview-v1/leo-catalogo-v1.css');
+new vm.Script(src,{filename:'leo-catalogo-v1.js'});
+new vm.Script(dataSrc,{filename:'leo-dados-v2.js'});
+assert(src.length<17000,'Controlador deve permanecer leve (< 17 KB)');
+assert(dataSrc.length<18000,'Dados consultivos devem permanecer compactos (< 18 KB)');
+assert(css.length<4500,'Estilos compactos');
+assert(!src.includes('<img'),'Sem fotos');
+assert(!src.includes('fetch('),'Pesquisa local sem requisições enquanto digita');
+assert(!src.includes('save('),'Consultar não pode salvar no banco');
+assert(!src.includes('localStorage'),'Consultar não pode alterar dados locais');
+const listeners={},allDialogs=[],loading=[];
+let ctx,scriptLoads=0;
 function node(id){
  return {
-  id,innerHTML:'',value:'',checked:false,isConnected:true,open:false,
-  events:{},options:[],focus(){},dispatchEvent(){},
+  id,value:'',innerHTML:'',textContent:'',href:'',checked:false,hidden:false,isConnected:true,open:false,
+  options:[],events:{},focus(){},dispatchEvent(){},setAttribute(){},remove(){this.removed=true},
   addEventListener(type,handler){this.events[type]=handler},
-  setAttribute(){},remove(){this.removed=true},
   showModal(){this.open=true},close(){this.open=false;if(this.events.close)this.events.close()},
-  querySelector(){return null}
+  closest(sel){return sel==='label'?this.parentLabel:null}
  };
 }
 const document={
- addEventListener:(name,callback)=>{listeners[name]=callback},
+ addEventListener:(event,handler)=>{listeners[event]=handler},
  createElement:tag=>{
-  assert.equal(tag,'dialog');created++;
-  const d=node('dialog');
-  const controls={
-   uaLeoClose:node('uaLeoClose'),uaLeoCategory:node('uaLeoCategory'),
-   uaLeoQuery:node('uaLeoQuery'),uaLeoResults:node('uaLeoResults'),
-   uaLeoCategoryLink:node('uaLeoCategoryLink'),uaLeoFillCost:node('uaLeoFillCost')
-  };
-  d.querySelector=selector=>controls[selector.slice(1)]||null;
-  d.controls=controls;latestDialog=d;return d;
+  const n=node(tag);
+  if(tag==='script')return n;
+  assert.equal(tag,'dialog');
+  const controls={};
+  for(const id of ['uaLeoClose','uaLeoCategory','uaLeoQuery','uaLeoBrand','uaLeoSize','uaLeoColor','uaLeoResults','uaLeoCategoryLink','uaLeoCount','uaLeoMore','uaLeoFillCost'])controls[id]=node(id);
+  controls.uaLeoBrand.parentLabel={hidden:false};
+  controls.uaLeoSize.parentLabel={hidden:false};
+  controls.uaLeoColor.parentLabel={hidden:false};
+  n.controls=controls;
+  n.querySelector=sel=>controls[sel.slice(1)]||null;
+  allDialogs.push(n);
+  return n;
  },
- body:{append(){}}
+ body:{append(){}},
+ head:{appendChild(script){
+  assert(script.src.includes('leo-dados-v2.js'));
+  scriptLoads++;
+  vm.runInNewContext(dataSrc,ctx,{timeout:1200});
+  script.onload();
+ }}
 };
 const window={};
-const ctx={window,document,Event:class Event{constructor(type){this.type=type}},Intl,Array,Object,Math,Date,Number,String,Error};
-vm.runInNewContext(source,ctx,{timeout:3000});
+const fakeAlert=[];
+ctx={window,document,alert:s=>fakeAlert.push(s),Event:class Event{constructor(type){this.type=type}},Intl,Array,Object,Math,Date,Number,String,Error,Promise,Set};
+vm.runInNewContext(src,ctx,{timeout:1200});
 const api=window.universaArtLeoCatalogo;
-assert(api&&api.items.length>=12);
-assert.equal(api.filter('mdf','15 mm').length,3);
-assert.equal(api.filter('parafusos','4 x 40').length,1);
-assert.equal(api.filter('buchas','8 mm').length,1);
-assert.equal(api.filter('fitas','35 mm').length,1);
-assert(api.priceNotice().includes('NÃO são verificados em tempo real'));
-assert(!source.includes('fetch('),'Sem coleta não autorizada de dados do varejista');
-assert(!source.includes('save('),'Catálogo não pode gravar pedidos ou estoque');
-assert(!source.includes('localStorage'),'Não persiste dados comerciais');
-assert(api.items.every(i=>i.price>0&&i.unit&&api.categories[i.category]?.url.startsWith('https://checkout.leomadeiras.com.br/')));
-
+assert(api);
+assert.equal(api.items.length,0,'O catálogo não deve ser carregado antes do uso');
+assert.equal(scriptLoads,0,'Nenhuma requisição antecipada');
+const db={projects:[{nome:'Móvel existente'}],products:[],transactions:[]},before=JSON.stringify(db);
 const projectInput=node('material');projectInput.name='material';
-const db={projects:[{nome:'Projeto real'}],products:[],transactions:[]};
-const before=JSON.stringify(db);
-const project={
- isConnected:true,
- querySelector:sel=>sel==='[name="material"]'?projectInput:null
-};
-assert(api.open({closest:()=>project}));
-assert(latestDialog.open);
-assert(latestDialog.controls.uaLeoResults.innerHTML.includes('Selecionar'));
-assert(latestDialog.controls.uaLeoResults.innerHTML.includes('R$'));
-latestDialog.events.click({target:{closest:sel=>sel==='[data-ua-leo-use]'?{dataset:{uaLeoUse:'0'}}:null}});
-assert.equal(projectInput.value,api.items[0].name,'Selecionar preenche apenas material do projeto');
-assert(!latestDialog.open,'Catálogo fecha após seleção');
-assert.equal(JSON.stringify(db),before,'Não alterar dados registrados');
-
-const fields={
- '[name="nome"]':node('nome'),'[name="categoria"]':node('categoria'),
- '[name="unidade"]':node('unidade'),'[name="custo"]':node('custo'),
- '[name="espessuraMm"]':node('espessuraMm'),
- '[name="chapaComprimentoMm"]':node('comprimento'),
- '[name="chapaLarguraMm"]':node('largura')
-};
-fields['[name="nome"]'].name='nome';
-fields['[name="custo"]'].value='0';
-fields['[name="unidade"]'].options=[{value:'chapa'},{value:'pacote'},{value:'un'}];
-const productForm={isConnected:true,querySelector:sel=>fields[sel]||null};
-api.open({closest:()=>productForm});
-latestDialog.controls.uaLeoCategory.value='mdf';
-latestDialog.controls.uaLeoCategory.events.change();
-latestDialog.events.click({target:{closest:sel=>sel==='[data-ua-leo-use]'?{dataset:{uaLeoUse:'0'}}:null}});
-assert.equal(fields['[name="nome"]'].value,api.items[0].name);
-assert.equal(fields['[name="custo"]'].value,'0','Preço não pode preencher o custo sem autorização');
-assert.equal(fields['[name="unidade"]'].value,'chapa');
-assert.equal(fields['[name="espessuraMm"]'].value,'15');
-assert.equal(fields['[name="chapaComprimentoMm"]'].value,'2750');
-assert.equal(fields['[name="chapaLarguraMm"]'].value,'1840');
-api.open({closest:()=>productForm});
-latestDialog.controls.uaLeoCategory.value='parafusos';
-latestDialog.controls.uaLeoCategory.events.change();
-latestDialog.controls.uaLeoFillCost.checked=true;
-latestDialog.events.click({target:{closest:sel=>sel==='[data-ua-leo-use]'?{dataset:{uaLeoUse:'0'}}:null}});
-assert.equal(fields['[name="unidade"]'].value,'pacote');
-assert.equal(fields['[name="custo"]'].value,'2.49','Preencher preço apenas após escolha explícita');
-assert.equal(JSON.stringify(db),before);
-assert(created>=3);
-
-for(const file of ['preview-v1/index.html','preview-v1/seguro.html']){
- const html=read(file);
- assert(html.includes('leo-catalogo-v1.js')&&html.includes('leo-catalogo-v1.css'));
- assert(html.includes('leomadeiras-referencias-20261112'));
+const project={isConnected:true,querySelector:sel=>sel==='[name="material"]'?projectInput:null};
+function pick(index){
+ const dialog=allDialogs.at(-1);
+ dialog.events.click({target:{closest:sel=>sel==='[data-ua-leo-use]'?{dataset:{uaLeoUse:String(index)}}:null}});
 }
-assert(read('preview-v1/features-v05.js').includes('data-ua-leo-open'),'Disponível no projeto');
-assert(read('preview-v1/universalartes-v1.js').includes('data-ua-leo-open'),'Disponível no assistente');
-assert(read('preview-v1/catalogo-produtos-1-0.js').includes('data-ua-leo-open'),'Disponível em matérias-primas');
-console.log('OK: catálogo Léo Madeiras, preços de referência, filtros, formulários e preservação de estoque/financeiro.');
+async function main(){
+ assert(await api.open({closest:()=>project}));
+ assert.equal(scriptLoads,1,'Carregar somente quando abrir primeira vez');
+ assert.equal(api.items.length,45);
+ const groups=Object.fromEntries(['mdf','parafusos','buchas','fitas'].map(c=>[c,api.filter(c).length]));
+ assert.deepEqual(groups,{mdf:21,parafusos:12,buchas:8,fitas:4});
+ assert(api.items.every(x=>api.checkUrl(x.url)),'Todos os links devem apontar para ficha individual de produto');
+ assert(api.items.every(x=>x.url.endsWith('/p')),'Página de produto, não página de categoria');
+ assert(api.filter('mdf','15 mm').length>=8,'Localizar MDFs 15 mm de várias cores');
+ assert.equal(api.filter('parafusos','4x40').length,1);
+ assert.equal(api.filter('parafusos','3,5 × 25').length,1);
+ assert.equal(api.filter('buchas','8 mm').length,2);
+ assert.equal(api.filter('fitas','35 mm').length,1);
+ assert.equal(api.filter('mdf','amendola', {brand:'Duratex',size:'15 mm'}).length,1,'Pesquisa ignora acento e filtra marca/espessura');
+ assert.equal(api.filter('mdf','',{color:'Amêndola Rústica'}).length,4,'Filtro de padrões/cor');
+ assert(api.priceNotice().includes('não uma cotação atual'));
+ assert(api.items.some(item=>item.price===null),'Produtos sem preço devem continuar na lista');
+ let dlg=allDialogs.at(-1);
+ assert(dlg.open,'Dialog deve abrir');
+ assert(dlg.innerHTML.includes('Marca')&&dlg.innerHTML.includes('Medida / Espessura'));
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('Ver produto na Léo'));
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('href="https://checkout.leomadeiras.com.br/'));
+ assert.equal((dlg.controls.uaLeoResults.innerHTML.match(/class="ua-leo-item"/g)||[]).length,20,'Renderização limitada na primeira página');
+ assert.equal(dlg.controls.uaLeoMore.hidden,false,'Mostrar mais quando houver referências não exibidas');
+ dlg.controls.uaLeoMore.events.click();
+ assert.equal((dlg.controls.uaLeoResults.innerHTML.match(/class="ua-leo-item"/g)||[]).length,40,'Segunda página não recria todos os itens');
+ dlg.controls.uaLeoMore.events.click();
+ assert.equal((dlg.controls.uaLeoResults.innerHTML.match(/class="ua-leo-item"/g)||[]).length,45);
+ assert.equal(dlg.controls.uaLeoMore.hidden,true);
+ dlg.controls.uaLeoQuery.value='4x40';
+ dlg.controls.uaLeoQuery.events.input();
+ assert.equal((dlg.controls.uaLeoResults.innerHTML.match(/class="ua-leo-item"/g)||[]).length,1,'Busca deve filtrar resultados');
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('4 × 40'));
+ dlg.controls.uaLeoQuery.value='';
+ dlg.controls.uaLeoQuery.events.input();
+ pick(0);
+ assert.equal(projectInput.value,api.items[0].name,'Selecionar preenche material do projeto');
+ assert.equal(dlg.open,false,'Consulta fecha após seleção');
+ assert.equal(JSON.stringify(db),before,'Nenhuma escrita em dados de projetos/estoque/financeiro');
+
+ const fields={
+  '[name="nome"]':node('nome'),'[name="categoria"]':node('categoria'),
+  '[name="unidade"]':node('unidade'),'[name="custo"]':node('custo'),
+  '[name="espessuraMm"]':node('espessuraMm'),
+  '[name="chapaComprimentoMm"]':node('comprimento'),
+  '[name="chapaLarguraMm"]':node('largura')
+ };
+ fields['[name="nome"]'].name='nome';fields['[name="custo"]'].value='0';
+ fields['[name="unidade"]'].options=[{value:'chapa'},{value:'pacote'},{value:'rolo'}];
+ const productForm={isConnected:true,querySelector:sel=>fields[sel]||null};
+ assert(await api.open({closest:()=>productForm}));
+ assert.equal(scriptLoads,1,'Dados carregados uma única vez');
+ dlg=allDialogs.at(-1);
+ dlg.controls.uaLeoCategory.value='mdf';
+ dlg.controls.uaLeoCategory.events.change();
+ assert(dlg.controls.uaLeoColor.parentLabel.hidden===false);
+ assert(dlg.controls.uaLeoSize.innerHTML.includes('25 mm'));
+ pick(0);
+ assert.equal(fields['[name="nome"]'].value,api.items[0].name);
+ assert.equal(fields['[name="custo"]'].value,'0','Não preencher custo sem seleção explícita');
+ assert.equal(fields['[name="unidade"]'].value,'chapa');
+ assert.equal(fields['[name="espessuraMm"]'].value,'15');
+ assert.equal(fields['[name="chapaComprimentoMm"]'].value,'2750');
+ assert.equal(fields['[name="chapaLarguraMm"]'].value,'1840');
+
+ await api.open({closest:()=>productForm});
+ dlg=allDialogs.at(-1);
+ dlg.controls.uaLeoCategory.value='mdf';dlg.controls.uaLeoCategory.events.change();
+ dlg.controls.uaLeoSize.value='25 mm';dlg.controls.uaLeoSize.events.change();
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('Preço não cadastrado'),'Preço ausente é exibido corretamente');
+ dlg.controls.uaLeoFillCost.checked=true;
+ pick(0);
+ assert.equal(fields['[name="custo"]'].value,'0','Sem preço não preencher custo zero/fictício');
+
+ await api.open({closest:()=>productForm});
+ dlg=allDialogs.at(-1);dlg.controls.uaLeoCategory.value='parafusos';dlg.controls.uaLeoCategory.events.change();
+ dlg.controls.uaLeoFillCost.checked=true;pick(0);
+ assert.equal(fields['[name="unidade"]'].value,'pacote');
+ assert.equal(fields['[name="custo"]'].value,'2.49','Preço histórico só após autorização explícita');
+ assert.equal(JSON.stringify(db),before);
+ assert.equal(fakeAlert.length,0);
+
+ const started=performance.now();
+ for(let i=0;i<1000;i++)api.filter(i%2?'mdf':'parafusos','4x40');
+ const elapsed=Math.round(performance.now()-started);
+ console.log('Desempenho: 2.000 pesquisas em '+elapsed+' ms; JS='+src.length+' bytes; dados lazy='+dataSrc.length+' bytes; CSS='+css.length+' bytes.');
+ assert(elapsed<2500,'Pesquisa local deve ser leve');
+
+ for(const page of ['preview-v1/index.html','preview-v1/seguro.html']){
+  const html=read(page);
+  assert(html.includes('leo-catalogo-v1.js?v=links-individuais-desempenho-20261112'));
+  assert(html.includes('leo-catalogo-v1.css?v=filtros-tecnicos-20261112'));
+  assert(!html.includes('src="leo-dados-v2.js"'),'Não carregar dados antes de abrir o catálogo');
+ }
+ assert(read('preview-v1/features-v05.js').includes('data-ua-leo-open'));
+ assert(read('preview-v1/universalartes-v1.js').includes('data-ua-leo-open'));
+ assert(read('preview-v1/catalogo-produtos-1-0.js').includes('data-ua-leo-open'));
+ console.log('OK: 45 referências, 45 links diretos, filtros, valores opcionais, cadastro sem escrita e carregamento sob demanda.');
+}
+main().catch(error=>{console.error(error);process.exitCode=1});

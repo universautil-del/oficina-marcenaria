@@ -7,9 +7,15 @@ dialog.ua-leo-dialog{width:min(900px,96vw);max-height:90dvh;overflow:auto;paddin
 .ua-leo-header h2{margin:0 0 5px;color:#193d30;font-size:23px}
 .ua-leo-header p{font-size:12px;color:#607265;margin:0;line-height:1.5}
 .ua-leo-warning{border:1px solid #e9cf98;background:#fff9eb;border-radius:10px;font-size:12px;color:#6c511e;line-height:1.65;padding:11px 13px}
-.ua-leo-filters{display:grid;grid-template-columns:minmax(160px,1fr) minmax(170px,2fr);gap:12px;margin:15px 0}
+.ua-leo-filters{display:grid;grid-template-columns:repeat(3,minmax(145px,1fr));gap:12px;margin:15px 0}
 .ua-leo-filters label{font-weight:650;font-size:12px;color:#425d48}
 .ua-leo-filters input,.ua-leo-filters select{display:block;width:100%;margin-top:5px;padding:11px 12px;min-height:43px;border:1px solid #cddacc;background:#fff;border-radius:8px;font:inherit;font-size:13px}
+.ua-leo-count{font-size:12px;color:#587362;margin:7px 0 10px;font-weight:650}
+.ua-leo-paging{display:flex;justify-content:center;padding:12px 0 4px}
+.ua-leo-paging button{border-color:#c99763;color:#193d30}
+.ua-leo-paging button[hidden]{display:none}
+.ua-leo-filters label[hidden]{display:none}
+.ua-leo-price b{white-space:normal}
 .ua-leo-results{display:grid;gap:9px;max-height:43dvh;overflow-y:auto}
 .ua-leo-item{display:grid;grid-template-columns:minmax(190px,1fr) minmax(110px,auto) auto;gap:12px;align-items:center;padding:12px;border:1px solid #e0e9e0;border-radius:11px;background:#fff}
 .ua-leo-item strong{font-size:13px;color:#213a2d;overflow-wrap:anywhere}
@@ -25,5 +31,6 @@ dialog.ua-leo-dialog{width:min(900px,96vw);max-height:90dvh;overflow:auto;paddin
 .ua-leo-foot{font-size:11px;color:#67796a;line-height:1.6;margin:14px 0 0}
 .ua-leo-foot .btn{display:inline-block;margin-right:10px;text-decoration:none;font-size:11px}
 .ua-leo-empty{color:#687a6e;font-size:13px;padding:13px}
-@media(max-width:720px){dialog.ua-leo-dialog{width:calc(100vw - 14px);padding:13px;max-height:94dvh}.ua-leo-filters{grid-template-columns:1fr}.ua-leo-item{grid-template-columns:1fr auto}.ua-leo-item-actions{grid-column:1/-1;justify-content:flex-start}.ua-leo-price b{font-size:13px}.ua-leo-header h2{font-size:20px}}
+@media(max-width:720px){dialog.ua-leo-dialog{width:calc(100vw - 14px);padding:13px;max-height:94dvh}.ua-leo-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.ua-leo-item{grid-template-columns:1fr auto}.ua-leo-item-actions{grid-column:1/-1;justify-content:flex-start}.ua-leo-price b{font-size:13px}.ua-leo-header h2{font-size:20px}}
+@media(max-width:480px){.ua-leo-filters{grid-template-columns:1fr}}
 @media(max-width:420px){.ua-leo-item{grid-template-columns:1fr}.ua-leo-price{text-align:left}.ua-leo-item-actions{grid-column:1}}
