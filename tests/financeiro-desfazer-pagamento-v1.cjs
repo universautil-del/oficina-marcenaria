@@ -49,7 +49,7 @@ confirmResult=true;
 saveResult=false;
 assert.throws(()=>ctx.undoPayment('t1:pay2'),/preservado/);
 assert.equal(receivable.payments.length,2,'Rollback em falha');
-assert.equal(receivable.paymentReversals.length,0,'Nenhum estorno gravado em falha');
+assert.equal(receivable.paymentReversals,undefined,'Nenhum estorno gravado em falha');
 saveResult=true;
 assert.equal(ctx.undoPayment('t1:pay2'),true);
 assert.equal(receivable.payments.length,1);
