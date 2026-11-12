@@ -60,7 +60,8 @@ assert.equal(receivable.paymentReversals[0].valor,3300);
 ctx.financeView();
 assert(content.innerHTML.includes('Parcial'),'Pago vira parcial após desfazer uma de duas parcelas');
 assert(content.innerHTML.includes('R$ 3.300,00'),'Saldo reaberto');
-assert(content.innerHTML.includes('R$ 2.500,00'),'Recebido: 2.000, despesas: 500, saldo de caixa 1.500'); // conta a pagar ainda paga; recebido 2000, gasto 500
+assert(content.innerHTML.includes('R$ 2.000,00'),'Recebido atualizado para 2.000');
+assert(content.innerHTML.includes('R$ 1.500,00'),'Caixa atualizado para 1.500 após descontar despesa de 500');
 assert.throws(()=>ctx.undoPayment('t1:pay2'),/já foi desfeito/,'Não permitir estorno repetido');
 ctx.paymentHistoryModal('t1');
 assert(modal.at(-1).html.includes('Estornos registrados'));
