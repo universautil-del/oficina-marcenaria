@@ -72,7 +72,7 @@
   const s=state.xlsxSheets?.[index];if(!s)throw Error('Aba do Excel não encontrada.');
   state.headers=s.rows[0].map((c,i)=>String(c).trim()||'Coluna '+(i+1));
   state.raw=s.rows.slice(1);state.file=(state.xlsxFilename||'Excel')+' · '+s.name;
-  state.parts=[];state.settings={};state.error='';state.selectedExcelSheet=index;
+  state.parts=[];state.settings={};state.materialAssignments={};state.error='';state.selectedExcelSheet=index;
   tool.mapping();tool.autoReadParts?.();tool.view();
  }
  async function readExcelFile(file){
