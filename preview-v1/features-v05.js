@@ -38,7 +38,57 @@ function v5ProjectModal(pid=''){
  const old=v5FindProject(pid)||{nome:'',clientId:'',ambiente:'',largura:'',altura:'',profundidade:'',material:'',acabamento:'',status:'planejamento',prazo:'',observacoes:'',optionA:'',optionB:'',priceA:0,priceB:0,checklist:[{label:'Medição',done:false},{label:'Aprovação do desenho',done:false},{label:'Corte',done:false},{label:'Montagem',done:false},{label:'Instalação',done:false}]};
  const clients=`<option value="">Sem cliente definido</option>${db.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===old.clientId?'selected':''}>${esc(c.nome)}</option>`).join('')}`;
  const stages=Object.entries(V5_STATUS).map(([key,label])=>`<option value="${key}" ${key===old.status?'selected':''}>${label}</option>`).join('');
- const fields=`<div class="form-grid"><label class="full">Nome do projeto *<input name="nome" maxlength="140" required value="${esc(old.nome||'')}"></label><label>Cliente<select name="clientId">${clients}</select><button type="button" class="btn small" data-v5-quick-client style="margin-top:8px">+ Novo cliente</button></label><label>Ambiente<input name="ambiente" maxlength="100" placeholder="Cozinha, quarto, sala..." value="${esc(old.ambiente||'')}"></label><label>Largura (mm)<input type="number" min="0" step="0.1" name="largura" value="${esc(old.largura||'')}"></label><label>Altura (mm)<input type="number" min="0" step="0.1" name="altura" value="${esc(old.altura||'')}"></label><label>Profundidade (mm)<input type="number" min="0" step="0.1" name="profundidade" value="${esc(old.profundidade||'')}"></label><label>Prazo previsto<input type="date" name="prazo" value="${esc(old.prazo||'')}"></label><label>Material principal<input name="material" maxlength="120" value="${esc(old.material||'')}" placeholder="MDF branco TX 15 mm"></label><label>Acabamento<input name="acabamento" maxlength="120" value="${esc(old.acabamento||'')}" placeholder="Carvalho, fosco, amadeirado..."></label><label>Etapa<select name="status">${stages}</select></label><label class="full">Checklist (uma etapa por linha)<textarea rows="5" name="etapas">${esc((old.checklist||[]).map(c=>c.label).join('\n'))}</textarea></label><label>Opção A — descrição<input maxlength="180" name="optionA" value="${esc(old.optionA||'')}"></label><label>Estimativa A (R$)<input type="number" min="0" step="0.01" name="priceA" value="${Number(old.priceA||0)}"></label><label>Opção B — descrição<input maxlength="180" name="optionB" value="${esc(old.optionB||'')}"></label><label>Estimativa B (R$)<input type="number" min="0" step="0.01" name="priceB" value="${Number(old.priceB||0)}"></label><label class="full">Observações<textarea name="observacoes" rows="3">${esc(old.observacoes||'')}</textarea></label><label class="full">Imagem de referência (opcional, até 2 MB)<input type="file" id="v5ProjectImage" accept="image/png,image/jpeg,image/webp"></label></div>`;
+ const fields=`<div class="ua-project-form">
+  <p class="ua-project-help">Organize os dados do móvel por etapa. As medidas são sempre em milímetros (mm). A lista SketchUp e os vínculos com orçamentos permanecem no projeto.</p>
+  <section class="ua-project-section" aria-label="Identificação do projeto">
+   <h3>1. Identificação do projeto</h3>
+   <div class="form-grid ua-project-fields">
+    <label class="full">Nome do projeto *<input name="nome" maxlength="140" required value="${esc(old.nome||'')}"></label>
+    <div class="ua-project-client">
+     <label>Cliente<select name="clientId">${clients}</select></label>
+     <button type="button" class="btn small" data-v5-quick-client>+ Novo cliente</button>
+    </div>
+    <label>Ambiente<input name="ambiente" maxlength="100" placeholder="Cozinha, quarto, sala..." value="${esc(old.ambiente||'')}"></label>
+   </div>
+  </section>
+  <section class="ua-project-section" aria-label="Medidas e materiais">
+   <h3>2. Medidas e materiais</h3>
+   <div class="form-grid ua-project-fields ua-project-measures">
+    <label>Largura (mm)<input type="number" min="0" step="0.1" inputmode="decimal" name="largura" value="${esc(old.largura||'')}"></label>
+    <label>Altura (mm)<input type="number" min="0" step="0.1" inputmode="decimal" name="altura" value="${esc(old.altura||'')}"></label>
+    <label>Profundidade (mm)<input type="number" min="0" step="0.1" inputmode="decimal" name="profundidade" value="${esc(old.profundidade||'')}"></label>
+   </div>
+   <div class="form-grid ua-project-fields ua-project-materials">
+    <label>Material principal<input name="material" maxlength="120" value="${esc(old.material||'')}" placeholder="MDF branco TX 15 mm"></label>
+    <label>Acabamento<input name="acabamento" maxlength="120" value="${esc(old.acabamento||'')}" placeholder="Amadeirado, fosco..."></label>
+   </div>
+  </section>
+  <section class="ua-project-section" aria-label="Acompanhamento">
+   <h3>3. Acompanhamento</h3>
+   <div class="form-grid ua-project-fields">
+    <label>Etapa<select name="status">${stages}</select></label>
+    <label>Prazo previsto<input type="date" name="prazo" value="${esc(old.prazo||'')}"></label>
+    <label class="full">Checklist (uma etapa por linha)<textarea rows="4" name="etapas">${esc((old.checklist||[]).map(c=>c.label).join('\n'))}</textarea></label>
+   </div>
+  </section>
+  <details class="ua-project-section ua-project-optional">
+   <summary>4. Alternativas e estimativas (opcional)</summary>
+   <div class="form-grid ua-project-fields">
+    <label>Opção A — descrição<input maxlength="180" name="optionA" value="${esc(old.optionA||'')}"></label>
+    <label>Estimativa A (R$)<input type="number" min="0" step="0.01" name="priceA" value="${Number(old.priceA||0)}"></label>
+    <label>Opção B — descrição<input maxlength="180" name="optionB" value="${esc(old.optionB||'')}"></label>
+    <label>Estimativa B (R$)<input type="number" min="0" step="0.01" name="priceB" value="${Number(old.priceB||0)}"></label>
+   </div>
+  </details>
+  <details class="ua-project-section ua-project-optional">
+   <summary>5. Observações e imagem (opcional)</summary>
+   <div class="form-grid ua-project-fields">
+    <label class="full">Observações<textarea name="observacoes" rows="3">${esc(old.observacoes||'')}</textarea></label>
+    <label class="full">Imagem de referência (opcional, até 2 MB)<input type="file" id="v5ProjectImage" accept="image/png,image/jpeg,image/webp"></label>
+    ${old.image?'<p class="ua-project-image-note">Já existe uma imagem vinculada. Ela será mantida se você não selecionar outra.</p>':''}
+   </div>
+  </details>
+ </div>`;
  return openModal(pid?'Editar projeto':'Novo projeto',fields,(v,dlg)=>{
    const name=v.nome.trim();if(!name)throw Error('Informe o nome do projeto.');
    for(const k of ['largura','altura','profundidade','priceA','priceB'])if(v[k]!==''&&(!Number.isFinite(Number(v[k]))||Number(v[k])<0))throw Error('As medidas e valores precisam ser positivos.');
@@ -54,6 +104,7 @@ function v5ProjectModal(pid=''){
    if(save()===false){db.projects=beforeProjects;db.seq=beforeSeq;throw Error('Não foi possível salvar o projeto. Nenhum dado foi alterado.');}
    return true;
  },dlg=>{
+   dlg.classList.add('ua-project-dialog');
    const quick=dlg.querySelector('[data-v5-quick-client]');
    if(quick)quick.onclick=()=>{
     const before=new Set((db.clients||[]).map(c=>String(c.id)));
