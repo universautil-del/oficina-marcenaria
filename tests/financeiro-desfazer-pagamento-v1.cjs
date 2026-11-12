@@ -3,7 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const src=fs.readFileSync(path.join(__dirname,'../preview-v1/script.js'),'utf8');
 const slice=(a,b)=>{const i=src.indexOf(a),j=src.indexOf(b,i+a.length);assert(i>=0&&j>i,'Fonte não encontrada '+a);return src.slice(i,j)};
-const financeSrc=slice('function financeView(){','function transactionModal(){');
+const financeSrc=slice('function financeClientName(t){','function transactionModal(){');
 const historySrc=slice('function paymentHistoryModal(tid){','const defaultContract=');
 new vm.Script(financeSrc+historySrc);
 const receivable={id:'t1',kind:'receber',descricao:'Pedido PED-2026-004 · Parcela 1/1',valor:5300,
@@ -11,7 +11,7 @@ const receivable={id:'t1',kind:'receber',descricao:'Pedido PED-2026-004 · Parce
  payments:[{id:'pay1',valor:2000,date:'2026-11-09',method:'Pix'}, {id:'pay2',valor:3300,date:'2026-11-11',method:'Dinheiro'}]};
 const payable={id:'t2',kind:'pagar',descricao:'Fornecedor MDF',valor:500,dueDate:'2026-11-12',
  orderId:'',payments:[{id:'p3',valor:500,date:'2026-11-11',method:'Transferência'}]};
-const db={transactions:[receivable,payable],orders:[{id:'o1',number:4,controlCode:'PED-2026-004'}],
+const db={transactions:[receivable,payable],orders:[{id:'o1',number:4,controlCode:'PED-2026-004',clientId:'c1'}],clients:[{id:'c1',nome:'Cliente do Pedido Teste'}],
  products:[{id:'mdf',nome:'MDF 15 mm',estoque:4}]};
 const initialOthers=JSON.stringify({orders:db.orders,products:db.products});
 const content={innerHTML:''},alerts=[],modal=[],dialogs=[];
@@ -23,7 +23,7 @@ const money=n=>'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2})
 const ctx={db,content,search:{financeiro:''},Number,Math,Date,Set,Map,String,Error,Array,
  esc:x=>String(x).replace(/[&<>]/g,''),date:d=>String(d).split('-').reverse().join('/'),
  id:()=> 'undo'+(++idCounter),iso:()=> '2026-11-11',money,round,
- cashReceived:paid,balance,getOrder:id=>db.orders.find(o=>o.id===id),
+ cashReceived:paid,balance,getOrder:id=>db.orders.find(o=>o.id===id),getClient:id=>db.clients.find(c=>c.id===id),
  kindText:{receber:'Receita',pagar:'Despesa'},getProduct:()=>null,
  intro:(title)=>title,inputSearch:()=>'<input>',pill:(label)=>label,
  button:(label,action,item)=>'<button data-action="'+action+'" data-id="'+item+'">'+label+'</button>',
@@ -38,6 +38,10 @@ vm.runInNewContext(financeSrc+historySrc,ctx,{timeout:2500});
 ctx.financeView();
 assert(content.innerHTML.includes('Desfazer pagamento'));
 assert(content.innerHTML.includes('Recibos'));
+assert(content.innerHTML.includes('Cliente:')&&content.innerHTML.includes('Cliente do Pedido Teste'),'Financeiro mostra cliente de cada pedido');
+ctx.search.financeiro='Cliente do Pedido Teste';ctx.financeView();
+assert(content.innerHTML.includes('Pedido PED-2026-004'),'Busca deve encontrar lançamento pelo cliente');
+ctx.search.financeiro='';
 assert(content.innerHTML.includes('R$ 5.300,00')&&content.innerHTML.includes('R$ 500,00'));
 ctx.paymentHistoryModal('t1');
 assert(modal[0].html.includes('undo-payment'));
