@@ -33,7 +33,7 @@ const document={
   if(tag==='script')return n;
   assert.equal(tag,'dialog');
   const controls={};
-  for(const id of ['uaLeoClose','uaLeoCategory','uaLeoQuery','uaLeoBrand','uaLeoSize','uaLeoColor','uaLeoResults','uaLeoCategoryLink','uaLeoCount','uaLeoMore','uaLeoFillCost'])controls[id]=node(id);
+  for(const id of ['uaLeoClose','uaLeoCategory','uaLeoQuery','uaLeoBrand','uaLeoSize','uaLeoColor','uaLeoResults','uaLeoCategoryLink','uaLeoCount','uaLeoFilterNotice','uaLeoClear','uaLeoMore','uaLeoFillCost'])controls[id]=node(id);
   controls.uaLeoBrand.parentLabel={hidden:false};
   controls.uaLeoSize.parentLabel={hidden:false};
   controls.uaLeoColor.parentLabel={hidden:false};
@@ -122,6 +122,34 @@ async function main(){
  dlg.controls.uaLeoCategory.events.change();
  assert(dlg.controls.uaLeoColor.parentLabel.hidden===false);
  assert(dlg.controls.uaLeoSize.innerHTML.includes('25 mm'));
+ // Cenário relatado: MDF 15 mm + Branco Puro não existe na lista verificada.
+ dlg.controls.uaLeoSize.value='15 mm';
+ dlg.controls.uaLeoSize.events.change();
+ assert(dlg.controls.uaLeoColor.innerHTML.includes('Branco Ártico'),'Deve sugerir Branco Ártico 15 mm');
+ assert(!dlg.controls.uaLeoColor.innerHTML.includes('Branco Puro'),'Não apresentar Branco Puro como opção existente em 15 mm');
+ // Quando o usuário escolhe uma cor incompatível, manter a preferência mais recente
+ // e remover a espessura anterior, explicando a mudança.
+ dlg.controls.uaLeoColor.value='Branco Puro';
+ dlg.controls.uaLeoColor.events.change();
+ assert.equal(dlg.controls.uaLeoSize.value,'','Alterar cor incompatível limpa espessura');
+ assert(dlg.controls.uaLeoFilterNotice.textContent.includes('medida / espessura'));
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('Branco Puro'),'Mostrar Branco Puro 18 mm');
+ assert(dlg.controls.uaLeoSize.innerHTML.includes('18 mm'),'Espessura disponível para Branco Puro');
+ // A operação inversa prioriza a nova espessura e remove a cor sem ocorrência.
+ dlg.controls.uaLeoSize.value='15 mm';
+ dlg.controls.uaLeoSize.events.change();
+ assert.equal(dlg.controls.uaLeoColor.value,'','Alterar espessura limpa cor incompatível');
+ assert(dlg.controls.uaLeoFilterNotice.textContent.includes('cor / padrão'));
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('Branco Ártico'));
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('Ver produto na Léo'));
+ // A limpeza não altera dados do sistema e restaura os 45 resultados.
+ dlg.controls.uaLeoClear.events.click();
+ assert.equal(dlg.controls.uaLeoCategory.value,'');
+ assert.equal(dlg.controls.uaLeoSize.value,'');
+ assert.equal(dlg.controls.uaLeoColor.value,'');
+ assert.equal(dlg.controls.uaLeoFilterNotice.textContent,'');
+ assert(dlg.controls.uaLeoResults.innerHTML.includes('MDF Branco Ártico'));
+ dlg.controls.uaLeoCategory.value='mdf';dlg.controls.uaLeoCategory.events.change();
  pick(0);
  assert.equal(fields['[name="nome"]'].value,api.items[0].name);
  assert.equal(fields['[name="custo"]'].value,'0','Não preencher custo sem seleção explícita');
