@@ -28,8 +28,10 @@ function purchasesView(){const q=search.compras.toLowerCase();const list=(db.pur
 function addPurchaseRow(dlg,item={}){const wrap=dlg.querySelector('#purchaseRows');const options=`<option value="">Selecione a matéria-prima</option>`+db.products.filter(p=>p.tipo==='materia').map(p=>`<option value="${esc(p.id)}">${esc(p.nome)} (${esc(p.unidade||'un')})</option>`).join('');const el=document.createElement('div');el.className='purchase-row';el.innerHTML=`<label>Matéria-prima<select data-pur-product required>${options}</select></label><label>Quantidade *<input type="number" min="0.001" step="0.001" data-pur-qty required value="${item.quantidade||1}"></label><label>Custo unitário (R$) *<input type="number" min="0.01" step="0.01" data-pur-cost required value="${item.custo||0}"></label><button type="button" class="btn danger" data-del-purchase>Remover</button>`;wrap.append(el);const sel=el.querySelector('select');if(item.productId)sel.value=item.productId;
  if(item.nfDescricao){
   el.dataset.nfDescricao=String(item.nfDescricao).slice(0,180);
+  el.dataset.nfUnidade=String(item.nfUnidade||'').slice(0,20);
   const label=document.createElement('p');label.className='muted small';
-  label.textContent='Item da nota: '+el.dataset.nfDescricao;
+  label.textContent='Item da nota: '+el.dataset.nfDescricao+
+   (el.dataset.nfUnidade?' · unidade na NF: '+el.dataset.nfUnidade+' (confira conversão)':'');
   el.prepend(label);
  }
  const refreshCost=()=>{
@@ -67,8 +69,14 @@ function purchaseModal(prefillItems=[],context={}){
  const invoiceItems=invoice&&!editing?(invoice.items||[]):[];
  const fromInvoice=invoiceItems.slice(0,200).map(line=>{
   const matches=db.products.filter(p=>p.tipo==='materia'&&normalize(p.nome)===normalize(line.nome));
-  return {productId:matches.length===1?matches[0].id:'',quantidade:Number(line.quantidade)||1,
-   custo:Number(line.custo)||0,nfDescricao:String(line.nome||'Item sem descrição')};
+  const nfu=normalize(line.unidade);
+  const units={un:'un',und:'un',unidade:'un',unidades:'un',pc:'un',peca:'un',
+   chapa:'chapa',chapas:'chapa',ch:'chapa',m:'m',mt:'m',metro:'m',metros:'m',
+   par:'par',pares:'par'};
+  const sameUnit=matches.length===1&&(units[nfu]||nfu)===(units[normalize(matches[0].unidade)]||normalize(matches[0].unidade));
+  return {productId:sameUnit?matches[0].id:'',quantidade:Number(line.quantidade)||1,
+   custo:Number(line.custo)||0,nfDescricao:String(line.nome||'Item sem descrição'),
+   nfUnidade:String(line.unidade||'').slice(0,20)};
  });
  if(invoiceItems.length>200)throw Error('NF-e com mais de 200 itens. Divida e confira antes de registrar.');
  const editingItems=editing?(editing.items||[]).map(row=>({...row})):[];
@@ -98,7 +106,7 @@ function purchaseModal(prefillItems=[],context={}){
    productId:row.querySelector('[data-pur-product]')?.value||'',
    quantidade:Number(row.querySelector('[data-pur-qty]')?.value),
    custo:round(row.querySelector('[data-pur-cost]')?.value),
-   ...(row.dataset.nfDescricao?{nfDescricao:row.dataset.nfDescricao}:{})
+   ...(row.dataset.nfDescricao?{nfDescricao:row.dataset.nfDescricao,nfUnidade:row.dataset.nfUnidade||''}:{})
   }));
   if(!items.length||items.some(i=>!getProduct(i.productId)||getProduct(i.productId)?.tipo!=='materia'||
    !Number.isFinite(i.quantidade)||!(i.quantidade>0)||!Number.isFinite(i.custo)||!(i.custo>=0)))
@@ -111,6 +119,10 @@ function purchaseModal(prefillItems=[],context={}){
    referencia:String(v.referencia||'').trim(),items};
   const total=purchaseTotal(form);
   if(!(total>0))throw Error('Informe um valor total maior que zero.');
+  if(invoice&&!editing&&Math.abs(total-Number(invoice.valor))>.01){
+   if(!confirm('O total dos materiais ('+money(total)+') difere do total da NF ('+
+    money(invoice.valor)+'). Verifique frete, impostos, quantidades e custos. Deseja continuar com os valores revisados?'))return false;
+  }
   if(editing){
    if(editing.status!=='aberta')throw Error('Esta entrada já foi confirmada e não pode ser alterada.');
    const account=db.transactions.find(t=>t.id===editing.accountId||t.purchaseId===editing.id);
@@ -249,10 +261,14 @@ function cancelPurchase(pid){
  if(t&&cashReceived(t)>0)return alert('Esta entrada possui pagamentos. Regularize os pagamentos antes do cancelamento.');
  if(!confirm('Cancelar a entrada #'+p.number+'? A conta a pagar pendente será removida.'))return;
  const previousTransactions=db.transactions,previousStatus=p.status;
+ const linkedInvoice=(db.invoices||[]).find(n=>n.id===p.invoiceId&&n.purchaseId===p.id);
+ const oldInvoiceLink=linkedInvoice?.purchaseId;
  p.status='cancelada';
  if(t)db.transactions=db.transactions.filter(x=>x.id!==t.id);
+ if(linkedInvoice)delete linkedInvoice.purchaseId;
  if(save()===false){
   p.status=previousStatus;db.transactions=previousTransactions;
+  if(linkedInvoice)linkedInvoice.purchaseId=oldInvoiceLink;
   return alert('Falha ao salvar cancelamento. Nenhum lançamento foi excluído.');
  }
  render();
