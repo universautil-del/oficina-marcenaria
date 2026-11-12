@@ -3,29 +3,63 @@
 <head>
  <meta charset="utf-8">
  <meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="robots" content="noindex">
  <meta name="theme-color" content="#193d30">
- <meta name="description" content="Oficina — Gestão de Marcenaria">
- <title>Oficina | Gestão de Marcenaria</title>
- <link rel="stylesheet" href="style.css?v=06-20261110">
- <link rel="stylesheet" href="style-v04.css?v=06-20261110">
- <link rel="stylesheet" href="theme-v05.css?v=06-20261110">
- <link rel="stylesheet" href="cloud-v06.css?v=06-20261110">
+ <title>UNIVERSA ART | OFICINA — acesso com login</title>
+ <style>
+  :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#193d30;background:#f5f7f3}
+  *{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px}
+  main{width:min(610px,100%);background:#fff;border-radius:18px;padding:28px;border:1px solid #dee8df;box-shadow:0 8px 28px #193d3014}
+  img{width:88px;height:88px;object-fit:contain;background:#fffcf7;border:1px solid #c99763;border-radius:12px}
+  h1{font-size:26px;margin:18px 0 10px}p{line-height:1.65;color:#4e6758}a{display:inline-block;border-radius:10px;text-decoration:none;padding:12px 16px;font-weight:700}
+  .primary{background:#193d30;color:#fff;border:1px solid #c99763}.secondary{border:1px solid #c99763;color:#193d30;background:#fff8e9}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}.caution{border:1px solid #d6b77d;background:#fff9ec;padding:12px;border-radius:11px;font-size:13px}
+ </style>
 </head>
 <body>
- <div class="shell">
-  <aside class="sidebar">
-   <div class="brand"><span class="brand-icon">▥</span><div><strong>OFICINA</strong><small>Gestão de Marcenaria</small></div></div>
-   <nav id="nav" aria-label="Navegação principal"></nav>
-   <div class="sidefoot">Versão · 0.6 | Nuvem opcional</div>
-  </aside>
-  <div class="main-wrap">
-   <header class="top"><button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">☰</button><div><div class="eyebrow">PAINEL DE CONTROLE</div><h1 id="pageTitle">Visão geral</h1></div><div class="avatar">OF</div></header>
-   <main id="content"></main>
-  </div>
+<main>
+ <img src="preview-v1/assets/universa-art-logo-novo.webp" alt="Logo UNIVERSA ART">
+ <h1>OFICINA — UNIVERSA ART</h1>
+ <p>O sistema de trabalho utiliza uma área autenticada. Faça login para acessar seus dados sincronizados e protegidos pelas permissões do banco.</p>
+ <div id="uaOldLocalNotice" class="caution" hidden>
+  <strong>Foram encontrados registros da versão local antiga neste navegador.</strong>
+  Eles não foram apagados nem transferidos automaticamente. Antes de continuar, confira e exporte um backup pela área de recuperação, se necessário.
  </div>
- <script src="upgrade.js?v=clientes-codigos-20261111" defer></script>
- <script src="script.js?v=clientes-codigos-20261111" defer></script>
- <script src="features-v05.js?v=auditoria-20261110" defer></script>
- <script src="cloud-v06.js?v=auditoria-20261110" defer></script>
+ <div class="actions">
+  <a id="uaSecureEntry" class="primary" href="oficina.html">Entrar na OFICINA com login</a>
+  <a id="uaLegacyEntry" class="secondary" href="recuperar-dados-locais.html" hidden>Recuperar dados locais antigos</a>
+ </div>
+ <p style="font-size:12px">O GitHub Pages hospeda os arquivos públicos do site. O controle de acesso aos registros depende do login e das políticas RLS configuradas no Supabase.</p>
+</main>
+<script>
+(function(){
+ 'use strict';
+ const secure='oficina.html'+(location.hash||'');
+ const link=document.getElementById('uaSecureEntry');
+ link.href=secure;
+ let hasOldData=false;
+ try{
+  for(const key of ['oficina-marcenaria-v03','oficina-clientes-v02']){
+   const raw=localStorage.getItem(key);
+   if(!raw)continue;
+   const value=JSON.parse(raw);
+   if(Array.isArray(value)&&value.length>0){hasOldData=true;break}
+   if(value&&typeof value==='object'&&
+    ['clients','products','quotes','orders','transactions','stockMovements'].some(k=>Array.isArray(value[k])&&value[k].length>0)){
+    hasOldData=true;break;
+   }
+  }
+ }catch(error){
+  // Caso a leitura seja bloqueada, não afirmar que os dados locais estão vazios.
+  hasOldData=true;
+ }
+ if(hasOldData){
+  document.getElementById('uaOldLocalNotice').hidden=false;
+  document.getElementById('uaLegacyEntry').hidden=false;
+ }else{
+  location.replace(secure);
+ }
+})();
+</script>
 </body>
 </html>
