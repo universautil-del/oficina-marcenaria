@@ -150,4 +150,20 @@ assert.equal(extra.invoiceId,'nf2');
 assert.equal(db.transactions.length,beforeLinkTransactions,'Vincular NF existente não duplica financeiro');
 assert.equal(db.stockMovements.length,2,'Vincular não movimenta estoque');
 assert.throws(()=>ctx.linkInvoicePurchase('nf2'),/já está vinculada/);
+// Se a unidade da nota não corresponder à unidade do cadastro, não vincular automaticamente.
+db.invoices.push({id:'nf3',numero:'103',tipo:'entrada',valor:300,data:'2026-11-11',
+ emitente:'Fornecedor Teste',items:[{nome:'MDF Branco TX 15 mm',unidade:'CX',quantidade:1,custo:300}]});
+ctx.prepareInvoicePurchase('nf3');
+dlg=dialogs.at(-1);
+assert.equal(dlg.rows[0].productId,'','Não converter caixa em chapa sem aprovação');
+assert.throws(()=>dlg.onSubmit({...values,referencia:'103'},dlg),/Vincule cada item/);
+assert.equal(db.transactions.length,beforeLinkTransactions);
+assert.equal(db.invoices.at(-1).purchaseId,undefined);
+// Cancelar uma entrada vinculada e ainda não recebida libera a NF para nova conferência.
+const beforeCancelMovements=db.stockMovements.length;
+ctx.cancelPurchase('manual1');
+assert.equal(extra.status,'cancelada');
+assert.equal(db.invoices[1].purchaseId,undefined,'NF liberada para outro lançamento sem duplicar');
+assert.equal(db.transactions.find(t=>t.id==='account2'),undefined,'Conta pendente cancelada sem afetar pagamentos anteriores');
+assert.equal(db.stockMovements.length,beforeCancelMovements);
 console.log('OK NF-e: importação revisável, compra única, edição, baixa única, rollback, vínculo de entrada existente e despesas sem duplicação.');
