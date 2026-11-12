@@ -1,0 +1,31 @@
+/* OFICINA — busca geral e atalhos de trabalho */
+.ua-quick-trigger{font-weight:650;border-color:#c9d8ce;color:#1f593e;background:#f7faf7;margin-left:auto;white-space:nowrap}
+.ua-quick-trigger:hover{background:#e9f3eb}
+dialog.ua-quick-dialog{width:min(730px,95vw);max-height:88dvh;overflow-y:auto;border-radius:16px;padding:21px 22px 18px}
+.ua-quick-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:14px}
+dialog.ua-quick-dialog .ua-quick-head h2{font-size:22px;margin:0}
+.ua-quick-label{display:block;font-weight:650;font-size:12px;color:#365341;margin-bottom:8px}
+.ua-quick-input{padding:13px 15px;border:1px solid #afc7b5;border-radius:10px;display:block;width:100%;font:inherit;font-size:15px;background:#fff;color:#193b27}
+.ua-quick-input:focus{outline:3px solid #b8d7bc;outline-offset:1px}
+.ua-quick-matches{min-height:82px;max-height:44vh;overflow-y:auto;padding:5px 0;margin:10px 0;border-bottom:1px solid #e4ece5}
+.ua-quick-hint{font-size:13px;color:#718579;padding:17px 4px;margin:0}
+.ua-quick-result{display:flex;align-items:center;gap:12px;width:100%;border:0;border-bottom:1px solid #edf2ed;background:#fff;text-align:left;padding:12px 8px;cursor:pointer;color:#274232;min-height:58px}
+.ua-quick-result:hover,.ua-quick-result:focus-visible{background:#f2f8f3}
+.ua-quick-result-type{font-size:11px;color:#2b6545;background:#e8f4e9;padding:5px 8px;border-radius:9px;min-width:79px;text-align:center}
+.ua-quick-result-info{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.ua-quick-result-info strong{font-size:14px;overflow-wrap:anywhere}
+.ua-quick-result-info small{font-size:12px;color:#617669;overflow-wrap:anywhere}
+.ua-quick-tasks strong{color:#28583d;font-size:14px}
+.ua-quick-task-buttons{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.ua-quick-task-buttons .btn{font-size:12px;padding:9px 11px}
+.ua-quick-footer{font-size:11px;color:#819188;margin:16px 0 0;line-height:1.6}
+@media(max-width:760px){
+ .ua-quick-trigger{margin-left:0;padding:8px 10px;font-size:12px}
+ dialog.ua-quick-dialog{width:calc(100vw - 12px);padding:15px 13px}
+ .ua-quick-result-type{min-width:66px}
+ .ua-quick-matches{max-height:47vh}
+}
+@media(max-width:430px){
+ .ua-quick-trigger{font-size:0;min-width:40px}
+ .ua-quick-trigger::before{content:'⌕';font-size:21px}
+}
