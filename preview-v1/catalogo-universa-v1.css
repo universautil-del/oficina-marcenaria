@@ -1,0 +1,65 @@
+/* OFICINA — referência consultiva ao catálogo público UNIVERSA ART */
+.ua-mat-launch{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 12px}
+.ua-mat-launch button{background:#f8f3e7;color:#193d30;border-color:#c99763;font-weight:700}
+.ua-mat-launch small{font-size:11px;color:#647267;line-height:1.5}
+dialog.ua-mat-dialog{width:min(900px,96vw);max-height:90dvh;overflow:auto;padding:22px;border-radius:15px}
+.ua-mat-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.ua-mat-header h2{margin:0 0 5px;color:#193d30;font-size:23px}
+.ua-mat-header p{font-size:12px;color:#607265;margin:0;line-height:1.5}
+.ua-mat-warning{border:1px solid #e9cf98;background:#fff9eb;border-radius:10px;font-size:12px;color:#6c511e;line-height:1.65;padding:11px 13px}
+.ua-mat-filters{display:grid;grid-template-columns:repeat(3,minmax(145px,1fr));gap:12px;margin:15px 0}
+.ua-mat-filters label{font-weight:650;font-size:12px;color:#425d48}
+.ua-mat-filters input,.ua-mat-filters select{display:block;width:100%;margin-top:5px;padding:11px 12px;min-height:43px;border:1px solid #cddacc;background:#fff;border-radius:8px;font:inherit;font-size:13px}
+.ua-mat-count{font-size:12px;color:#587362;margin:7px 0 10px;font-weight:650}
+.ua-mat-paging{display:flex;justify-content:center;padding:12px 0 4px}
+.ua-mat-paging button{border-color:#c99763;color:#193d30}
+.ua-mat-paging button[hidden]{display:none}
+.ua-mat-filters label[hidden]{display:none}
+.ua-mat-price b{white-space:normal}
+.ua-mat-results{display:grid;gap:9px;max-height:43dvh;overflow-y:auto}
+.ua-mat-item{display:grid;grid-template-columns:minmax(190px,1fr) minmax(110px,auto) auto;gap:12px;align-items:center;padding:12px;border:1px solid #e0e9e0;border-radius:11px;background:#fff}
+.ua-mat-item strong{font-size:13px;color:#213a2d;overflow-wrap:anywhere}
+.ua-mat-item small{display:block;margin-top:4px;font-size:11px;color:#6a786d}
+.ua-mat-price{text-align:right}
+.ua-mat-price b{font-size:15px;color:#193d30;white-space:nowrap}
+.ua-mat-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.ua-mat-actions .btn{padding:8px 10px;font-size:12px;white-space:nowrap;text-decoration:none}
+.ua-mat-actions button{background:#193d30;color:#fff;border-color:#c99763}
+.ua-mat-actions button:hover{background:#2a5d46}
+.ua-mat-opt{display:flex;align-items:center;gap:9px;margin:16px 0;font-size:12px;color:#375640}
+.ua-mat-opt input{width:auto!important}
+.ua-mat-foot{font-size:11px;color:#67796a;line-height:1.6;margin:14px 0 0}
+.ua-mat-foot .btn{display:inline-block;margin-right:10px;text-decoration:none;font-size:11px}
+.ua-mat-empty{color:#687a6e;font-size:13px;padding:13px}
+@media(max-width:720px){dialog.ua-mat-dialog{width:calc(100vw - 14px);padding:13px;max-height:94dvh}.ua-mat-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.ua-mat-item{grid-template-columns:1fr auto}.ua-mat-actions{grid-column:1/-1;justify-content:flex-start}.ua-mat-price b{font-size:13px}.ua-mat-header h2{font-size:20px}}
+@media(max-width:480px){.ua-mat-filters{grid-template-columns:1fr}}
+@media(max-width:420px){.ua-mat-item{grid-template-columns:1fr}.ua-mat-price{text-align:left}.ua-mat-actions{grid-column:1}}
+
+/* Filtros dependentes: aviso de combinação ajustada e ação rápida de limpeza. */
+.ua-mat-filter-tools{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:7px 0 10px}
+.ua-mat-filter-tools .ua-mat-count{margin:0;flex:1}
+.ua-mat-filter-tools .btn{font-size:12px;color:#193d30;border-color:#c99763}
+.ua-mat-filter-notice{font-size:12px;color:#705116;background:#fff8e9;border:1px solid #ebd2a2;border-radius:9px;padding:10px 12px;line-height:1.55;margin:7px 0 12px}
+.ua-mat-filter-notice[hidden]{display:none}
+
+/* Simulação opcional, totalmente local, inclusive para material sem saldo em estoque. */
+.ua-mat-simulate-trigger{border:1px solid #c99763!important;background:#fff9ed!important;color:#193d30!important}
+.ua-mat-simulator{border:1px solid #c99763;border-radius:12px;background:#fffaf1;padding:15px;margin:12px 0}
+.ua-mat-simulator[hidden]{display:none}
+.ua-mat-simulator h3{color:#193d30;font-size:16px;margin:0 0 8px}
+.ua-mat-sim-product{font-size:13px;font-weight:700;margin:4px 0 6px;color:#294d37;line-height:1.5}
+.ua-mat-sim-mode,.ua-mat-sim-hint{font-size:12px;color:#746042;line-height:1.5;margin:7px 0}
+.ua-mat-sim-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:13px 0}
+.ua-mat-sim-grid label{font-size:12px;font-weight:650;color:#284934}
+.ua-mat-sim-grid input{display:block;width:100%;padding:10px;border:1px solid #cdd8ce;border-radius:8px;background:#fff;margin-top:5px;font:inherit}
+.ua-mat-sim-total{font-size:16px;color:#193d30;margin:10px 0}
+.ua-mat-sim-copy{font-size:12px;color:#286b42;margin-left:10px}
+@media(max-width:520px){.ua-mat-sim-grid{grid-template-columns:1fr}.ua-mat-sim-copy{display:block;margin:8px 0 0}}
+
+.ua-mat-info{min-width:0;display:flex;flex-direction:column;gap:3px}
+.ua-mat-info small{line-height:1.4}
+.ua-mat-filter-tools #uaMatCount{color:#547262;font-size:12px;flex:1}
+.ua-mat-item .ua-mat-simulate-trigger{background:#fff9ed!important;color:#193d30!important}
+#uaMatQuoteName{color:#193d30;font-size:13px;font-weight:700}
+#uaMatCopyStatus{color:#286b42;font-size:12px;padding-left:9px}
+.ua-mat-paging button[hidden],.ua-mat-simulator[hidden],.ua-mat-filter-notice[hidden]{display:none}
