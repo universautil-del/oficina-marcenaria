@@ -169,8 +169,8 @@
    '<label class="ua-product-wide"><span data-product-name-label>Descrição do produto *</span><input name="nome" required maxlength="180" autocomplete="off" placeholder="Ex.: MDF branco TX 18 mm, MDF 25 mm, parafuso 4 × 40 mm" value="'+safe(old.nome||'')+'"></label>'+
    '<div class="ua-product-wide ua-mat-launch" data-ua-raw><button type="button" class="btn small" data-ua-material-open>Consultar Catálogo UNIVERSA ART</button><small>Selecione um material da planilha. Custos não informados ficam para cotação; o estoque não é alterado.</small></div>'+
    '<label data-ua-raw>Espessura (mm), quando aplicável<input name="espessuraMm" type="number" inputmode="decimal" min="0" max="1000" step="0.1" placeholder="Ex.: 18 ou 25" value="'+safe(old.espessuraMm??'')+'"></label>'+
-   '<label data-ua-raw>Comprimento da chapa (mm), opcional<input name="chapaComprimentoMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaComprimentoMm??'')+'"></label>'+
-   '<label data-ua-raw>Largura da chapa (mm), opcional<input name="chapaLarguraMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaLarguraMm??'')+'"></label>'+
+   '<label data-ua-raw>Comprimento (mm), opcional<input name="chapaComprimentoMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaComprimentoMm??'')+'"></label>'+
+   '<label data-ua-raw>Largura (mm), opcional<input name="chapaLarguraMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaLarguraMm??'')+'"></label>'+
    '<label data-ua-raw>Estoque mínimo<input name="minimo" type="number" min="0" step="0.001" value="'+Number(old.minimo||0)+'"></label>'+
    '<label data-ua-raw>Custo unitário (R$)<input name="custo" type="number" min="0" step="0.01" value="'+Number(old.custo||0)+'"></label>'+
    (entryMaterial?'<input type="hidden" name="preco" value="0">':
