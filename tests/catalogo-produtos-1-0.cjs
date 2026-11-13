@@ -112,6 +112,9 @@ assert(modal.fields.includes('Parafusos')&&modal.fields.includes('Dobradiças'))
 assert(modal.fields.includes('name="espessuraMm"'));
 assert(modal.fields.includes('name="chapaComprimentoMm"'));
 assert(modal.fields.includes('name="chapaLarguraMm"'));
+assert(modal.fields.includes('Comprimento (mm), opcional'),'Campo de comprimento sem a palavra chapa');
+assert(modal.fields.includes('Largura (mm), opcional'),'Campo de largura sem a palavra chapa');
+assert(!modal.fields.includes('Comprimento da chapa (mm), opcional')&&!modal.fields.includes('Largura da chapa (mm), opcional'),'Rótulos antigos não devem ser exibidos');
 assert(modal.fields.includes('Saldo inicial: 0'),'Não permite contagem dupla do recebimento');
 assert(modal.fields.includes('<input type="hidden" name="preco" value="0">'),'Entrada de material não exige preço de venda');
 const newMdf={...values,tipo:'materia',nome:'MDF 25 mm',categoria:'Chapas MDF',unidade:'chapa',
