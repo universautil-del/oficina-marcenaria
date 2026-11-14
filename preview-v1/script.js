@@ -888,6 +888,8 @@ function handleAction(action,item){switch(action){
  case 'new-category':return window.universaArtCategorias?.edit?.();
  case 'edit-category':return window.universaArtCategorias?.edit?.(item);
  case 'delete-category':return window.universaArtCategorias?.remove?.(item);
+ case 'go-kardex':return window.universaArtKardex?.selectProduct?.('');
+ case 'show-kardex':return window.universaArtKardex?.selectProduct?.(item);
  case 'new-raw':return productModal('','materia');case 'edit-product':return productModal(item);case 'adjust-stock':return adjustStock(item);case 'delete-product':return removeProduct(item);
  case 'new-quote':return openSales('quote');case 'edit-quote':return openSales('quote',item);case 'convert-quote':return convertQuote(item);case 'delete-quote':return removeQuote(item);
  case 'print-quote':{const o=getQuote(item);if(o)salesPrint(o,'Orçamento');return}
