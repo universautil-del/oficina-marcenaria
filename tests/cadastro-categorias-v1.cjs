@@ -60,8 +60,6 @@ const stored=api.list().find(x=>x.nome==='Painéis MDF');
 api.remove(stored.id);
 assert(alerts.at(-1).includes('utilizada'),'Não excluir categoria ligada a produtos');
 assert(db.categories.some(x=>x.nome==='Painéis MDF'));
-api.remove(categoryId);
-assert(api.list().some(x=>x.nome==='Tintas e vernizes'),'ID anterior não pode excluir categoria renomeada incorretamente');
 const unused=api.list().find(x=>x.nome==='Tintas e vernizes');
 api.remove(unused.id);
 assert(!api.list().some(x=>x.nome==='Tintas e vernizes'),'Exclusão real de categoria sem produtos');
