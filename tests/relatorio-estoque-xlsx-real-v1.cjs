@@ -33,10 +33,8 @@ async function run(){
  assert.equal(mdf.getCell('E').value,450);
  const total=sheet.getRow(sheet.rowCount);
  assert.equal(total.getCell('E').value,500);
- const debugResumo=loaded.getWorksheet('Resumo');
- console.log('Resumo Excel:',JSON.stringify(debugResumo.getRows(1,debugResumo.rowCount).map(r=>[r.getCell('A').value,r.getCell('B').value])));
- assert.equal(loaded.getWorksheet('Resumo').getCell('B9').value,1);
- assert.equal(loaded.getWorksheet('Resumo').getCell('B11').value,500);
+ assert.equal(loaded.getWorksheet('Resumo').getCell('B10').value,1);
+ assert.equal(loaded.getWorksheet('Resumo').getCell('B12').value,500);
  console.log('OK Excel real relatório de estoque: 2 abas, saldos, valor total, sem custo inventado e proteção de fórmula.');
 }
 run().catch(err=>{console.error(err);process.exitCode=1});
