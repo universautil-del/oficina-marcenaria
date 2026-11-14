@@ -237,7 +237,7 @@
   const p=report.product;
   const summary='<p><strong>'+escape(p.name)+'</strong> · '+escape(p.code)+' · '+escape(p.unit)+' · Categoria: '+escape(p.category)+'</p>'+
    '<p>Saldo: '+(p.current===null?'Não informado':qty(p.current))+' · Mínimo: '+(p.min===null?'Não informado':qty(p.min))+
-   ' · Máximo: '+(p.max===null?'Não definido':qty(p.max))+' · Valor compra: '+moneyLabel(p.buy)+'</p>';
+   ' · Estoque máximo: '+(p.max===null?'Não definido':qty(p.max))+' · Valor de compra: '+moneyLabel(p.buy)+'</p>';
   openPrint('Kardex — UNIVERSA ART',summary+grid(report)+
    '<p style="font-size:11px">Saldos reconstituídos com base no estoque atual e movimentos registrados. '+report.count+' movimento(s).</p>');
  }
