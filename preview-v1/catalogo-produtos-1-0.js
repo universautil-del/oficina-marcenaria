@@ -95,6 +95,7 @@
    intro('Produtos e Estoque','Cadastro de matérias-primas e produtos acabados com composição.',all.length+' produto(s)')+
    '<section class="panel"><div class="toolbar ua-materials-toolbar">'+inputSearch('produtos')+
    '<div class="actions">'+button('Registrar entrada','new-purchase','','small')+
+   button('Relatório de estoque','go-reports','','small')+button('Categorias','go-categories','','small')+
    button(lowStockOnly?'Mostrar todos':'Estoque baixo ('+low.length+')','filter-low-stock','',lowStockOnly?'small accent':'small')+
    button('Produtos','new-raw','','primary')+'</div></div>'+
    '<label class="ua-product-filter">Exibir: <select id="uaProductTypeFilter" aria-label="Filtrar por tipo de produto">'+
@@ -179,8 +180,10 @@
     '<div class="ua-product-wide ua-stock-from-purchase" data-ua-raw><strong>Saldo inicial: 0</strong><p class="muted small">O estoque será atualizado quando você confirmar o recebimento em Entrada de Materiais. Não lance a quantidade duas vezes.</p><input type="hidden" name="estoque" value="0"></div>':
     '<label class="ua-product-wide" data-ua-raw>'+(pid?'Saldo em estoque':'Saldo inicial de estoque')+
     '<input name="estoque" type="number" min="0" step="0.001" value="'+Number(old.estoque||0)+'"></label>')+
-   '<label class="ua-product-wide">Categoria (opcional)<input name="categoria" list="uaMarcenariaCategorias" maxlength="120" value="'+safe(old.categoria||'')+'" placeholder="Ex.: Chapas MDF, parafusos, ferragens"></label>'+
-   '<datalist id="uaMarcenariaCategorias"><option value="Chapas MDF"><option value="Fitas de borda"><option value="Parafusos"><option value="Buchas"><option value="Dobradiças"><option value="Corrediças"><option value="Puxadores"><option value="Colas e adesivos"><option value="Outros insumos"></datalist>'+
+   '<label class="ua-product-wide">Categoria<select name="categoria" aria-label="Categoria do produto">'+
+    (window.universaArtCategorias?.options(old.categoria)||'<option value="">Selecione uma categoria</option><option value="'+safe(old.categoria||'')+'" selected>'+safe(old.categoria||'')+'</option>')+
+    '</select></label>'+
+   '<div class="ua-product-wide ua-category-quick-create"><button type="button" class="btn small" data-ua-category-new>+ Cadastrar categoria</button><span class="muted small">Crie uma nova categoria sem perder o preenchimento do produto.</span></div>'+
    '<label class="ua-product-wide">Observações<textarea name="observacoes" maxlength="2500" rows="2">'+safe(old.observacoes||'')+'</textarea></label>'+
    '</div>'+
    '<section class="ua-product-finished" data-ua-finished hidden>'+
@@ -271,7 +274,7 @@
     if(!chosen)return;
     for(const key of ['nome','categoria','unidade','espessuraMm']){
      const input=dialog.querySelector('[name="'+key+'"]');
-     if(input)input.value=chosen[key]??'';
+     if(input){if(key==='categoria')window.universaArtCategorias?.ensureOption(input,chosen[key]);else input.value=chosen[key]??'';}
     }
     dialog.querySelector('[name="nome"]')?.focus();
    };

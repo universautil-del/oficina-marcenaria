@@ -1,6 +1,6 @@
 'use strict';
 /* OFICINA v0.3 — versão local, sem servidor, autenticação ou sincronização. */
-const sections=[['dashboard','▦','Dashboard'],['clientes','♙','Clientes'],['produtos','▤','Produtos'],['fornecedores','♧','Fornecedores'],['compras','▥','Entrada de Materiais'],['orcamentos','▧','Orçamentos'],['pedidos','▣','Pedidos'],['producao','▣','Produção'],['financeiro','＄','Financeiro'],['relatorios','▤','Relatórios'],['documentos','▤','Documentos'],['empresa','⚙','Minha Empresa']];
+const sections=[['dashboard','▦','Dashboard'],['clientes','♙','Clientes'],['produtos','▤','Produtos'],['categorias','▤','Cadastro de categorias'],['fornecedores','♧','Fornecedores'],['compras','▥','Entrada de Materiais'],['orcamentos','▧','Orçamentos'],['pedidos','▣','Pedidos'],['producao','▣','Produção'],['financeiro','＄','Financeiro'],['relatorios','▤','Relatórios'],['documentos','▤','Documentos'],['empresa','⚙','Minha Empresa']];
 const nav=document.querySelector('#nav'),content=document.querySelector('#content'),title=document.querySelector('#pageTitle'),sidebar=document.querySelector('.sidebar');
 const DB_KEY='universalartes-preview-v1-dados',OLD_CLIENTS='universalartes-preview-v1-clientes-antigos';
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -124,7 +124,7 @@ function render(section=location.hash.slice(1)||'dashboard'){
  const selected=sections.find(s=>s[0]===section)||sections[0];section=selected[0];title.textContent=section==='dashboard'?'Visão geral':selected[2];
  nav.innerHTML=sections.map(([key,icon,label])=>`<button class="nav-btn ${key===section?'active':''}" data-section="${key}"><span aria-hidden="true">${icon}</span>${label}</button>`).join('');
  nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.section;sidebar.classList.remove('open');if((location.hash.slice(1)||'dashboard')===section)render(section)}));
- const view={dashboard:dashboardUpgrade,clientes:clientsView,produtos:productsView,fornecedores:suppliersView,compras:purchasesView,orcamentos:quotesView,pedidos:ordersView,producao:productionView,financeiro:financeView,relatorios:reportsView,documentos:documentsView,empresa:companyView};
+ const view={dashboard:dashboardUpgrade,clientes:clientsView,produtos:productsView,fornecedores:suppliersView,compras:purchasesView,orcamentos:quotesView,pedidos:ordersView,producao:productionView,financeiro:financeView,relatorios:reportsView,categorias:()=>window.universaArtCategorias?.view?.(),documentos:documentsView,empresa:companyView};
  view[section]();
 }
 function inputSearch(section){return `<input class="search" data-search="${section}" placeholder="Pesquisar..." aria-label="Pesquisar" value="${esc(search[section]||'')}">`}
@@ -884,6 +884,10 @@ function handleAction(action,item){switch(action){
  case 'goto-products':location.hash='produtos';return;case 'goto-orders':location.hash='pedidos';return;case 'goto-finance':location.hash='financeiro';return;
  case 'ua-list-sort-direction':return uaFlipListingSort(item);
  case 'filter-low-stock':lowStockOnly=!lowStockOnly;return render('produtos');
+ case 'go-categories':location.hash='categorias';return;
+ case 'new-category':return window.universaArtCategorias?.edit?.();
+ case 'edit-category':return window.universaArtCategorias?.edit?.(item);
+ case 'delete-category':return window.universaArtCategorias?.remove?.(item);
  case 'new-raw':return productModal('','materia');case 'edit-product':return productModal(item);case 'adjust-stock':return adjustStock(item);case 'delete-product':return removeProduct(item);
  case 'new-quote':return openSales('quote');case 'edit-quote':return openSales('quote',item);case 'convert-quote':return convertQuote(item);case 'delete-quote':return removeQuote(item);
  case 'print-quote':{const o=getQuote(item);if(o)salesPrint(o,'Orçamento');return}

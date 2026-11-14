@@ -12,7 +12,7 @@ assert(css.includes('overflow-y:auto'));
 assert(css.includes('min-height:44px'));
 const entries=[
  ['dashboard','⌂','Dashboard'],['cadastros','♟','Clientes e Fornecedores'],['projetos','▥','Projetos'],
- ['assistente','✎','Assistente'],['sketchup','▤','SketchUp'],['produtos','▤','Produtos'],
+ ['assistente','✎','Assistente'],['sketchup','▤','SketchUp'],['produtos','▤','Produtos'],['categorias','▤','Cadastro de categorias'],
  ['compras','▥','Entrada de Materiais'],['orcamentos','▧','Orçamentos'],
  ['pedidos','▣','Pedidos'],['producao','▣','Produção'],['financeiro','＄','Financeiro'],
  ['notas','▤','Notas fiscais'],['documentos','▤','Documentos'],['anexos','▧','Contratos anexados'],
@@ -51,7 +51,7 @@ assert.deepEqual(sections.slice(0,7).map(x=>x[0]),[
 assert.equal(JSON.stringify(api.groups()[0].rows.map(x=>x[0])),JSON.stringify(['dashboard','cadastros']),'Clientes e Fornecedores deve aparecer junto ao Dashboard no topo');
 const idx=key=>sections.findIndex(x=>x[0]===key);
 assert(idx('pedidos')<idx('producao')&&idx('producao')<idx('produtos'));
-assert(idx('produtos')+1===idx('compras'));
+assert(idx('produtos')+1===idx('categorias')&&idx('categorias')+1===idx('compras'),'Cadastro de categorias ao lado de Produtos');
 assert(!nav.innerHTML.includes('data-section="fornecedores"'),'Cadastro de fornecedores não deve duplicar o módulo unificado');
 assert(idx('financeiro')<idx('relatorios')&&idx('relatorios')<idx('empresa'));
 context.render('compras');
