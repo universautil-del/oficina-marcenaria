@@ -95,7 +95,7 @@
    intro('Produtos e Estoque','Cadastro de matérias-primas e produtos acabados com composição.',all.length+' produto(s)')+
    '<section class="panel"><div class="toolbar ua-materials-toolbar">'+inputSearch('produtos')+
    '<div class="actions">'+button('Registrar entrada','new-purchase','','small')+
-   button('Relatório de estoque','go-reports','','small')+button('Categorias','go-categories','','small')+
+   button('Relatório de estoque','go-reports','','small')+button('Kardex','go-kardex','','small')+button('Categorias','go-categories','','small')+
    button(lowStockOnly?'Mostrar todos':'Estoque baixo ('+low.length+')','filter-low-stock','',lowStockOnly?'small accent':'small')+
    button('Produtos','new-raw','','primary')+'</div></div>'+
    '<label class="ua-product-filter">Exibir: <select id="uaProductTypeFilter" aria-label="Filtrar por tipo de produto">'+
@@ -111,7 +111,7 @@
     p.tipo==='materia'?(dec(p.estoque)+' '+safe(p.unidade)+(Number(p.estoque)<=Number(p.minimo)?pill('Mínimo','warn'):'')):
       ((p.components||[]).length+' componente(s) · fabricação por pedido'),
     '<div class="row-actions">'+button('Editar','edit-product',p.id,'small')+
-     (p.tipo==='materia'?button('Movimentar','adjust-stock',p.id,'small'):'')+
+     (p.tipo==='materia'?button('Movimentar','adjust-stock',p.id,'small')+button('Kardex','show-kardex',p.id,'small'):'')+
      button('Excluir','delete-product',p.id,'small danger')+'</div>'
    )))+'</section>'+
    '<section class="panel gap-top"><div class="panel-head"><h3>Movimentações recentes</h3>'+
@@ -173,6 +173,7 @@
    '<label data-ua-raw>Comprimento (mm), opcional<input name="chapaComprimentoMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaComprimentoMm??'')+'"></label>'+
    '<label data-ua-raw>Largura (mm), opcional<input name="chapaLarguraMm" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="Medida real da chapa" value="'+safe(old.chapaLarguraMm??'')+'"></label>'+
    '<label data-ua-raw>Estoque mínimo<input name="minimo" type="number" min="0" step="0.001" value="'+Number(old.minimo||0)+'"></label>'+
+   '<label data-ua-raw>Estoque máximo (opcional)<input name="maximo" type="number" min="0" step="0.001" placeholder="Não definido" value="'+safe(old.maximo??'')+'"></label>'+
    '<label data-ua-raw>Custo unitário (R$)<input name="custo" type="number" min="0" step="0.01" value="'+Number(old.custo||0)+'"></label>'+
    (entryMaterial?'<input type="hidden" name="preco" value="0">':
    '<label>Preço de venda (R$)<input name="preco" type="number" min="0" step="0.01" value="'+Number(old.preco||0)+'"></label>')+
@@ -210,6 +211,8 @@
    if(isDuplicate)throw Error('Este código já pertence a outro produto.');
    if(kind==='materia'){
     const custo=Number(v.custo),estoque=entryMaterial?0:Number(v.estoque),minimo=Number(v.minimo);
+    const maximo=v.maximo==null||String(v.maximo).trim()===''?null:Number(v.maximo);
+    if(maximo!==null&&(!Number.isFinite(maximo)||maximo<minimo))throw Error('Estoque máximo deve ser igual ou superior ao mínimo, quando informado.');
     if(![custo,estoque,minimo].every(n=>Number.isFinite(n)&&n>=0))throw Error('Custo, saldo e mínimo devem ser números não negativos.');
     const dimensions=['espessuraMm','chapaComprimentoMm','chapaLarguraMm'];
     for(const dimension of dimensions){
@@ -220,12 +223,12 @@
         (dimension==='espessuraMm'&&num>1000))throw Error('Confira as medidas da matéria-prima em milímetros.');
      data[dimension]=num;
     }
-    data.custo=round(custo);data.estoque=estoque;data.minimo=minimo;data.components=[];
+    data.custo=round(custo);data.estoque=estoque;data.minimo=minimo;data.maximo=maximo;data.components=[];
     if(data.estoque+0.000001<reservedQuantity(data.id))throw Error('O estoque não pode ficar abaixo da quantidade reservada.');
    }else{
     const rows=componentRows(dialog);
     data.components=validateComponents(rows);
-    data.custo=0;data.estoque=0;data.minimo=0;
+    data.custo=0;data.estoque=0;data.minimo=0;data.maximo=null;
    }
    const beforeProducts=db.products,beforeMoves=db.stockMovements,beforeSeq={...db.seq};
    if(pid)db.products=db.products.map(p=>p.id===pid?data:p);else db.products=[...db.products,data];
