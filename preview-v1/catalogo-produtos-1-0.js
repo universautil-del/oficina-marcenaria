@@ -95,6 +95,7 @@
    intro('Produtos e Estoque','Cadastro de matérias-primas e produtos acabados com composição.',all.length+' produto(s)')+
    '<section class="panel"><div class="toolbar ua-materials-toolbar">'+inputSearch('produtos')+
    '<div class="actions">'+button('Registrar entrada','new-purchase','','small')+
+   button('Relatório de estoque','go-reports','','small')+button('Categorias','go-categories','','small')+
    button(lowStockOnly?'Mostrar todos':'Estoque baixo ('+low.length+')','filter-low-stock','',lowStockOnly?'small accent':'small')+
    button('Produtos','new-raw','','primary')+'</div></div>'+
    '<label class="ua-product-filter">Exibir: <select id="uaProductTypeFilter" aria-label="Filtrar por tipo de produto">'+
