@@ -69,7 +69,7 @@ api.state.productId='p1';
 const panel=api.panel();
 for(const name of [
  'Kardex de produtos','Descrição do item','Unidade','Categoria','Estoque atual','Estoque mínimo',
- 'Estoque máximo','Valor de compra','MDF Amêndola','R$ 145,00','Compra',
+ 'Estoque máximo','Valor de compra','MDF Amêndola','R$ 145,00','Entrada por compra',
  'Entrada','Saída','Saldo após*','PED-2026-003','Mais recentes primeiro','Imprimir / PDF',
  'Exportar CSV','Exportar Excel','reconstituído'
  ])assert(panel.includes(name),'Elemento de interface ausente: '+name);
