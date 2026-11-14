@@ -53,11 +53,11 @@
   const sum=selected.reduce((n,x)=>n+(number(x.m.delta)??0),0);
   const opening=current===null||bad?null:three(current-sum);
   let running=opening;
-  const chronological=selected.map(({m,index})=>{
+  const chronological=selected.map(({m,index},position)=>{
    const delta=number(m.delta);
    running=running===null||delta===null?null:three(running+delta);
    return {
-    index,indexLabel:index+1,date:text(m.date),type:kind(m,delta),
+    index,indexLabel:position+1,date:text(m.date),type:kind(m,delta),
     reference:origin(m,data),note:text(m.note)||'Sem observações',
     delta,entry:delta!==null&&delta>0?delta:0,
     exit:delta!==null&&delta<0?-delta:0,
