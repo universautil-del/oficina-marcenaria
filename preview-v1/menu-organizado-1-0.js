@@ -7,7 +7,7 @@
  const groups=[
   {title:'PAINEL',keys:['dashboard','cadastros','clientes']},
   {title:'PROJETOS E PEDIDOS',keys:['projetos','assistente','sketchup','orcamentos','pedidos','producao']},
-  {title:'MATERIAIS E COMPRAS',keys:['produtos','compras','fornecedores']},
+  {title:'MATERIAIS E COMPRAS',keys:['produtos','categorias','compras','fornecedores']},
   {title:'FINANCEIRO E DOCUMENTOS',keys:['financeiro','notas','documentos','anexos','relatorios']},
   {title:'SISTEMA E SEGURANÇA',keys:['empresa','backupdrive','seguranca']}
  ];
