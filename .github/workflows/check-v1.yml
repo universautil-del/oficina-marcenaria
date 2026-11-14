@@ -49,6 +49,7 @@ on:
       - 'tests/relatorio-estoque-v1.cjs'
       - 'tests/cadastro-categorias-v1.cjs'
       - 'tests/relatorio-financeiro-xlsx-real-v1.cjs'
+      - 'tests/relatorio-estoque-xlsx-real-v1.cjs'
       - 'tests/project-modal-ux-v1.cjs'
       - 'tests/integracoes-produtividade-1-0.cjs'
       - 'tests/cadastros-encadeados-1-0.cjs'
@@ -87,4 +88,4 @@ jobs:
       - name: Instalar leitor Excel apenas para testar XLSX real
         run: npm install --no-save --ignore-scripts --no-audit --no-fund exceljs@4.4.0
       - name: Testar leitura de planilha real
-        run: node tests/xlsx-real-v1.cjs && node tests/relatorio-financeiro-xlsx-real-v1.cjs
+        run: node tests/xlsx-real-v1.cjs && node tests/relatorio-financeiro-xlsx-real-v1.cjs && node tests/relatorio-estoque-xlsx-real-v1.cjs
