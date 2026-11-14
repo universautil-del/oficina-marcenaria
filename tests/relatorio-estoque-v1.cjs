@@ -77,7 +77,9 @@ class Row{
  getCell(n){return this.cells[n]||(this.cells[n]={numFmt:'',fill:{}})}
 }
 class Worksheet{
- constructor(name){this.name=name;this.rows=[];this.columns=[];this.views=[];}
+ constructor(name){this.name=name;this.rows=[];this._columns=[];this.views=[];}
+ set columns(value){this._columns=value;this.getRow(1)}
+ get columns(){return this._columns}
  getRow(n){return this.rows[n-1]||(this.rows[n-1]=new Row(n,{}))}
  getCell(a){return {numFmt:''}}
  addRow(values){const row=new Row(this.rows.length+1,values);this.rows.push(row);return row}
@@ -91,11 +93,13 @@ const wb=api.workbook({Workbook:Book},api.compute(db));
 assert.equal(wb.sheets.length,2);
 assert.equal(wb.sheets[0].name,'Produtos em estoque');
 assert.equal(wb.sheets[0].rows.length,6,'4 matérias-primas + total + cabeçalho de Excel');
-assert.equal(wb.sheets[0].rows[1].values.saldo,4);
-assert.equal(wb.sheets[0].rows[1].values.unitario,120.25);
-assert.equal(wb.sheets[0].rows[1].values.total,481);
-assert.equal(wb.sheets[0].rows[3].values.unitario,null,'Sem custo não pode virar zero no Excel');
-assert.equal(wb.sheets[0].rows[3].values.total,null);
+const xlsxMdf=wb.sheets[0].rows.find(row=>row.values?.descricao==='MDF branco 15 mm');
+const xlsxFita=wb.sheets[0].rows.find(row=>row.values?.descricao==='Fita borda');
+assert.equal(xlsxMdf.values.saldo,4);
+assert.equal(xlsxMdf.values.unitario,120.25);
+assert.equal(xlsxMdf.values.total,481);
+assert.equal(xlsxFita.values.unitario,null,'Sem custo não pode virar zero no Excel');
+assert.equal(xlsxFita.values.total,null);
 assert.equal(wb.sheets[0].rows.at(-1).values.total,551);
 assert.equal(JSON.stringify(db),snapshot,'Relatório não altera estoque, pedidos nem financeiro');
 for(const page of ['preview-v1/index.html','preview-v1/seguro.html']){
