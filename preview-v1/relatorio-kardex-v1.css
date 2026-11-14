@@ -1,0 +1,27 @@
+/* UNIVERSA ART — Kardex de produtos, responsivo e sem imagens. */
+.ua-kardex{margin-bottom:18px}
+.ua-kardex .panel-head{align-items:flex-start;gap:12px}
+.ua-kardex .panel-head h3{margin:0 0 6px;color:#193d30;font-size:19px}
+.ua-kardex .panel-head .actions{display:flex;flex-wrap:wrap;gap:7px}
+.ua-kardex-controls{display:grid;grid-template-columns:minmax(230px,2fr) minmax(200px,1fr);gap:12px;margin:18px 0}
+.ua-kardex-controls label{font-size:12px;font-weight:700;color:#415e4a;display:flex;flex-direction:column;gap:5px}
+.ua-kardex-controls select{min-width:0;width:100%;min-height:42px;padding:10px;border:1px solid #cddacd;border-radius:9px;background:#fff;color:#193d30;font:inherit}
+.ua-kardex-header{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.ua-kardex-header>div{background:#f8faf7;border:1px solid #e1e9df;border-radius:9px;padding:12px;min-width:0;display:flex;flex-direction:column;gap:7px}
+.ua-kardex-header>div:first-child{grid-column:span 2}
+.ua-kardex-header span{font-size:11px;color:#607268}
+.ua-kardex-header strong{font-size:15px;color:#193d30;overflow-wrap:anywhere}
+.ua-kardex-header small{font-size:11px;color:#738475}
+.ua-kardex-summary{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:17px 0 12px;color:#476452;font-size:12px}
+.ua-kardex-summary strong{color:#193d30;font-size:14px}
+.ua-kardex-grid{width:100%;max-width:100%;overflow-x:auto}
+.ua-kardex-grid table{min-width:1040px}
+.ua-kardex-grid th,.ua-kardex-grid td{padding:9px 8px;vertical-align:top}
+.ua-kardex-grid td:nth-last-child(-n+3){text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ua-kardex-more{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}
+.ua-kardex-note{color:#647465;line-height:1.65;font-size:12px;margin:14px 0 0}
+.ua-kardex .empty{margin:14px 0}
+@media(max-width:1050px){.ua-kardex-header{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:680px){.ua-kardex-controls{grid-template-columns:1fr}.ua-kardex-header{grid-template-columns:repeat(2,minmax(0,1fr))}.ua-kardex-header>div:first-child{grid-column:span 2}.ua-kardex .panel-head{flex-direction:column}.ua-kardex .panel-head .actions{width:100%}.ua-kardex .panel-head .actions button{flex:1}}
+@media(max-width:400px){.ua-kardex-header{grid-template-columns:1fr}.ua-kardex-header>div:first-child{grid-column:span 1}}
+@media print{.ua-kardex-controls,.ua-kardex .panel-head .actions,.ua-kardex-more{display:none}}
