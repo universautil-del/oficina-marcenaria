@@ -163,7 +163,7 @@
   totalRow.font={bold:true,color:{argb:'FF193D30'}};
   totalRow.getCell(5).numFmt=moneyCell;
   const sum=wb.addWorksheet('Resumo');
-  sum.columns=[{width:38},{width:35}];
+  sum.columns=[{header:'Indicador',key:'campo',width:38},{header:'Valor',key:'valor',width:35}];
   for(const [k,v] of [
    ['UNIVERSA ART — RELATÓRIO DE ESTOQUE',''],['Emitido em',result.date],
    ['Filtro de saldo',result.filters.stock==='positivo'?'Somente com saldo':result.filters.stock==='zerado'?'Saldo zero':'Todos'],
@@ -173,8 +173,8 @@
    ['Produtos relacionados',result.items],['Sem custo informado',result.missingCost],
    ['Com custo zero',result.zeroCost],['Valor total avaliado (R$)',result.total],
    ['Observação','Custos de compra cadastrados. Sem custo, o item não integra o total.']
-  ]){const row=sum.addRow([k,v]);if(row.number===1){row.font={bold:true,size:14,color:{argb:'FF193D30'}}}}
-  sum.getCell('B11').numFmt=moneyCell;
+  ]){const row=sum.addRow({campo:k,valor:v});if(row.number===2){row.font={bold:true,size:14,color:{argb:'FF193D30'}}}}
+  sum.getCell('B12').numFmt=moneyCell;
   sum.getColumn(2).alignment={wrapText:true};
   return wb;
  }
