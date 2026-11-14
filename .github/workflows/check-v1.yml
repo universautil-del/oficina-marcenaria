@@ -90,4 +90,4 @@ jobs:
       - name: Instalar leitor Excel apenas para testar XLSX real
         run: npm install --no-save --ignore-scripts --no-audit --no-fund exceljs@4.4.0
       - name: Testar leitura de planilha real
-        run: node tests/xlsx-real-v1.cjs && node tests/relatorio-financeiro-xlsx-real-v1.cjs && node tests/relatorio-estoque-xlsx-real-v1.cjs
+        run: node tests/xlsx-real-v1.cjs && node tests/relatorio-financeiro-xlsx-real-v1.cjs && node tests/relatorio-estoque-xlsx-real-v1.cjs && node tests/relatorio-kardex-xlsx-real-v1.cjs
