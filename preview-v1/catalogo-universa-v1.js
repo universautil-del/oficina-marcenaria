@@ -143,7 +143,7 @@
   input.dispatchEvent(new Event('change',{bubbles:true}));
   if(input.name==='nome'){
    const category=form.querySelector('[name="categoria"]');
-   if(category)category.value=it.type||groups[it.category]||'';
+   if(category){const name=it.type||groups[it.category]||'';window.universaArtCategorias?.ensureOption(category,name);category.value=name;}
    const unit=form.querySelector('[name="unidade"]');
    if(unit&&[...unit.options].some(o=>o.value===it.unit))unit.value=it.unit;
    const thick=form.querySelector('[name="espessuraMm"]');
