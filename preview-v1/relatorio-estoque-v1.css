@@ -1,0 +1,28 @@
+/* UNIVERSA ART — Cadastro de categorias e Relatório de estoque */
+.ua-category-quick-create{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.ua-category-quick-create button{border:1px solid #c99763;background:#fff9ed;color:#193d30;font-weight:700}
+.ua-categories-view .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.ua-categories-view .toolbar p{margin:0}
+.ua-categories-view table td:last-child{min-width:160px}
+.ua-stock-report{margin-bottom:20px}
+.ua-stock-report .panel-head{align-items:flex-start;gap:12px}
+.ua-stock-report .panel-head h3{font-size:19px;margin:0 0 5px;color:#193d30}
+.ua-stock-report .panel-head .actions{display:flex;gap:7px;flex-wrap:wrap}
+.ua-stock-filters{display:grid;grid-template-columns:minmax(200px,1.4fr) repeat(3,minmax(140px,1fr)) auto;align-items:end;gap:10px;margin:18px 0}
+.ua-stock-filters label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:650;color:#405a4a;min-width:0}
+.ua-stock-filters input,.ua-stock-filters select{padding:10px 11px;min-height:42px;width:100%;min-width:0;border:1px solid #cddccf;border-radius:8px;background:#fff;color:#203e2c;font:inherit}
+.ua-stock-dir{min-height:42px;white-space:nowrap;border:1px solid #c99763;color:#193d30;background:#fff9ed}
+.ua-stock-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0}
+.ua-stock-summary>div{background:#f7faf7;border:1px solid #e1ece2;border-radius:10px;padding:15px;display:flex;flex-direction:column;gap:8px}
+.ua-stock-summary span{font-size:12px;color:#5b7060}
+.ua-stock-summary strong{font-size:20px;color:#193d30;font-variant-numeric:tabular-nums}
+.ua-stock-table{max-width:100%;overflow-x:auto}
+.ua-stock-table table{min-width:780px}
+.ua-stock-table th,.ua-stock-table td{padding:10px}
+.ua-stock-table th:not(:first-child),.ua-stock-table td:not(:first-child){white-space:nowrap}
+.ua-stock-table td:nth-child(3),.ua-stock-table td:nth-child(4),.ua-stock-table td:nth-child(5){text-align:right;font-variant-numeric:tabular-nums}
+.ua-stock-note{font-size:12px;line-height:1.65;color:#647466;margin:14px 0 0}
+@media(max-width:1120px){.ua-stock-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.ua-stock-dir{width:fit-content}}
+@media(max-width:760px){.ua-stock-report .panel-head{flex-direction:column}.ua-stock-summary{grid-template-columns:1fr 1fr}.ua-stock-report .panel-head .actions{width:100%}}
+@media(max-width:520px){.ua-stock-filters,.ua-stock-summary{grid-template-columns:1fr}.ua-stock-report .panel-head .actions button{flex:1}}
+@media print{.ua-stock-filters,.ua-stock-report .panel-head .actions,.ua-categories-view .row-actions{display:none}}
