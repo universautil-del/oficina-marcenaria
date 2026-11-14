@@ -117,6 +117,14 @@
    table(['Categoria / Descrição','Produtos vinculados','Ações'],rows,'Nenhuma categoria cadastrada.')+
    '<p class="footer-note">A exclusão é bloqueada quando a categoria está em uso. Renomear uma categoria atualiza os produtos vinculados e preserva o estoque.</p></section>';
  }
+ document.addEventListener('click',event=>{
+  const action=event.target.closest('[data-ua-category-new]');
+  if(!action)return;
+  event.preventDefault();
+  const parent=action.closest('dialog');
+  const select=parent?.querySelector('[name="categoria"]')||null;
+  edit('',select);
+ });
  const entry=['categorias','▤','Cadastro de categorias'];
  if(!sections.some(row=>row[0]==='categorias'))sections.push(entry);
  window.universaArtCategorias={list,options,ensureOption,quantity,edit,remove,view,normalize,defaults};
