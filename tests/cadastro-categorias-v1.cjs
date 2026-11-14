@@ -23,7 +23,7 @@ const context={
  button:(label,action,id)=>'<button data-action="'+action+'" data-id="'+id+'">'+label+'</button>',
  td:(...cells)=>'<tr>'+cells.map(s=>'<td>'+s+'</td>').join('')+'</tr>',
  table:(heads,rows)=>'<table>'+rows.join('')+'</table>',
- document:{createElement:()=>({})},
+ document:{createElement:()=>({}),addEventListener(){}},
  Event:class Event{constructor(name){this.type=name}},
  Array,String,Number,Set,Map,Math,Date,Error
 };
